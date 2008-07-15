@@ -1,8 +1,9 @@
+#! /bin/sh
 #
 #   /**------- <| --------------------------------------------------------**
 #    **         A                     Clan                                **
 #    **---     /.\   -----------------------------------------------------**
-#    **   <|  [""M#                makefile.am                            **
+#    **   <|  [""M#             check_complex.sh                          **
 #    **-   A   | #   -----------------------------------------------------**
 #    **   /.\ [""M#         First version: 30/04/2008                     **
 #    **- [""M# | #  U"U#U  -----------------------------------------------**
@@ -34,42 +35,6 @@
 # * Written by Cedric Bastoul, Cedric.Bastoul@inria.fr                        *
 # *                                                                           *
 # *****************************************************************************/
-#
-# Makefile.am (or makefile if generated) of Clan, the Chunky Loop Analyser.
-# Makefile.am is not a makefile, you must run the 'autogen.sh' THEN the
-# configure shellscript to generate the Makefile thanks to this file.
 
 
-
-#############################################################################
-SUBDIRS 		= doc source include tests
-
-
-#############################################################################
-ACLOCAL_AMFLAGS		= -I autoconf
-
-m4datadir		= $(datadir)/aclocal
-
-
-AUX_DIST                =			\
-	$(ac_aux_dir)/config.guess		\
-	$(ac_aux_dir)/config.sub		\
-	$(ac_aux_dir)/install-sh		\
-	$(ac_aux_dir)/ltmain.sh			\
-	$(ac_aux_dir)/missing			\
-	$(ac_aux_dir)/depcomp
-
-
-MAINTAINERCLEANFILES 	=			\
-	Makefile.in				\
-	aclocal.m4				\
-	configure				\
-	source/stamp-h.in			\
-	$(AUX_DIST)
-
-
-dist-hook:
-	(cd $(distdir) && mkdir -p $(ac_aux_dir))
-	for file in $(AUX_DIST) $(AUX_DIST_EXTRA); do \
-	  cp $$file $(distdir)/$$file; \
-	done
+./$CHECKER "Complex test suite" "$TEST_FILES"

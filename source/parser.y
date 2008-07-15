@@ -1,13 +1,13 @@
 
    /*+------- <| --------------------------------------------------------**
-    **         A                     Clan                                **       
-    **---     /.\   -----------------------------------------------------**    
-    **   <|  [""M#                 parser.y                              **  
+    **         A                     Clan                                **
+    **---     /.\   -----------------------------------------------------**
+    **   <|  [""M#                 parser.y                              **
     **-   A   | #   -----------------------------------------------------**
     **   /.\ [""M#         First version: 30/04/2008                     **
-    **- [""M# | #  U"U#U  -----------------------------------------------**        
-         | #  | #  \ .:/    
-         | #  | #___| #     
+    **- [""M# | #  U"U#U  -----------------------------------------------**
+         | #  | #  \ .:/
+         | #  | #___| #
  ******  | "--'     .-"  ******************************************************
  *     |"-"-"-"-"-#-#-##   Clan : the Chunky Loop Analyzer (experimental)     *
  ****  |     # ## ######  *****************************************************
@@ -40,7 +40,13 @@
    #include <stdio.h>
    #include <stdlib.h>
    #include <string.h>
-   #include "../include/clan/clan.h"
+   #include <clan/macros.h>
+   #include <clan/vector.h>
+   #include <clan/matrix.h>
+   #include <clan/scop.h>
+   #include <clan/symbol.h>
+   #include <clan/statement.h>
+   #include <clan/options.h>
 
    int yylex(void);
    void yyerror(char *);
@@ -83,7 +89,7 @@
 %token sySEMICOLON syPOINT
 
 %token opEQUAL opLEQ opGEG opLOWER opGREATER opPLUS opMINUS
-%token opMULTIPLY opDIVIDE opAFFECTATION opINCREMENTATION
+%token opMULTIPLY opDIVIDE opASSIGNMENT opINCREMENTATION
 %token opPLUSEQUAL opMINUSEQUAL opMULTIPLYEQUAL opDIVIDEEQUAL
 
 %left opPLUS opMINUS
@@ -95,7 +101,7 @@
 %type <setex> array_index
 %type <setex> variable
 %type <setex> expression
-%type <rw>    affectation
+%type <rw>    assignment
 
 %%
 
@@ -117,17 +123,17 @@ program:
   ;
 
 instruction_list:
-    instruction 
+    instruction
   | instruction_list instruction
   | IGNORE
   | instruction_list IGNORE
   ;
 
 bloc:
-    instruction 
+    instruction
   | syRBRACE instruction_list syLBRACE
   ;
- 
+
 instruction:
     FOR
     syRPARENTHESIS
@@ -136,9 +142,20 @@ instruction:
         clan_symbol_p symbol;
         symbol = clan_symbol_add(&parser_symbol,$3,
                                  CLAN_TYPE_ITERATOR,parser_depth+1);
+	/* Ensure that the returned symbol was either a new one,
+	   either from the same type. */
+	if (symbol->type != CLAN_TYPE_ITERATOR)
+	  {
+	    fprintf (stderr, "[Clan] Error: the input file is not a SCoP\nA loop iterator was previously used as a parameter\n");
+	    exit(1);
+	  }
+	/* Update the rank, in case a symbol with the same name was
+	   already existing. */
+	if (symbol->rank != parser_depth + 1)
+	  symbol->rank = parser_depth + 1;
         parser_iterators[parser_depth] = symbol;
       }
-    opAFFECTATION
+    opASSIGNMENT
     affine_expression
       {
         /* Loop lower bound i = a translates to i-a>=0 constraint */
@@ -150,7 +167,7 @@ instruction:
         clan_vector_tag_inequality(constraint);
         clan_vector_free(i_term);
         clan_vector_free($6);
-        
+
         clan_matrix_replace_vector(parser_domain,constraint,parser_nb_cons);
         parser_nb_cons++;
         parser_consperdim[parser_depth]++;
@@ -162,7 +179,7 @@ instruction:
         parser_nb_cons++;
         parser_consperdim[parser_depth]++;
       }
-    sySEMICOLON       
+    sySEMICOLON
     incrementation
     syLPARENTHESIS
       {
@@ -182,15 +199,16 @@ instruction:
         parser_record = (char *)malloc(CLAN_MAX_STRING * sizeof(char));
         parser_recording = CLAN_TRUE;
         /* Yacc needs Lex to read the next token to ensure we are starting
-         * an affectation. So we keep track of the latest text Lex read
+         * an assignment. So we keep track of the latest text Lex read
          * and we start the statement body with it.
          */
         strcpy(parser_record,scanner_latest_text);
       }
-    affectation
+    assignment
       {
-        parser_statement->domain = clan_matrix_ncopy(parser_domain,
-                                                     parser_nb_cons);
+	parser_statement->domain = clan_matrix_list_malloc();
+	parser_statement->domain->elt = clan_matrix_ncopy(parser_domain,
+							  parser_nb_cons);
         parser_statement->schedule = clan_matrix_scheduling(parser_scheduling,
                                                             parser_depth);
         parser_statement->read = $2[0];
@@ -218,7 +236,7 @@ incrementation:
 
 condition:
     affine_expression opLOWER affine_expression
-      { 
+      {
         /* a<b translates to b-a-1>=0 */
         clan_vector_p temp;
         temp = clan_vector_sub($3,$1);
@@ -226,10 +244,10 @@ condition:
         clan_vector_tag_inequality($$);
         clan_vector_free($1);
         clan_vector_free($3);
-        clan_vector_free(temp);        
+        clan_vector_free(temp);
       }
   | affine_expression opGREATER affine_expression
-      { 
+      {
         /* a>b translates to a-b-1>=0 */
         clan_vector_p temp;
         temp = clan_vector_sub($1,$3);
@@ -237,10 +255,10 @@ condition:
         clan_vector_tag_inequality($$);
         clan_vector_free($1);
         clan_vector_free($3);
-        clan_vector_free(temp);        
+        clan_vector_free(temp);
       }
   | affine_expression opLEQ affine_expression
-      { 
+      {
         /* a<=b translates to b-a>=0 */
         $$ = clan_vector_sub($3,$1);
         clan_vector_tag_inequality($$);
@@ -248,7 +266,7 @@ condition:
         clan_vector_free($3);
       }
   | affine_expression opGEG affine_expression
-      { 
+      {
         /* a>=b translates to a-b>=0 */
         $$ = clan_vector_sub($1,$3);
         clan_vector_tag_inequality($$);
@@ -256,7 +274,7 @@ condition:
         clan_vector_free($3);
       }
   | affine_expression opEQUAL affine_expression
-      { 
+      {
         /* a==b translates to a-b==0 */
         $$ = clan_vector_sub($1,$3);
         clan_vector_tag_equality($$);
@@ -267,58 +285,58 @@ condition:
 
 affine_expression:
     term
-      { 
+      {
         $$ = $1;
       }
   | affine_expression opPLUS  affine_expression
-      { 
+      {
         $$ = clan_vector_add($1,$3);
         clan_vector_free($1);
         clan_vector_free($3);
       }
   | affine_expression opMINUS affine_expression
-      { 
+      {
         $$ = clan_vector_sub($1,$3);
         clan_vector_free($1);
         clan_vector_free($3);
       }
   | syRPARENTHESIS affine_expression syLPARENTHESIS
-      { 
+      {
         $$ = $2;
       }
   ;
 
 term:
     INTEGER
-      { 
+      {
         $$ = clan_vector_term(parser_symbol,$1,NULL);
       }
   | ID
-      { 
+      {
         clan_symbol_add(&parser_symbol,$1,CLAN_TYPE_UNKNOWN,parser_depth);
         $$ = clan_vector_term(parser_symbol,1,$1);
         free($1);
       }
   | opMINUS INTEGER
-      { 
+      {
         $$ = clan_vector_term(parser_symbol,-($2),NULL);
       }
   | INTEGER opMULTIPLY ID
-      { 
+      {
         clan_symbol_add(&parser_symbol,$3,CLAN_TYPE_UNKNOWN,parser_depth);
         $$ = clan_vector_term(parser_symbol,$1,$3);
         free($3);
       }
   | opMINUS INTEGER opMULTIPLY ID
-      { 
+      {
         clan_symbol_add(&parser_symbol,$4,CLAN_TYPE_UNKNOWN,parser_depth);
         $$ = clan_vector_term(parser_symbol,-($2),$4);
         free($4);
       }
   ;
 
-affectation:
-    variable opAFFECTATION expression sySEMICOLON
+assignment:
+    variable opASSIGNMENT expression sySEMICOLON
       {
         $$[0] = $3;
         $$[1] = $1;
@@ -354,7 +372,7 @@ expression:
       {
         $$ = NULL;
       }
-  | opMINUS NUMBER 
+  | opMINUS NUMBER
       {
         $$ = NULL;
       }
@@ -395,11 +413,11 @@ expression:
         $$ = NULL;
         free($1);
       }
-  ;  
+  ;
 
 variable:
     ID
-      { 
+      {
         int rank;
         clan_matrix_p matrix;
         clan_symbol_add(&parser_symbol,$1,CLAN_TYPE_ARRAY,parser_depth);
@@ -410,7 +428,7 @@ variable:
         free($1);
       }
   | ID array_index
-      { 
+      {
         int rank;
         clan_symbol_add(&parser_symbol,$1,CLAN_TYPE_ARRAY,parser_depth);
         rank = clan_symbol_get_rank(parser_symbol,$1);
@@ -419,15 +437,15 @@ variable:
         free($1);
       }
   ;
-  
+
 array_index:
     syRBRACKET affine_expression syLBRACKET
-      { 
+      {
         $$ = clan_matrix_from_vector($2);
         clan_vector_free($2);
       }
   | array_index syRBRACKET affine_expression syLBRACKET
-      { 
+      {
         clan_matrix_insert_vector($1,$3,CLAN_END);
         clan_vector_free($3);
         $$ = $1;
@@ -438,7 +456,7 @@ NUMBER:
     INTEGER
   | REAL
   ;
-  
+
 %%
 
 
@@ -465,7 +483,7 @@ clan_parser_initialize_state()
   nb_rows    = CLAN_MAX_CONSTRAINTS;
   nb_columns = CLAN_MAX_DEPTH + CLAN_MAX_PARAMETERS + 2;
   depth      = CLAN_MAX_DEPTH;
-  
+
   parser_scop   = clan_scop_malloc();
   parser_domain = clan_matrix_malloc(nb_rows,nb_columns);
   parser_symbol = NULL;
@@ -473,11 +491,11 @@ clan_parser_initialize_state()
   parser_scheduling = (int *)malloc(depth * sizeof(int));
   parser_consperdim = (int *)malloc(depth * sizeof(int));
   for (i = 0; i < depth; i++)
-  { 
+  {
     parser_scheduling[i] = 0;
     parser_consperdim[i] = 0;
   }
-  parser_iterators = (clan_symbol_p *)malloc(depth * sizeof(clan_symbol_p));  
+  parser_iterators = (clan_symbol_p *)malloc(depth * sizeof(clan_symbol_p));
 }
 
 
@@ -512,15 +530,15 @@ clan_scop_p
 clan_parse(FILE * input, clan_options_p options)
 {
   yyin = input;
- 
+
   clan_parser_initialize_state();
 
   yyparse();
- 
+
   clan_parser_free_state();
   clan_scop_compact(parser_scop);
   fclose(yyin);
-  
+
   return parser_scop;
 }
 

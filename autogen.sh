@@ -1,5 +1,5 @@
-#!/bin/sh
-libtoolize -c --force
-aclocal
-automake -a -c --foreign
-autoconf
+#! /bin/sh
+
+aclocal -I autoconf
+libtoolize --force --copy
+autoreconf -vfi

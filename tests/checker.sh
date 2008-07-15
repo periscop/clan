@@ -1,8 +1,9 @@
+#! /bin/sh
 #
 #   /**------- <| --------------------------------------------------------**
 #    **         A                     Clan                                **
 #    **---     /.\   -----------------------------------------------------**
-#    **   <|  [""M#                makefile.am                            **
+#    **   <|  [""M#                 checker.sh                            **
 #    **-   A   | #   -----------------------------------------------------**
 #    **   /.\ [""M#         First version: 30/04/2008                     **
 #    **- [""M# | #  U"U#U  -----------------------------------------------**
@@ -34,42 +35,48 @@
 # * Written by Cedric Bastoul, Cedric.Bastoul@inria.fr                        *
 # *                                                                           *
 # *****************************************************************************/
-#
-# Makefile.am (or makefile if generated) of Clan, the Chunky Loop Analyser.
-# Makefile.am is not a makefile, you must run the 'autogen.sh' THEN the
-# configure shellscript to generate the Makefile thanks to this file.
 
-
-
-#############################################################################
-SUBDIRS 		= doc source include tests
-
-
-#############################################################################
-ACLOCAL_AMFLAGS		= -I autoconf
-
-m4datadir		= $(datadir)/aclocal
-
-
-AUX_DIST                =			\
-	$(ac_aux_dir)/config.guess		\
-	$(ac_aux_dir)/config.sub		\
-	$(ac_aux_dir)/install-sh		\
-	$(ac_aux_dir)/ltmain.sh			\
-	$(ac_aux_dir)/missing			\
-	$(ac_aux_dir)/depcomp
-
-
-MAINTAINERCLEANFILES 	=			\
-	Makefile.in				\
-	aclocal.m4				\
-	configure				\
-	source/stamp-h.in			\
-	$(AUX_DIST)
-
-
-dist-hook:
-	(cd $(distdir) && mkdir -p $(ac_aux_dir))
-	for file in $(AUX_DIST) $(AUX_DIST_EXTRA); do \
-	  cp $$file $(distdir)/$$file; \
-	done
+output=0
+TEST_FILES="$2";
+echo "[CHECK:] $1";
+for i in $TEST_FILES; do
+    outtemp=0
+    echo "[TEST:] Source parser test:== $i ==";
+    $top_builddir/source/clan $i > $i.test 2>/tmp/clanout
+    z=`diff $i.test $i.scop 2>&1`
+    err=`cat /tmp/clanout`;
+    if ! [ -z "$z" ]; then
+	echo -e "\033[31m[FAIL:] Source parser test: Wrong .scop generated\033[0m";
+	outtemp=1;
+    fi
+    if ! [ -z "$err" ]; then
+	if [ $outtemp = "0" ]; then
+	    echo "[INFO:] Source parser test: .scop OK";
+	fi
+	echo -e "\033[31m[FAIL:] Source parser test: stderr output: $err\033[0m";
+	outtemp=1
+	output=1
+    fi
+    if [ $outtemp = "0" ]; then
+	echo "[PASS:] Source parser test: .scop OK";
+	rm -f $i.test
+    fi
+    rm -f /tmp/clanout
+    echo "[TEST:] .SCoP parser test:== $i.scop ==";
+    $top_builddir/source/clan -inputscop $i.scop > $i.parsetest 
+    z=`diff $i.parsetest $i.scop`
+    if ! [ -z "$z" ]; then
+	echo -e "\033[31m[FAIL:] .SCoP parser test: $i\033[0m";
+	outtemp=1
+	output=1
+    else
+	echo "[PASS:] .SCoP parser test: .scop re-OK";
+	rm -f $i.parsetest
+    fi
+done
+if [ $output = "1" ]; then
+    echo -e "\033[31m[FAIL:] $1\033[0m";
+else
+    echo "[PASS:] $1";
+fi
+exit $output

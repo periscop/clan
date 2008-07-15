@@ -1,13 +1,13 @@
 
    /*+------- <| --------------------------------------------------------**
-    **         A                     Clan                                **       
-    **---     /.\   -----------------------------------------------------**    
-    **   <|  [""M#                 scanner.l                             **  
+    **         A                     Clan                                **
+    **---     /.\   -----------------------------------------------------**
+    **   <|  [""M#                 scanner.l                             **
     **-   A   | #   -----------------------------------------------------**
     **   /.\ [""M#         First version: 30/04/2008                     **
-    **- [""M# | #  U"U#U  -----------------------------------------------**        
-         | #  | #  \ .:/    
-         | #  | #___| #     
+    **- [""M# | #  U"U#U  -----------------------------------------------**
+         | #  | #  \ .:/
+         | #  | #___| #
  ******  | "--'     .-"  ******************************************************
  *     |"-"-"-"-"-#-#-##   Clan : the Chunky Loop Analyzer (experimental)     *
  ****  |     # ## ######  *****************************************************
@@ -39,16 +39,18 @@
 %{
    #include <stdlib.h>
    #include <string.h>
-   #include "../include/clan/clan.h"
-   #include "parser.h"
-   
+   #include <clan/macros.h>
+   #include <clan/vector.h>
+   #include <clan/matrix.h>
+   #include <parser.h>
+
    void yyerror(char *);
    int  clan_scanner(int, char *, char *);
-   
+
    extern int           parser_recording; /**< Do we record what we read ? */
    extern char *        parser_record;    /**< What we record */
    extern clan_symbol_p parser_symbol;    /**< Top of the symbol table */
-   
+
    int  scanner_parsing = CLAN_FALSE;     /**< Do we parse or not ? */
    char scanner_latest_text[CLAN_MAX_STRING]; /**< Latest text read */
 %}
@@ -66,7 +68,7 @@
                          char * word;
                          word = (char *)malloc((strlen(yytext)+1)*sizeof(char));
 			 strcpy(word,yytext);
-			 yylval.symbol = word; 
+			 yylval.symbol = word;
 			 return clan_scanner(ID,yytext,"ID");
                        }
 [0-9]+"."[0-9]*        { return clan_scanner(REAL,yytext,"REAL"); }
@@ -82,7 +84,7 @@
 "{"                    { return clan_scanner(syRBRACE,         yytext,"{");  }
 "}"                    { return clan_scanner(syLBRACE,         yytext,"}");  }
 ";"                    { return clan_scanner(sySEMICOLON,      yytext,";");  }
-"."                    { return clan_scanner(syPOINT,          yytext,".");  } 
+"."                    { return clan_scanner(syPOINT,          yytext,".");  }
 "++"                   { return clan_scanner(opINCREMENTATION, yytext,"++"); }
 "+="                   { return clan_scanner(opPLUSEQUAL,      yytext,"+="); }
 "-="                   { return clan_scanner(opMINUSEQUAL,     yytext,"-="); }
@@ -97,7 +99,7 @@
 "-"                    { return clan_scanner(opMINUS,          yytext,"-");  }
 "*"                    { return clan_scanner(opMULTIPLY,       yytext,"*");  }
 "/"                    { return clan_scanner(opDIVIDE,         yytext,"/");  }
-"="                    { return clan_scanner(opAFFECTATION,    yytext,"=");  }
+"="                    { return clan_scanner(opASSIGNMENT,    yytext,"=");  }
 
 .                      { if (scanner_parsing == CLAN_TRUE)
                          {
@@ -131,11 +133,11 @@ int clan_scanner(int token, char * text, char * message)
 {
   //if (CLAN_DEBUG)
   //  printf("Lex: %s (%s)\n",message,text);
-  
+
   sprintf(scanner_latest_text,"%s",text);
   if (parser_recording)
     strcat(parser_record,text);
-  
+
   if (scanner_parsing == CLAN_TRUE)
     return token;
   else

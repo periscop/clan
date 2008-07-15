@@ -5,7 +5,7 @@ void main(void)
   int i,j,k,l;
   double **a,s;
   
-
+#pragma scop
   for(k = 1; k <= n; k++)
     {
       s = 1/a[k][k];
@@ -17,4 +17,5 @@ void main(void)
 	for(i = k+1; i <= n; i++)
 	  a[i][j] = a[i][j] - a[k][j] * a[i][k];
     }
+#pragma endscop
 }

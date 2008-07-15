@@ -1,13 +1,13 @@
 
    /*+------- <| --------------------------------------------------------**
-    **         A                     Clan                                **       
-    **---     /.\   -----------------------------------------------------**    
-    **   <|  [""M#                options.h                              **  
+    **         A                     Clan                                **
+    **---     /.\   -----------------------------------------------------**
+    **   <|  [""M#                options.h                              **
     **-   A   | #   -----------------------------------------------------**
     **   /.\ [""M#         First version: 24/05/2008                     **
-    **- [""M# | #  U"U#U  -----------------------------------------------**        
-         | #  | #  \ .:/    
-         | #  | #___| #     
+    **- [""M# | #  U"U#U  -----------------------------------------------**
+         | #  | #  \ .:/
+         | #  | #___| #
  ******  | "--'     .-"  ******************************************************
  *     |"-"-"-"-"-#-#-##   Clan : the Chunky Loop Analyzer (experimental)     *
  ****  |     # ## ######  *****************************************************
@@ -37,11 +37,16 @@
 
 
 #ifndef CLAN_OPTIONS_H
-#define CLAN_OPTIONS_H
-#if defined(__cplusplus)
-extern "C" 
+# define CLAN_OPTIONS_H
+
+# include <stdio.h>
+# include <clan/macros.h>
+
+
+# if defined(__cplusplus)
+extern "C"
   {
-#endif 
+# endif
 
 
 /**
@@ -53,6 +58,8 @@ struct clan_options
   char * name ;  /**< Name of the input file. */
   int castle;    /**< 1 to put the Clan castle in output, 0 otherwise. */
   int structure; /**< 1 to print the clan_scop structure, 0 otherwise. */
+  int inputscop; /**< 1 to read a .scop on the input, 0 to read a
+		    source file (default). */
 };
 typedef struct clan_options   clan_options_t;
 typedef struct clan_options * clan_options_p;
@@ -82,7 +89,7 @@ clan_options_p clan_options_read(int, char **, FILE **, FILE **);
  ******************************************************************************/
 
 
-#if defined(__cplusplus)
+# if defined(__cplusplus)
   }
-#endif 
+# endif
 #endif /* define CLAN_OPTIONS_H */

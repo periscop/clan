@@ -1,13 +1,13 @@
 dnl
 dnl   /**------- <| --------------------------------------------------------**
-dnl    **         A                     Clan                                **       
-dnl    **---     /.\   -----------------------------------------------------**    
-dnl    **   <|  [""M#               configure.in                            **  
+dnl    **         A                     Clan                                **
+dnl    **---     /.\   -----------------------------------------------------**
+dnl    **   <|  [""M#               configure.in                            **
 dnl    **-   A   | #   -----------------------------------------------------**
 dnl    **   /.\ [""M#         First version: 30/04/2008                     **
-dnl    **- [""M# | #  U"U#U  -----------------------------------------------**        
-dnl         | #  | #  \ .:/    
-dnl         | #  | #___| #     
+dnl    **- [""M# | #  U"U#U  -----------------------------------------------**
+dnl         | #  | #  \ .:/
+dnl         | #  | #___| #
 dnl ******  | "--'     .-"  ***************************************************
 dnl *     |"-"-"-"-"-#-#-##   Clan : the Chunky Loop Analyser (experimental)  *
 dnl ****  |     # ## ######  **************************************************
@@ -40,27 +40,37 @@ dnl Input file for autoconf to build a configuration shellscript.
 
 
 AC_PREREQ(2.13)
-AC_INIT(source/clan.c)
-AC_CONFIG_AUX_DIR(autoconf)
-AM_INIT_AUTOMAKE(clan, 0.3.0)
+dnl Fill here the @bug email adress.
+AC_INIT([clan], [0.3.0], [cedric.bastoul@inria.fr])
+dnl A common file, which serve as a test.
+AC_CONFIG_SRCDIR([include/clan/scop.h])
+dnl Put as most as possible configuration files to an auxialiry
+dnl directory.
+AC_CONFIG_AUX_DIR([autoconf])
+dnl Initialize automake. Here, a special tar version that enables
+dnl (very) long filenames.
+AM_INIT_AUTOMAKE([1.9 tar-ustar no-define foreign dist-bzip2])
+
+
 dnl default version
 BITS="64"
 CPPFLAGS=-DLINEAR_VALUE_IS_LONGLONG
 
+
 dnl /**************************************************************************
 dnl  *                              Checking                                  *
 dnl  **************************************************************************/
+
 
 dnl Checks for programs.
 AC_PROG_CC
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_CHECK_PROG(CD, cd)
-dnl Configure needs an empty install.sh file with this, i HATE that...
-AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 AC_PROG_LEX
 AC_PROG_YACC
+AC_CHECK_PROGS(DOXYGEN,doxygen,doxygen)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -68,6 +78,7 @@ AC_TYPE_SIZE_T
 
 dnl Checks for header files.
 AC_HEADER_STDC
+AC_CHECK_HEADERS([errno.h stddef.h stdlib.h string.h strings.h unistd.h])
 
 dnl Checks for library functions.
 AC_CHECK_FUNCS(strtol)
@@ -159,7 +170,7 @@ else
     dnl Default given by --with-X is "yes", --without-X is "no". We also
     dnl initialized manually all gmp_package* variables to "yes" (thus they are
     dnl supposed to be "yes" except if the user set them himself).
-    
+
     if test "$gmp_package" != "yes" ; then
       echo "(GMP path has been set by user)"
       GMP_DIR=$gmp_package
@@ -167,15 +178,15 @@ else
       CPPFLAGS="-I$GMP_DIR/include $CPPFLAGS"
       LDFLAGS="-L$GMP_DIR/lib $LDFLAGS"
     fi
-    
+
     if test "$gmp_include_package" != "yes" ; then
       CPPFLAGS="-I$GMP_INC $CPPFLAGS"
     fi
-    
+
     if test "$gmp_library_package" != "yes" ; then
       LDFLAGS="-L$GMP_LIB $LDFLAGS"
     fi
-     
+
     AC_CHECK_HEADER(gmp.h,
                     [],
                     [AC_MSG_ERROR(Can't find gmp headers.)])
@@ -183,7 +194,7 @@ else
                  __gmpz_init,
                  [LIBS="$LIBS -lgmp"],
                  [AC_MSG_ERROR(Can't find gmp library.)])
-    
+
     AC_MSG_RESULT(yes)
   fi
 fi
@@ -194,20 +205,23 @@ dnl  *                            Substitutions                               *
 dnl  **************************************************************************/
 
 
-dnl Substitutions to do in Makefile.in.
-AC_SUBST(target)
-AC_SUBST(CC)
-AC_SUBST(LN_S)
-AC_SUBST(SHEXT)
-
-AC_SUBST(prefix)
-AC_SUBST(exec_prefix)
-AC_SUBST(INSTALL)
-
+dnl Substitutions to do.
 AC_SUBST(BITS)
-AC_SUBST(CPPFLAGS)
+AC_SUBST(ac_aux_dir)
 
-AC_OUTPUT(Makefile include/clan/clan.h autoconf/Doxyfile)
+dnl Configure Makefiles.
+AC_CONFIG_FILES([
+	Makefile
+	doc/Makefile
+	doc/Doxyfile
+	include/Makefile
+	include/clan/clan.h
+	source/Makefile
+	tests/Makefile
+	],
+	[test -z "$CONFIG_HEADERS" || echo timestamp > source/stamp-h.in])
+
+AC_OUTPUT
 
 
 echo "             /*-----------------------------------------------*"

@@ -456,7 +456,7 @@ Z^2.
 We often use in our research papers a graphical representation that gives a
 better view of this subspace:
 
-@image{./images/basic1,4cm}
+@image{images/basic1,4cm}
 
 @noindent Here the iteration domain is specified thanks to a set of
 constraints. When those constraints are affine and
@@ -848,7 +848,7 @@ D_S4=  @{(i,j) in Z^2 | 2 <= i <= 4 && 2 <= j <= 4 @}.
 @noindent If you are still not comfortable with the mathematical notation, it
 corresponds to the following graphical representation:
 
-@image{./images/basic2,3cm}
+@image{images/basic2,3cm}
 
 @noindent The list of the statement instances of @code{S4} (the integral
 points of its iteration domain) corresponds to the following iteration vectors:
@@ -1000,7 +1000,7 @@ for (i=1;i<=N;i++) @{
 figure. It directly gives the scattering functions (schedules) for all the
 statements of the program.
 
-@image{./images/tree,6cm}
+@image{images/tree,6cm}
 
 @tex
 $$
@@ -1572,7 +1572,7 @@ $\theta_{S}(i,j,k) = (j+2,3*i+j,k+n+1)$
 @end tex
 @ifnottex
 @example
-T_{S}(i,j,k) = (j+2,3*i+j,k+n+1)
+T_@{S@}(i,j,k) = (j+2,3*i+j,k+n+1)
 @end example
 @end ifnottex
 may be written in a .scop file in the following way:
@@ -1749,7 +1749,7 @@ fields are not described here.
 * clan_matrix_t::
 * clan_statement_t::
 * clan_scop_t::
-* CloogOptions::
+* clan_options_t::
 @end menu
 
 
@@ -1798,7 +1798,7 @@ Set this field to the initial size of the @code{p_Init} array
 @group
 struct clan_statement
 @{
-  clan_matrix_p domain;         /* Iteration domain */
+  clan_matrix_list_p domain;    /* Iteration domain */
   clan_matrix_p scattering;     /* Scattering function */
   clan_matrix_p read;           /* Array read access informations */
   clan_matrix_p write;          /* Array write access informations */
@@ -1813,23 +1813,24 @@ typedef struct clan_statement * clan_statement_p;
 @end example
 
 @noindent The @code{clan_statement_t} structure represents a @code{NULL}
-terminated linked list of statements. The structure contains all elements
-of the polyhedral representation of the statement using a
-@code{clan_matrix_t} data structure: the iteration domain
-@code{domain}, the scattering function @code{scattering}, the set of array read
-accesses @code{read} and the set of array write accesses @code{write}.
-The particular representation of each element using the @code{clan_matrix_t}
-data structure is described with the output file format
-(@pxref{Reading The Output File}). If an element is not
-present, the according pointer have to be @code{NULL}.
-The @code{nb_iterators} field gives the depth of the statement in the original
-program. It may be used with any matrix to compute the number of
-parameters (e.g.
-@code{nb_parameters = domain->NbColumns - nb_iterators - 2})
-To represent the statement body, we use @code{iterators}, an array of
-@code{nb_iterators} strings for the surrounding loop counters names in the
-original program, and @code{body}, the statement body string in the
-original program.
+terminated linked list of statements. The structure contains all
+elements of the polyhedral representation of the statement. It uses a
+@code{clan_matrix_list_t} data structure to represent a union for the
+iteration domain @code{domain} (it is simply a chained list of
+@code{clan_matrix_t} elements), and a @code{clan_matrix_t} data
+structure for the rest: the scattering function @code{scattering}, the
+set of array read accesses @code{read} and the set of array write
+accesses @code{write}.  The particular representation of each element
+using the @code{clan_matrix_t} data structure is described with the
+output file format (@pxref{Reading The Output File}). If an element is
+not present, the according pointer have to be @code{NULL}.  The
+@code{nb_iterators} field gives the depth of the statement in the
+original program. It may be used with any matrix to compute the number
+of parameters (e.g.  @code{nb_parameters = domain->NbColumns -
+nb_iterators - 2}) To represent the statement body, we use
+@code{iterators}, an array of @code{nb_iterators} strings for the
+surrounding loop counters names in the original program, and
+@code{body}, the statement body string in the original program.
 
 @node clan_scop_t
 @subsection clan_scop_t

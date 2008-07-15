@@ -40,36 +40,66 @@
 # configure shellscript to generate the Makefile thanks to this file.
 
 
+#############################################################################
+SUBDIRS 		=
 
 #############################################################################
-SUBDIRS 		= doc source include tests
 
+MAINTAINERCLEANFILES    = Makefile.in
+
+TESTS_ENVIRONMENT       = top_builddir=$(top_builddir) SRCDIR=$(srcdir)
 
 #############################################################################
-ACLOCAL_AMFLAGS		= -I autoconf
 
-m4datadir		= $(datadir)/aclocal
+EXTRA_DIST              = checker.sh
+
+check_SCRIPTS		= check_unitary.sh check_complex.sh
+
+## Replace by program names when needed
+# check_PROGRAMS = ...
+TESTS			= $(check_SCRIPTS)
+
+TEST_FILES             	=			\
+	$(top_srcdir)/tests/ax-do.c		\
+	$(top_srcdir)/tests/gauss.c		\
+	$(top_srcdir)/tests/gemver.c		\
+	$(top_srcdir)/tests/iir_4_64.c		\
+	$(top_srcdir)/tests/matmul.c		\
+	$(top_srcdir)/tests/swim.c
+
+UNITARY_TEST_FILES             	=			\
+	$(top_srcdir)/tests/unitary/classicloop.c	\
+	$(top_srcdir)/tests/unitary/simpleloop.c	\
+	$(top_srcdir)/tests/unitary/basicnest.c		\
+	$(top_srcdir)/tests/unitary/empty.c		\
+	$(top_srcdir)/tests/unitary/simplecond.c	\
+	$(top_srcdir)/tests/unitary/redefiter.c		\
+	$(top_srcdir)/tests/unitary/assigniter.c	\
+	$(top_srcdir)/tests/unitary/comments.c		\
+	$(top_srcdir)/tests/unitary/increment.c
 
 
-AUX_DIST                =			\
-	$(ac_aux_dir)/config.guess		\
-	$(ac_aux_dir)/config.sub		\
-	$(ac_aux_dir)/install-sh		\
-	$(ac_aux_dir)/ltmain.sh			\
-	$(ac_aux_dir)/missing			\
-	$(ac_aux_dir)/depcomp
+TEST_FILES_REF    =		 $(TEST_FILES:.c=.c.scop)
+UNITARY_TEST_FILES_REF		= $(UNITARY_TEST_FILES:.c=.c.scop)
+
+TEST_FILES_CLEAN		= $(TEST_FILES:.c=.c.test)
+UNITARY_TEST_FILES_CLEAN	= $(UNITARY_TEST_FILES:.c=.c.test)
 
 
-MAINTAINERCLEANFILES 	=			\
-	Makefile.in				\
-	aclocal.m4				\
-	configure				\
-	source/stamp-h.in			\
-	$(AUX_DIST)
+CLEANFILES			=		\
+	$(TEST_FILES_CLEAN)			\
+	$(UNITARY_TEST_FILES_CLEAN)
 
 
-dist-hook:
-	(cd $(distdir) && mkdir -p $(ac_aux_dir))
-	for file in $(AUX_DIST) $(AUX_DIST_EXTRA); do \
-	  cp $$file $(distdir)/$$file; \
-	done
+EXTRA_DIST	+=				\
+	$(TEST_FILES)				\
+	$(TEST_FILES_REF)			\
+	$(UNITARY_TEST_FILES)			\
+	$(UNITARY_TEST_FILES_REF)		\
+	$(check_SCRIPTS)
+
+
+TESTS_ENVIRONMENT +=					\
+	CHECKER="$(top_srcdir)/tests/checker.sh"	\
+	TEST_FILES="$(TEST_FILES)"			\
+	UNITARY_TEST_FILES="$(UNITARY_TEST_FILES)"

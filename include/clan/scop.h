@@ -1,13 +1,13 @@
 
    /*+------- <| --------------------------------------------------------**
-    **         A                     Clan                                **       
-    **---     /.\   -----------------------------------------------------**    
-    **   <|  [""M#                  scop.h                               **  
+    **         A                     Clan                                **
+    **---     /.\   -----------------------------------------------------**
+    **   <|  [""M#                  scop.h                               **
     **-   A   | #   -----------------------------------------------------**
     **   /.\ [""M#         First version: 30/04/2008                     **
-    **- [""M# | #  U"U#U  -----------------------------------------------**        
-         | #  | #  \ .:/    
-         | #  | #___| #     
+    **- [""M# | #  U"U#U  -----------------------------------------------**
+         | #  | #  \ .:/
+         | #  | #___| #
  ******  | "--'     .-"  ******************************************************
  *     |"-"-"-"-"-#-#-##   Clan : the Chunky Loop Analyzer (experimental)     *
  ****  |     # ## ######  *****************************************************
@@ -37,11 +37,17 @@
 
 
 #ifndef CLAN_SCOP_H
-#define CLAN_SCOP_H
-#if defined(__cplusplus)
-extern "C" 
+# define CLAN_SCOP_H
+
+# include <clan/macros.h>
+# include <clan/matrix.h>
+# include <clan/statement.h>
+# include <clan/options.h>
+
+# if defined(__cplusplus)
+extern "C"
   {
-#endif 
+# endif
 
 
 /**
@@ -69,6 +75,12 @@ void        clan_scop_print(FILE *, clan_scop_p);
 void        clan_scop_print_dot_scop(FILE *, clan_scop_p, clan_options_p);
 
 
+/******************************************************************************
+ *                               Reading function                             *
+ ******************************************************************************/
+clan_scop_p clan_scop_read(FILE *, clan_options_p);
+
+
 /*+****************************************************************************
  *                    Memory allocation/deallocation function                 *
  ******************************************************************************/
@@ -81,9 +93,10 @@ void        clan_scop_free(clan_scop_p);
  ******************************************************************************/
 clan_scop_p clan_scop_extract(FILE *, clan_options_p);
 void        clan_scop_compact(clan_scop_p);
+char**	    clan_scop_generate_names(char*, int);
 
 
-#if defined(__cplusplus)
+# if defined(__cplusplus)
   }
-#endif 
+# endif
 #endif /* define CLAN_SCOP_H */

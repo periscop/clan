@@ -42,34 +42,41 @@
 
 
 #############################################################################
-SUBDIRS 		= doc source include tests
-
+SUBDIRS			=
 
 #############################################################################
-ACLOCAL_AMFLAGS		= -I autoconf
+MAINTAINERCLEANFILES	= Makefile.in
 
-m4datadir		= $(datadir)/aclocal
+INCLUDES		= -I$(top_builddir) -I$(top_srcdir)	\
+			  -I$(top_builddir)/include		\
+		          -I$(top_srcdir)/include
 
+#############################################################################
 
-AUX_DIST                =			\
-	$(ac_aux_dir)/config.guess		\
-	$(ac_aux_dir)/config.sub		\
-	$(ac_aux_dir)/install-sh		\
-	$(ac_aux_dir)/ltmain.sh			\
-	$(ac_aux_dir)/missing			\
-	$(ac_aux_dir)/depcomp
+lib_LTLIBRARIES 	= libclan.la
 
 
-MAINTAINERCLEANFILES 	=			\
-	Makefile.in				\
-	aclocal.m4				\
-	configure				\
-	source/stamp-h.in			\
-	$(AUX_DIST)
+libclan_la_SOURCES 	=			\
+	parser.y				\
+	scanner.l				\
+	options.c				\
+	symbol.c				\
+	scop.c					\
+	statement.c				\
+	matrix.c				\
+	vector.c
+
+AM_CFLAGS = -Wall -fomit-frame-pointer -g
 
 
-dist-hook:
-	(cd $(distdir) && mkdir -p $(ac_aux_dir))
-	for file in $(AUX_DIST) $(AUX_DIST_EXTRA); do \
-	  cp $$file $(distdir)/$$file; \
-	done
+bin_PROGRAMS = clan
+
+LDADD = libclan.la
+
+clan_SOURCES = clan.c
+
+YFLAGS = -y -d
+
+#EXTRA_DIST = 					\
+#	parser.h
+#

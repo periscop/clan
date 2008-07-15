@@ -1,13 +1,13 @@
 
    /*+------- <| --------------------------------------------------------**
-    **         A                     Clan                                **       
-    **---     /.\   -----------------------------------------------------**    
-    **   <|  [""M#                 vector.h                              **  
+    **         A                     Clan                                **
+    **---     /.\   -----------------------------------------------------**
+    **   <|  [""M#                 vector.h                              **
     **-   A   | #   -----------------------------------------------------**
     **   /.\ [""M#         First version: 01/05/2008                     **
-    **- [""M# | #  U"U#U  -----------------------------------------------**        
-         | #  | #  \ .:/    
-         | #  | #___| #     
+    **- [""M# | #  U"U#U  -----------------------------------------------**
+         | #  | #  \ .:/
+         | #  | #___| #
  ******  | "--'     .-"  ******************************************************
  *     |"-"-"-"-"-#-#-##   Clan : the Chunky Loop Analyzer (experimental)     *
  ****  |     # ## ######  *****************************************************
@@ -37,11 +37,17 @@
 
 
 #ifndef CLAN_VECTOR_H
-#define CLAN_VECTOR_H
-#if defined(__cplusplus)
-extern "C" 
+# define CLAN_VECTOR_H
+
+# include <stdio.h>
+# include <clan/macros.h>
+# include <clan/symbol.h>
+
+
+# if defined(__cplusplus)
+extern "C"
   {
-#endif 
+# endif
 
 
 /**
@@ -84,7 +90,7 @@ clan_vector_p clan_vector_sub(clan_vector_p, clan_vector_p);
 void          clan_vector_tag_inequality(clan_vector_p);
 void          clan_vector_tag_equality(clan_vector_p);
 
-#if defined(__cplusplus)
+# if defined(__cplusplus)
   }
-#endif 
+# endif
 #endif /* define CLAN_VECTOR_H */

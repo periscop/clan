@@ -1,13 +1,13 @@
 
    /*+------- <| --------------------------------------------------------**
-    **         A                     Clan                                **       
-    **---     /.\   -----------------------------------------------------**    
-    **   <|  [""M#                 symbol.c                              **  
+    **         A                     Clan                                **
+    **---     /.\   -----------------------------------------------------**
+    **   <|  [""M#                 symbol.c                              **
     **-   A   | #   -----------------------------------------------------**
     **   /.\ [""M#         First version: 01/05/2008                     **
-    **- [""M# | #  U"U#U  -----------------------------------------------**        
-         | #  | #  \ .:/    
-         | #  | #___| #     
+    **- [""M# | #  U"U#U  -----------------------------------------------**
+         | #  | #  \ .:/
+         | #  | #___| #
  ******  | "--'     .-"  ******************************************************
  *     |"-"-"-"-"-#-#-##   Clan : the Chunky Loop Analyzer (experimental)     *
  ****  |     # ## ######  *****************************************************
@@ -40,7 +40,7 @@
 # include <stdio.h>
 # include <ctype.h>
 # include <string.h>
-# include "../include/clan/clan.h"
+# include <clan/symbol.h>
 
 
 /*+****************************************************************************
@@ -102,7 +102,7 @@ clan_symbol_print_structure(FILE * file, clan_symbol_p symbol, int level)
     }
     else
       first = 0;
-      
+
     /* A blank line. */
     for (j = 0; j <= level+1; j++)
       fprintf(file,"|\t");
@@ -142,7 +142,7 @@ clan_symbol_print_structure(FILE * file, clan_symbol_p symbol, int level)
     for (j = 0; j <= level; j++)
       fprintf(file,"|\t");
     fprintf(file,"Rank: %d\n",symbol->rank);
-    
+
     /* A blank line. */
     for (j = 0; j <= level+1; j++)
       fprintf(file,"|\t");
@@ -155,7 +155,7 @@ clan_symbol_print_structure(FILE * file, clan_symbol_p symbol, int level)
     if (symbol != NULL)
     {
       for (j = 0; j <= level; j++)
-        fprintf(file,"|\t");  
+        fprintf(file,"|\t");
       fprintf(file,"V\n");
     }
   }
@@ -178,7 +178,7 @@ clan_symbol_print_structure(FILE * file, clan_symbol_p symbol, int level)
  */
 void
 clan_symbol_print(FILE * file, clan_symbol_p symbol)
-{ 
+{
   clan_symbol_print_structure(file,symbol,0);
 }
 
@@ -202,12 +202,12 @@ clan_symbol_malloc()
   clan_symbol_p symbol;
 
   symbol = (clan_symbol_p)malloc(sizeof(clan_symbol_t));
-  if (symbol == NULL) 	
+  if (symbol == NULL)
   {
     fprintf(stderr, "[Clan] Memory Overflow.\n");
     exit(1);
   }
-  
+
   symbol->identifier = NULL;
   symbol->next       = NULL;
 
@@ -224,15 +224,15 @@ clan_symbol_malloc()
  */
 void
 clan_symbol_free(clan_symbol_p symbol)
-{ 
+{
   clan_symbol_p next;
 
   while (symbol != NULL)
   {
-    next = symbol->next;    
+    next = symbol->next;
     free(symbol->identifier);
     free(symbol);
-    symbol = next;    
+    symbol = next;
   }
 }
 
@@ -254,13 +254,13 @@ clan_symbol_free(clan_symbol_p symbol)
  */
 clan_symbol_p
 clan_symbol_lookup(clan_symbol_p symbol, char * identifier)
-{ 
+{
   while (symbol != NULL)
-  { 
+  {
     if (strcmp(symbol->identifier,identifier) == 0)
       return symbol;
     else
-      symbol = symbol->next;    
+      symbol = symbol->next;
   }
   return NULL;
 }
@@ -282,7 +282,7 @@ clan_symbol_lookup(clan_symbol_p symbol, char * identifier)
  */
 clan_symbol_p
 clan_symbol_add(clan_symbol_p * location, char * identifier, int type, int rank)
-{ 
+{
   clan_symbol_p symbol;
 
   /* If the identifier is already in the table, do nothing. */
@@ -292,19 +292,19 @@ clan_symbol_add(clan_symbol_p * location, char * identifier, int type, int rank)
 
   /* Else, we allocate and fill a new clan_symbol_t node. */
   symbol = clan_symbol_malloc();
-  
+
   symbol->identifier = (char *)malloc(CLAN_MAX_STRING * sizeof(char));
   strcpy(symbol->identifier,identifier);
-  
+
   /* If the type was unknown (iterator or parameter) we know now that it is
    * a parameter, it would have been already in the table otherwise.
    */
   if (type == CLAN_TYPE_UNKNOWN)
     type = CLAN_TYPE_PARAMETER;
   symbol->type = type;
-  
+
   switch (symbol->type)
-  { 
+  {
     case CLAN_TYPE_ITERATOR : symbol->rank = rank;
                               symbol_nb_iterators++;
 			      break;
@@ -316,7 +316,7 @@ clan_symbol_add(clan_symbol_p * location, char * identifier, int type, int rank)
   /* We put the new symbol at the beginning of the table (easier ;-) !). */
   symbol->next = *location;
   *location = symbol;
-  
+
   return symbol;
 }
 
@@ -333,13 +333,13 @@ clan_symbol_add(clan_symbol_p * location, char * identifier, int type, int rank)
  */
 int
 clan_symbol_get_rank(clan_symbol_p symbol, char * identifier)
-{ 
+{
   while (symbol != NULL)
-  { 
+  {
     if (strcmp(symbol->identifier,identifier) == 0)
       return symbol->rank;
     else
-      symbol = symbol->next;    
+      symbol = symbol->next;
   }
   return -1;
 }
@@ -357,13 +357,13 @@ clan_symbol_get_rank(clan_symbol_p symbol, char * identifier)
  */
 int
 clan_symbol_get_type(clan_symbol_p symbol, char * identifier)
-{ 
+{
   while (symbol != NULL)
-  { 
+  {
     if (strcmp(symbol->identifier,identifier) == 0)
       return symbol->type;
     else
-      symbol = symbol->next;    
+      symbol = symbol->next;
   }
   return -1;
 }
@@ -383,19 +383,19 @@ clan_symbol_get_type(clan_symbol_p symbol, char * identifier)
  */
 char **
 clan_symbol_iterators(clan_symbol_p * symbols, int depth)
-{ 
+{
   int i, length;
   char ** iterators;
-  
+
   iterators = (char **)malloc(depth * sizeof (char *));
-  
+
   for (i = 0; i < depth; i++)
   {
     length = strlen((symbols[i])->identifier) + 1;
     iterators[i] = (char *)malloc(length * sizeof(char));
     strcpy(iterators[i],(symbols[i])->identifier);
   }
-  
+
   return iterators;
 }
 
@@ -415,29 +415,29 @@ clan_symbol_iterators(clan_symbol_p * symbols, int depth)
  */
 char **
 clan_symbol_id_array(clan_symbol_p symbol, int type, int * size)
-{ 
+{
   int i, length, nb_identifiers = 0;
   char ** identifiers;
   clan_symbol_p start;
-    
+
   /* A first scan of the table to find the number of identifiers of "type". */
   start = symbol;
   while (symbol != NULL)
-  { 
+  {
     if (symbol->type == type)
       nb_identifiers++;
     symbol = symbol->next;
   }
-  
+
   identifiers = (char **)malloc(nb_identifiers * sizeof(char *));
-  
+
   /* We scan the table a second time to fill the identifier array
    * Not optimal to act this way but overkills are worse!
    */
   i = 0;
   symbol = start;
   while (symbol != NULL)
-  { 
+  {
     if (symbol->type == type)
     {
       length = strlen(symbol->identifier) + 1;
@@ -445,12 +445,12 @@ clan_symbol_id_array(clan_symbol_p symbol, int type, int * size)
       strcpy(identifiers[symbol->rank - 1],symbol->identifier);
       i++;
     }
-    symbol = symbol->next;    
+    symbol = symbol->next;
   }
-  
+
   if (size != NULL)
    *size = nb_identifiers;
-  
+
   return identifiers;
 }
 

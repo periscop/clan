@@ -6,8 +6,8 @@
     **-   A   | #   -----------------------------------------------------**
     **   /.\ [""M#         First version: 30/04/2008                     **
     **- [""M# | #  U"U#U  -----------------------------------------------**
-         | #  | #  \ .:/    
-         | #  | #___| #     
+         | #  | #  \ .:/
+         | #  | #___| #
  ******  | "--'     .-"  ******************************************************
  *     |"-"-"-"-"-#-#-##   Clan : the Chunky Loop Analyzer (experimental)     *
  ****  |     # ## ######  *****************************************************
@@ -37,7 +37,9 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "../include/clan/clan.h"
+
+#include <clan/scop.h>
+#include <clan/options.h>
 
 
 int main(int argc, char * argv[])
@@ -46,17 +48,22 @@ int main(int argc, char * argv[])
   clan_options_p options;
   FILE * input;
   FILE * output;
- 
+
   /* Options and input/output file setting. */
   options = clan_options_read(argc,argv,&input,&output);
 
   /* Extraction of the polyhedral representation of the SCoP from the input. */
-  scop = clan_scop_extract(input,options);
-  
+  if (options->inputscop)
+    /* Input is a .scop file. */
+    scop = clan_scop_read(input,options);
+  else
+    /* Input is a source code. */
+    scop = clan_scop_extract(input,options);
+
   /* Printing of the internal data structure of the SCoP if asked. */
   if (options->structure)
     clan_scop_print(stdout,scop);
-  
+
   /* Generation of the .scop output file. */
   clan_scop_print_dot_scop(output,scop,options);
 

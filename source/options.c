@@ -1,13 +1,13 @@
 
    /*+------- <| --------------------------------------------------------**
-    **         A                     Clan                                **       
-    **---     /.\   -----------------------------------------------------**    
-    **   <|  [""M#                options.c                              **  
+    **         A                     Clan                                **
+    **---     /.\   -----------------------------------------------------**
+    **   <|  [""M#                options.c                              **
     **-   A   | #   -----------------------------------------------------**
     **   /.\ [""M#         First version: 24/05/2008                     **
-    **- [""M# | #  U"U#U  -----------------------------------------------**        
-         | #  | #  \ .:/    
-         | #  | #___| #     
+    **- [""M# | #  U"U#U  -----------------------------------------------**
+         | #  | #  \ .:/
+         | #  | #___| #
  ******  | "--'     .-"  ******************************************************
  *     |"-"-"-"-"-#-#-##   Clan : the Chunky Loop Analyzer (experimental)     *
  ****  |     # ## ######  *****************************************************
@@ -39,7 +39,8 @@
 # include <stdlib.h>
 # include <stdio.h>
 # include <string.h>
-# include "../include/clan/clan.h"
+# include <clan/options.h>
+# include <clan/clan.h>
 
 
 /*+****************************************************************************
@@ -60,14 +61,15 @@ void
 clan_options_print(FILE * foo, clan_options_p options)
 {
   fprintf(foo,"Options:\n");
-  
+
   if (options->name != NULL)
     fprintf(foo,"name        = %s,\n",options->name);
   else
     fprintf(foo,"name        = NULL,\n");
-  
+
   fprintf(foo,"castle      = %3d,\n",options->castle);
   fprintf(foo,"structure   = %3d.\n",options->structure);
+  fprintf(foo,"inputscop   = %3d.\n",options->inputscop);
 }
 
 
@@ -113,6 +115,7 @@ clan_options_help()
   "  -o <output>           Name of the output file; 'stdout' is a special\n"
   "                        value: when used, output is standard output\n"
   "                        (default setting: stdout).\n"
+  "  -inputscop            Read a .scop as the input.\n"
   "  -v, --version         Display the release information (and more).\n"
   "  -h, --help            Display this information.\n\n");
   printf(
@@ -162,7 +165,7 @@ clan_options_version()
   printf(
   "For any information, please send an email to the author\n"
   "Cedric Bastoul <cedric.bastoul@inria.fr>.\n");
-} 
+}
 
 
 /**
@@ -180,7 +183,7 @@ void
 clan_options_set(int * option, int argv, char ** argc, int * number)
 {
   char ** endptr;
-  
+
   if (*number+1 >= argv)
   { fprintf(stderr, "[clan]ERROR: an option lacks of argument.\n");
     exit(1);
@@ -212,16 +215,17 @@ clan_options_malloc(void)
 
   /* Memory allocation for the clan_options_t structure. */
   options = (clan_options_p)malloc(sizeof(clan_options_t));
-  if (options == NULL) 
+  if (options == NULL)
   { fprintf(stderr, "[clan]ERROR: memory overflow.\n");
     exit(1);
-  } 
-  
+  }
+
   /* We set the various fields with default values. */
   options->name      = NULL; /* Name of the input file is not set. */
   options->castle    = 1;    /* Do print the Clan McCloog castle in output. */
   options->structure = 0;    /* Don't print internal structure.*/
-  
+  options->inputscop = 0;    /* Default input is a source file, not a .scop.*/
+
   return options;
 }
 
@@ -243,10 +247,10 @@ clan_options_read(int argv, char ** argc, FILE ** input, FILE ** output)
 {
   int i, infos=0, input_is_set=0;
   clan_options_p options;
-  
+
   /* clan_options_t structure allocation and initialization. */
   options = clan_options_malloc();
-  
+
   /* The default output is the standard output. */
   *output = stdout;
 
@@ -266,6 +270,9 @@ clan_options_read(int argv, char ** argc, FILE ** input, FILE ** output)
       else
       if (strcmp(argc[i],"-structure") == 0)
         options->structure = 1;
+      else
+      if (strcmp(argc[i],"-inputscop") == 0)
+        options->inputscop = 1;
       else
       if ((strcmp(argc[i],"--help") == 0) || (strcmp(argc[i],"-h") == 0))
       {
@@ -300,7 +307,7 @@ clan_options_read(int argv, char ** argc, FILE ** input, FILE ** output)
             exit(1);
           }
         }
-        i++;    
+        i++;
       }
       else
         fprintf(stderr, "[clan]WARNING: unknown %s option.\n",argc[i]);
@@ -323,7 +330,7 @@ clan_options_read(int argv, char ** argc, FILE ** input, FILE ** output)
             exit(1);
           }
         }
-      } 
+      }
       else
       {
         fprintf(stderr, "[clan]ERROR: multiple input files.\n");
@@ -331,7 +338,7 @@ clan_options_read(int argv, char ** argc, FILE ** input, FILE ** output)
       }
     }
   }
-  
+
   if (!input_is_set)
   {
     if (!infos)
@@ -339,7 +346,7 @@ clan_options_read(int argv, char ** argc, FILE ** input, FILE ** output)
     clan_options_free(options);
     exit(1);
   }
-  
+
   return options;
 }
 

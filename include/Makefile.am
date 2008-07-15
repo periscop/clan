@@ -40,36 +40,20 @@
 # configure shellscript to generate the Makefile thanks to this file.
 
 
+#############################################################################
+SUBDIRS			=
 
 #############################################################################
-SUBDIRS 		= doc source include tests
-
+MAINTAINERCLEANFILES	= Makefile.in
 
 #############################################################################
-ACLOCAL_AMFLAGS		= -I autoconf
 
-m4datadir		= $(datadir)/aclocal
-
-
-AUX_DIST                =			\
-	$(ac_aux_dir)/config.guess		\
-	$(ac_aux_dir)/config.sub		\
-	$(ac_aux_dir)/install-sh		\
-	$(ac_aux_dir)/ltmain.sh			\
-	$(ac_aux_dir)/missing			\
-	$(ac_aux_dir)/depcomp
-
-
-MAINTAINERCLEANFILES 	=			\
-	Makefile.in				\
-	aclocal.m4				\
-	configure				\
-	source/stamp-h.in			\
-	$(AUX_DIST)
-
-
-dist-hook:
-	(cd $(distdir) && mkdir -p $(ac_aux_dir))
-	for file in $(AUX_DIST) $(AUX_DIST_EXTRA); do \
-	  cp $$file $(distdir)/$$file; \
-	done
+pkginclude_HEADERS 	=			\
+	clan/clan.h				\
+	clan/options.h				\
+	clan/statement.h			\
+	clan/vector.h				\
+	clan/matrix.h				\
+	clan/macros.h				\
+	clan/scop.h				\
+	clan/symbol.h

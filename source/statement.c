@@ -1,13 +1,13 @@
 
    /*+------- <| --------------------------------------------------------**
-    **         A                     Clan                                **       
-    **---     /.\   -----------------------------------------------------**    
-    **   <|  [""M#                statement.c                            **  
+    **         A                     Clan                                **
+    **---     /.\   -----------------------------------------------------**
+    **   <|  [""M#                statement.c                            **
     **-   A   | #   -----------------------------------------------------**
     **   /.\ [""M#         First version: 30/04/2008                     **
-    **- [""M# | #  U"U#U  -----------------------------------------------**        
-         | #  | #  \ .:/    
-         | #  | #___| #     
+    **- [""M# | #  U"U#U  -----------------------------------------------**
+         | #  | #  \ .:/
+         | #  | #___| #
  ******  | "--'     .-"  ******************************************************
  *     |"-"-"-"-"-#-#-##   Clan : the Chunky Loop Analyzer (experimental)     *
  ****  |     # ## ######  *****************************************************
@@ -38,8 +38,9 @@
 
 # include <stdlib.h>
 # include <stdio.h>
+# include <string.h>
 # include <ctype.h>
-# include "../include/clan/clan.h"
+# include <clan/statement.h>
 
 
 /*+****************************************************************************
@@ -80,7 +81,7 @@ clan_statement_print_structure(FILE * file, clan_statement_p statement,
       fprintf(file,"|\t");
     fprintf(file,"+-- NULL statement\n");
   }
-  
+
   while (statement != NULL)
   { if (!first)
     {
@@ -91,14 +92,14 @@ clan_statement_print_structure(FILE * file, clan_statement_p statement,
     }
     else
       first = 0;
-      
+
     /* A blank line. */
     for (j = 0; j <= level+1; j++)
       fprintf(file,"|\t");
     fprintf(file,"\n");
 
     /* Print the domain of the statement. */
-    clan_matrix_print_structure(file,statement->domain,level+1);
+    clan_matrix_list_print_structure(file,statement->domain,level+1);
 
     /* Print the schedule of the statement. */
     clan_matrix_print_structure(file,statement->schedule,level+1);
@@ -142,12 +143,12 @@ clan_statement_print_structure(FILE * file, clan_statement_p statement,
 
     statement = statement->next;
     number++;
-    
+
     /* Next line. */
     if (statement != NULL)
     {
       for (j = 0; j <= level; j++)
-        fprintf(file,"|\t");  
+        fprintf(file,"|\t");
       fprintf(file,"V\n");
     }
   }
@@ -170,7 +171,7 @@ clan_statement_print_structure(FILE * file, clan_statement_p statement,
  */
 void
 clan_statement_print(FILE * file, clan_statement_p statement)
-{ 
+{
   clan_statement_print_structure(file,statement,0);
 }
 
@@ -192,24 +193,24 @@ void
 clan_statement_print_dot_scop(FILE * file, clan_statement_p statement,
                               int nb_parameters, char ** parameters,
 			      int nb_arrays, char ** arrays)
-{ 
+{
   int i, number = 1;
 
   while (statement != NULL)
   {
     fprintf(file,"# =============================================== ");
     fprintf(file,"Statement %d\n",number);
-   
+
     fprintf(file,"# ---------------------------------------------- ");
     fprintf(file,"%2d.1 Domain\n",number);
     fprintf(file,"# Iteration domain\n");
-    fprintf(file,"1\n");
-    clan_matrix_print_dot_scop(file,statement->domain,CLAN_TYPE_DOMAIN,
-                               statement->nb_iterators,statement->iterators,
-                               nb_parameters,parameters,
-			       nb_arrays,arrays);
-    fprintf(file,"\n");  
-    
+    clan_matrix_list_print_dot_scop(file, statement->domain, CLAN_TYPE_DOMAIN,
+				    statement->nb_iterators,
+				    statement->iterators,
+				    nb_parameters,parameters,
+				    nb_arrays,arrays);
+    fprintf(file,"\n");
+
     fprintf(file,"# ---------------------------------------------- ");
     fprintf(file,"%2d.2 Scattering\n",number);
     fprintf(file,"# Scattering function is provided\n");
@@ -219,8 +220,8 @@ clan_statement_print_dot_scop(FILE * file, clan_statement_p statement,
                                statement->nb_iterators,statement->iterators,
                                nb_parameters,parameters,
 			       nb_arrays,arrays);
-    fprintf(file,"\n");  
-    
+    fprintf(file,"\n");
+
     fprintf(file,"# ---------------------------------------------- ");
     fprintf(file,"%2d.3 Access\n",number);
     fprintf(file,"# Access informations are provided\n");
@@ -235,8 +236,8 @@ clan_statement_print_dot_scop(FILE * file, clan_statement_p statement,
                                statement->nb_iterators,statement->iterators,
                                nb_parameters,parameters,
 			       nb_arrays,arrays);
-    fprintf(file,"\n");  
-         
+    fprintf(file,"\n");
+
     fprintf(file,"# ---------------------------------------------- ");
     fprintf(file,"%2d.4 Body\n",number);
     fprintf(file,"# Statement body is provided\n");
@@ -252,11 +253,133 @@ clan_statement_print_dot_scop(FILE * file, clan_statement_p statement,
       fprintf(file,"# No original iterator names\n");
     fprintf(file,"# Statement body\n");
     fprintf(file,"%s\n",statement->body);
-    fprintf(file,"\n\n");  
+    fprintf(file,"\n\n");
 
     statement = statement->next;
     number++;
   }
+}
+
+
+
+/******************************************************************************
+ *                               Reading function                             *
+ ******************************************************************************/
+
+/**
+ * Internal function. Read 'nb_strings' strings on the input 'file'.
+ *
+ * FIXME should be placed somewhere else, it's duplicated in scop.c.
+ */
+static
+char**
+clan_statement_read_strings(FILE* file, int nb_strings)
+{
+  char str[CLAN_MAX_STRING];
+  char tmp[CLAN_MAX_STRING];
+  char* s;
+  char** res = NULL;
+  int i;
+  int count;
+
+  /* Skip blank/commented lines. */
+  while (fgets(str, CLAN_MAX_STRING, file) == 0 || str[0] == '#' ||
+	 isspace(str[0]))
+    ;
+  s = str;
+
+  /* Allocate the array of string. Make it NULL-terminated. */
+  res = (char**) malloc(sizeof(char*) * (nb_strings + 1));
+  res[nb_strings] = NULL;
+
+  /* Read the desired number of strings. */
+  for (i = 0; i < nb_strings; ++i)
+    {
+      for (count = 0; *s && ! isspace(*s) && *s != '#'; ++count)
+	tmp[count] = *(s++);
+      tmp[count] = '\0';
+      res[i] = strdup(tmp);
+      if (*s != '#')
+	++s;
+    }
+
+  return res;
+}
+
+/**
+ * Internal function. Read an int on the input 'file'.
+ *
+ * FIXME should be placed somewhere else, it's duplicated in scop.c.
+ */
+static
+int
+clan_statement_read_int(FILE* file)
+{
+  char s[CLAN_MAX_STRING];
+  int res;
+
+  /* Skip blank/commented lines. */
+  while (fgets(s, CLAN_MAX_STRING, file) == 0 || s[0] == '#' ||
+	 isspace(s[0]))
+    ;
+  sscanf(s, "%d", &res);
+
+  return res;
+}
+
+char**	    clan_scop_generate_names(char*, int);
+
+/**
+ * clan_statement_read function:
+ * This function reads a clan_statement_t structure from an input stream
+ * (possibly stdin).
+ * \param file		The input stream
+ * \param nb_parameters	The number of global parameters for the program
+ * \param arrays	The array containing names of arrays of the
+ *			input program
+ * \param nb_arr	The size of the array parameter
+ */
+clan_statement_p
+clan_statement_read (FILE* file, int nb_parameters, char*** arrays, int* nb_arr)
+{
+  clan_statement_p stmt = clan_statement_malloc();
+  char** tmp;
+
+  if (file)
+    {
+      /* Read the domain matrices. */
+      stmt->domain = clan_matrix_list_read(file);
+
+      /* Read the scattering, if any. */
+      if (clan_statement_read_int(file) > 0)
+	stmt->schedule = clan_matrix_read(file);
+
+      /* Read the access functions, if any. */
+      if (clan_statement_read_int(file) > 0)
+	{
+	  stmt->read = clan_matrix_read_arrays(file, arrays, nb_arr);
+	  stmt->write = clan_matrix_read_arrays(file, arrays, nb_arr);
+	}
+
+      stmt->nb_iterators = stmt->domain->elt->NbColumns - 2 - nb_parameters;
+      /* Read the body information, if any. */
+      if (clan_statement_read_int(file) > 0)
+	{
+	  if (stmt->nb_iterators > 0)
+	    stmt->iterators = clan_statement_read_strings(file,
+							  stmt->nb_iterators);
+	  tmp = clan_statement_read_strings(file, 1);
+	  stmt->body = tmp[0];
+	  free(tmp);
+	}
+      else
+	{
+	  stmt->iterators = clan_scop_generate_names("i", stmt->nb_iterators);
+	  stmt->body = strdup("[undefined]");
+	}
+    }
+
+  return stmt;
 }
 
 
@@ -277,9 +400,9 @@ clan_statement_p
 clan_statement_malloc()
 {
   clan_statement_p statement;
-  
+
   statement = (clan_statement_p)malloc(sizeof(clan_statement_t));
-  if (statement == NULL) 	
+  if (statement == NULL)
   {
     fprintf(stderr, "[Clan] Memory Overflow.\n");
     exit(1);
@@ -293,7 +416,7 @@ clan_statement_malloc()
   statement->iterators = NULL;
   statement->body      = NULL;
   statement->next      = NULL;
-  
+
   return statement;
 }
 
@@ -307,14 +430,14 @@ clan_statement_malloc()
  */
 void
 clan_statement_free(clan_statement_p statement)
-{ 
+{
   int i;
   clan_statement_p next;
-  
+
   while (statement != NULL)
   {
     next = statement->next;
-    clan_matrix_free(statement->domain);
+    clan_matrix_list_free(statement->domain);
     clan_matrix_free(statement->schedule);
     clan_matrix_free(statement->read);
     clan_matrix_free(statement->write);
@@ -340,7 +463,7 @@ clan_statement_free(clan_statement_p statement)
 /**
  * clan_statement_add function:
  * This function adds a statement "statement" at the end of the statement
- * list pointed by "location". 
+ * list pointed by "location".
  * \param location  Address of the first element of the statement list.
  * \param statement The statement to add to the list.
  **
@@ -351,7 +474,7 @@ clan_statement_add(clan_statement_p * location, clan_statement_p statement)
 {
   while (*location != NULL)
     location = &((*location)->next);
-  
+
   *location = statement;
 }
 
@@ -360,7 +483,7 @@ clan_statement_add(clan_statement_p * location, clan_statement_p statement)
  * clan_statement_compact function:
  * This function scans the statement list to put the right number of columns
  * to every matrix (during construction we used CLAN_MAX_DEPTH and
- * CLAN_MAX_PARAMETERS to define matrix and vector sizes). 
+ * CLAN_MAX_PARAMETERS to define matrix and vector sizes).
  * \param statement     The first statement to scan to compact matrices.
  * \param nb_parameters The true number of parameters in the SCoP.
  **
@@ -368,13 +491,19 @@ clan_statement_add(clan_statement_p * location, clan_statement_p statement)
  */
 void
 clan_statement_compact(clan_statement_p statement, int nb_parameters)
-{ 
+{
   int nb_iterators;
-  
+  clan_matrix_list_p tmp;
+
   while (statement != NULL)
   {
     nb_iterators = statement->nb_iterators;
-    clan_matrix_compact(statement->domain,nb_iterators,nb_parameters);
+    tmp = statement->domain;
+    while (tmp)
+      {
+	clan_matrix_compact(tmp->elt,nb_iterators,nb_parameters);
+	tmp = tmp->next;
+      }
     clan_matrix_compact(statement->schedule,nb_iterators,nb_parameters);
     clan_matrix_compact(statement->read,nb_iterators,nb_parameters);
     clan_matrix_compact(statement->write,nb_iterators,nb_parameters);
@@ -386,16 +515,16 @@ clan_statement_compact(clan_statement_p statement, int nb_parameters)
 /**
  * clan_statement_number function:
  * This function returns the number of statements in the statement list
- * provided as parameter. 
+ * provided as parameter.
  * \param statement The first element of the statement list.
  **
  * - 03/05/2008: first version.
  */
 int
 clan_statement_number(clan_statement_p statement)
-{ 
+{
   int number = 0;
-  
+
   while (statement != NULL)
   {
     number++;

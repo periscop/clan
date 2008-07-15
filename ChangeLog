@@ -1,0 +1,202 @@
+2008-07-14  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+
+	* tests/check_unitary.sh,
+	* tests/check_complex.sh,
+	* tests/Makefile.am: Fix make distcheck.
+
+2008-07-13  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+
+	* tests/gauss.c: Add pragma scop.
+	* tests/gauss.c.scop: Fix reference file.
+
+2008-07-13  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+	This patch fixes a bug in the parser. Problem occured when an
+	iterator which was previously encountered at a given loop level
+	was parsed again, but at a different level.
+
+	* source/parser.y,
+	* source/scanner.l: Fix the parser.
+
+	* tests/swim.c.scop: Fix the reference file.
+	* tests/unitary/redefiter.c,
+	* tests/unitary/redefiter.c.scop: New. Add unitary test for the
+	bug.
+	* tests/Makefile.am: Update accordingly.
+
+	* tests/checker.sh: Don't systematically delete the test output.
+
+2008-07-13  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+	This patch re-enables the possibility to access any function of the
+	clan library by including simply clan.h.
+
+	* include/clan/macros.h: New. Create a file storing all the macros.
+
+	* source/parser.y,
+	* source/scanner.l,
+	* source/scop.c,
+	* source/options.c,
+	* include/Makefile.am,
+	* include/clan/options.h,
+	* include/clan/clan.h.in,
+	* include/clan/vector.h,
+	* include/clan/matrix.h,
+	* include/clan/scop.h,
+	* include/clan/statement.h,
+	* include/clan/symbol.h: Update accordingly.
+
+2008-07-13  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+	This patch fixes the includes of the library. To use a specific
+	function of the clan library, like clan_xxx_func, one MUST include
+	clan/xxx.h.
+
+	* source/parser.y,
+	* source/scanner.l,
+	* source/vector.c,
+	* source/matrix.c,
+	* source/scop.c,
+	* source/statement.c,
+	* source/symbol.c,
+	* source/options.c,
+	* source/clan.c,
+	* include/clan/options.h,
+	* include/clan/vector.h,
+	* include/clan/statement.h,
+	* include/clan/symbol.h: Fix incorrect includes.
+
+2008-07-11  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+	* tests/unitary/checker.sh: Delete.
+
+	* tests/checker.sh: Merge the tester in a single script.
+
+	* tests/check_unitary.sh,
+	* tests/check_complex.sh: New. Wrapper for test suite.
+
+	* tests/Makefile.am: Update accordingly.
+
+2008-07-11  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+
+	* tests/unitary/assigniter.c.scop: Fix reference file.
+
+2008-07-11  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+
+	* tests/unitary/simpleloop.c.scop: Add missing reference file.
+
+	* tests/Makefile.am,
+	* tests/checker.sh,
+	* tests/unitary/checker.sh: Improve the test procedure.
+
+2008-07-10  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+
+	* tests/unitary/checker.sh: Fix check of base .scop, add .scop
+	parser test.
+
+2008-07-10  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+
+	* tests/unitary/empty.c,
+	* tests/unitary/simplecond.c.scop,
+	* tests/unitary/empty.c.scop,
+	* tests/unitary/assigniter.c,
+	* tests/unitary/assigniter.c.scop,
+	* tests/unitary/basicnest.c,
+	* tests/unitary/classicloop.c,
+	* tests/unitary/basicnest.c.scop,
+	* tests/unitary/classicloop.c.scop,
+	* tests/unitary/simpleloop.c,
+	* tests/unitary/increment.c,
+	* tests/unitary/comments.c,
+	* tests/unitary/increment.c.scop,
+	* tests/unitary/comments.c.scop,
+	* tests/unitary/simplecond.c: New. Unitary test suite.
+	* tests/unitary/checker.sh: New. Checker script for the new suite.
+
+	* tests/Makefile.am: Update accordingly, include unitary tests in
+	make check.
+
+2008-07-10  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+
+	* source/scop.c,
+	* source/statement.c,
+	* include/clan/scop.h: Minor fix in the .scop parser, to handle
+	weird cases.
+
+2008-07-10  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+
+	* doc/clan.texi: Update the documentation for new iteration domain
+	type.
+
+2008-07-10  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+	Provide a parser for .scop files (reentrant with clan output).
+	Change iteration domain type from matrix to matrix list, and
+	provide functions on matrix list.
+
+	* source/parser.y,
+	* source/statement.c,
+	* source/scop.c,
+	* include/clan/scop.h,
+	* include/clan/statement.h,
+	* include/clan/matrix.h,
+	* source/matrix.c: Move iteration domain from matrix to
+	matrix_list. Add support for parsing .scop files.
+
+	* include/clan/options.h,
+	* source/options.c: Add option -inputscop to read .scop files.
+	* source/clan.c: Add support for option -inputscop.
+
+	* tests/swim.c,
+	* tests/swim.c.scop: Fix the test (formerly in DOS format).
+
+	* tests/checker.sh: Add the SCoP parser in the test suite.
+
+2008-07-09  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+	Provide a working test suite, fix the generation of the
+	documentation.
+
+	* tests/iir_4_64.c.scop,
+	* tests/matmul.c.scop,
+	* tests/swim.c.scop,
+	* tests/gauss.c.scop,
+	* tests/gemver.c.scop,
+	* tests/ax-do.c.scop: New. Add test suite reference files.
+	* tests/checker.sh: New. Add tester script for make check.
+	* tests/Makefile.am: New. Distribute the tests.
+
+	* configure.in,
+	* Makefile.am: Update accordingly.
+
+	* doc/clan.texi,
+	* doc/Doxyfile.in,
+	* doc/Makefile.am: Fix the documentation generation.
+
+2008-07-09  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+
+	* configclan: New. Configuration script to hook configure into
+	build/ directory.
+
+2008-07-09  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+
+	* source/parser.y,
+	* source/scanner.l,
+	* source/vector.c,
+	* source/matrix.c,
+	* source/scop.c,
+	* source/statement.c,
+	* source/symbol.c,
+	* source/options.c,
+	* source/clan.c,
+	* include/clan/options.h,
+	* include/clan/clan.h.in,
+	* include/clan/vector.h,
+	* include/clan/matrix.h,
+	* include/clan/scop.h,
+	* include/clan/symbol.h: Make code 80 columns compliant, fix wrong
+	includes, add missing ones.
+
+2008-07-09  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+	Severe rewriting of the Auto{conf,make} architecture.
+
+	* doc/Makefile.am,
+	* source/Makefile.am,
+	* include/Makefile.am: New. Split Makefile.am in those files.
+
+	* configure.in: severe update, add doxygen detection
+

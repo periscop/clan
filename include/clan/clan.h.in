@@ -1,13 +1,13 @@
 
    /*+------- <| --------------------------------------------------------**
-    **         A                     Clan                                **       
-    **---     /.\   -----------------------------------------------------**    
-    **   <|  [""M#                  clan.h                               **  
+    **         A                     Clan                                **
+    **---     /.\   -----------------------------------------------------**
+    **   <|  [""M#                  clan.h                               **
     **-   A   | #   -----------------------------------------------------**
     **   /.\ [""M#         First version: 30/04/2008                     **
-    **- [""M# | #  U"U#U  -----------------------------------------------**        
-         | #  | #  \ .:/    
-         | #  | #___| #     
+    **- [""M# | #  U"U#U  -----------------------------------------------**
+         | #  | #  \ .:/
+         | #  | #___| #
  ******  | "--'     .-"  ******************************************************
  *     |"-"-"-"-"-#-#-##   Clan : the Chunky Loop Analyzer (experimental)     *
  ****  |     # ## ######  *****************************************************
@@ -42,142 +42,17 @@
 
 
 #ifndef CLAN_H
-#define CLAN_H
-#if defined(__cplusplus)
-extern "C" 
-  {
-#endif
+# define CLAN_H
 
+# define CLAN_RELEASE "@PACKAGE_VERSION@"
+# define CLAN_VERSION "@BITS@"
 
-#define CLAN_RELEASE "@VERSION@"
-#define CLAN_VERSION "@BITS@"
+# include <clan/macros.h>
+# include <clan/matrix.h>
+# include <clan/options.h>
+# include <clan/scop.h>
+# include <clan/statement.h>
+# include <clan/symbol.h>
+# include <clan/vector.h>
 
-
-#if defined(LINEAR_VALUE_IS_LONGLONG)
-
-#define CLAN_FMT     "%4lld"
-#define CLAN_FMT_TXT "%lld"
-#define Value long long
-
-#elif defined(LINEAR_VALUE_IS_LONG)
-
-#define CLAN_FMT     "%4ld"
-#define CLAN_FMT_TXT "%ld"
-#define Value long int
-
-#else  /* GNUMP */
-
-#define CLAN_FMT     "%4s"
-#define CLAN_FMT_TXT "%s"
-#define Value mpz_t
-
-#endif
-
-
-#include "./options.h"
-#include "./symbol.h"
-#include "./vector.h"
-#include "./matrix.h"
-#include "./statement.h"
-#include "./scop.h"
-
-#define CLAN_DEBUG             1 /* Set to 1 for debug mode, 0 otherwise */
-
-#define CLAN_MAX_STRING     1024 /* Max string length (e.g. statement bodies) */
-#define CLAN_MAX_DEPTH         5 /* Max loop depth (max iterator number) */
-#define CLAN_MAX_PARAMETERS    5 /* Max parameter number */
-#define CLAN_MAX_CONSTRAINTS  10 /* Max contraint number for a domain */
-#define CLAN_TRUE              1
-#define CLAN_FALSE             0
-#define CLAN_END              -1 /* Must be negative */
-#define CLAN_TYPE_ITERATOR     1
-#define CLAN_TYPE_PARAMETER    2
-#define CLAN_TYPE_ARRAY        3
-#define CLAN_TYPE_FUNCTION     4
-#define CLAN_TYPE_DOMAIN       6
-#define CLAN_TYPE_SCATTERING   7
-#define CLAN_TYPE_ACCESS       8
-#define CLAN_TYPE_UNKNOWN      9
-
-
-/*+****************************************************************************
- *                              CLAN GMP MACROS                               *
- ******************************************************************************/
-#ifdef LINEAR_VALUE_IS_MP
-/* Basic Macros */    				    
-#define CLAN_init(val)                (mpz_init((val)))
-#define CLAN_assign(v1,v2)            (mpz_set((v1),(v2)))
-#define CLAN_set_si(val,i)            (mpz_set_si((val),(i)))    
-#define CLAN_get_si(val)              (mpz_get_si((val)))    
-#define CLAN_init_set_si(val,i)       (mpz_init_set_si((val),(i)))    
-#define CLAN_clear(val)               (mpz_clear((val)))
-#define CLAN_print(Dst,fmt,val)       { char *str; \
-                                        str = mpz_get_str(0,10,(val)); \
-                                        fprintf((Dst),(fmt),str); free(str); \
-                                      }
-#define CLAN_sprint(Dst,fmt,val)      { char * str; \
-                                        str = mpz_get_str(0,10,(val)); \
-                                        sprintf((Dst),(fmt),str); free(str); \
-                                      }
-
-/* Boolean operators on 'Value' */
-#define CLAN_eq(v1,v2)                (mpz_cmp((v1),(v2)) == 0)
-#define CLAN_ne(v1,v2)                (mpz_cmp((v1),(v2)) != 0)
-
-/* Binary operators on 'Value' */
-#define CLAN_increment(ref,val)       (mpz_add_ui((ref),(val),1))
-#define CLAN_addto(ref,val1,val2)     (mpz_add((ref),(val1),(val2)))
-#define CLAN_add_int(ref,val,vint)    (mpz_add_ui((ref),(val),(long)(vint)))
-#define CLAN_subtract(ref,val1,val2)  (mpz_sub((ref),(val1),(val2)))
-#define CLAN_oppose(ref,val)          (mpz_neg((ref),(val)))
-
-/* Conditional operations on 'Value' */
-#define CLAN_pos_p(val)               (mpz_sgn(val) >  0)
-#define CLAN_neg_p(val)               (mpz_sgn(val) <  0)
-#define CLAN_zero_p(val)              (mpz_sgn(val) == 0)
-#define CLAN_notzero_p(val)           (mpz_sgn(val) != 0)
-#define CLAN_one_p(val)               (mpz_cmp_si(val,1)  == 0)
-#define CLAN_mone_p(val)              (mpz_cmp_si(val,-1) == 0)
-
-/*+****************************************************************************
- *                           CLAN BASIC TYPES MACROS                          *
- ******************************************************************************/
-#else
-/* Basic Macros */    				    
-#define CLAN_init(val)                ((val) = 0)
-#define CLAN_assign(v1,v2)            ((v1)  = (v2))
-#define CLAN_set_si(val,i)            ((val) = (Value)(i))   
-#define CLAN_get_si(val)              ((val))    
-#define CLAN_init_set_si(val,i)       ((val) = (Value)(i))    
-#define CLAN_clear(val)               ((val) = 0)
-#define CLAN_print(Dst,fmt,val)       (fprintf((Dst),(fmt),(val)))
-#define CLAN_sprint(Dst,fmt,val)      (sprintf((Dst),(fmt),(val)))
-
-/* Boolean operators on 'Value' */
-#define CLAN_eq(v1,v2)                ((v1)==(v2))
-#define CLAN_ne(v1,v2)                ((v1)!=(v2))
-#define CLAN_lt(v1,v2)                ((v1)<(v2))
-#define CLAN_gt(v1,v2)                ((v1)>(v2))
-
-/* Binary operators on 'Value' */
-#define CLAN_increment(ref,val)       ((ref) = (val)+(Value)(1))
-#define CLAN_addto(ref,val1,val2)     ((ref) = (val1)+(val2))
-#define CLAN_add_int(ref,val,vint)    ((ref) = (val)+(Value)(vint))
-#define CLAN_subtract(ref,val1,val2)  ((ref) = (val1)-(val2))
-#define CLAN_oppose(ref,val)          ((ref) = (-(val)))
-
-/* Conditional operations on 'Value' */
-#define CLAN_pos_p(val)               CLAN_gt(val,0)
-#define CLAN_neg_p(val)               CLAN_lt(val,0)
-#define CLAN_zero_p(val)              CLAN_eq(val,0)
-#define CLAN_notzero_p(val)           CLAN_ne(val,0)
-#define CLAN_one_p(val)               CLAN_eq(val,1)
-#define CLAN_mone_p(val)              CLAN_eq(val,-1)
-
-#endif
-
-
-#if defined(__cplusplus)
-  }
-#endif 
 #endif /* define CLAN_H */

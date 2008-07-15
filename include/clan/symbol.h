@@ -1,13 +1,13 @@
 
    /*+------- <| --------------------------------------------------------**
-    **         A                     Clan                                **       
-    **---     /.\   -----------------------------------------------------**    
-    **   <|  [""M#                 symbol.h                              **  
+    **         A                     Clan                                **
+    **---     /.\   -----------------------------------------------------**
+    **   <|  [""M#                 symbol.h                              **
     **-   A   | #   -----------------------------------------------------**
     **   /.\ [""M#         First version: 01/05/2008                     **
-    **- [""M# | #  U"U#U  -----------------------------------------------**        
-         | #  | #  \ .:/    
-         | #  | #___| #     
+    **- [""M# | #  U"U#U  -----------------------------------------------**
+         | #  | #  \ .:/
+         | #  | #___| #
  ******  | "--'     .-"  ******************************************************
  *     |"-"-"-"-"-#-#-##   Clan : the Chunky Loop Analyzer (experimental)     *
  ****  |     # ## ######  *****************************************************
@@ -37,11 +37,15 @@
 
 
 #ifndef CLAN_SYMBOL_H
-#define CLAN_SYMBOL_H
-#if defined(__cplusplus)
-extern "C" 
+# define CLAN_SYMBOL_H
+
+# include <stdio.h>
+# include <clan/macros.h>
+
+# if defined(__cplusplus)
+extern "C"
   {
-#endif 
+# endif
 
 
 /**
@@ -83,7 +87,7 @@ char **       clan_symbol_iterators(clan_symbol_p *, int);
 char **       clan_symbol_id_array(clan_symbol_p, int, int *);
 
 
-#if defined(__cplusplus)
+# if defined(__cplusplus)
   }
-#endif 
+# endif
 #endif /* define CLAN_SYMBOL_H */

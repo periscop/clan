@@ -1,13 +1,13 @@
 
    /*+------- <| --------------------------------------------------------**
-    **         A                     Clan                                **       
-    **---     /.\   -----------------------------------------------------**    
-    **   <|  [""M#                 matrix.h                              **  
+    **         A                     Clan                                **
+    **---     /.\   -----------------------------------------------------**
+    **   <|  [""M#                 matrix.h                              **
     **-   A   | #   -----------------------------------------------------**
     **   /.\ [""M#         First version: 30/04/2008                     **
-    **- [""M# | #  U"U#U  -----------------------------------------------**        
-         | #  | #  \ .:/    
-         | #  | #___| #     
+    **- [""M# | #  U"U#U  -----------------------------------------------**
+         | #  | #  \ .:/
+         | #  | #___| #
  ******  | "--'     .-"  ******************************************************
  *     |"-"-"-"-"-#-#-##   Clan : the Chunky Loop Analyzer (experimental)     *
  ****  |     # ## ######  *****************************************************
@@ -37,11 +37,17 @@
 
 
 #ifndef CLAN_MATRIX_H
-#define CLAN_MATRIX_H
-#if defined(__cplusplus)
-extern "C" 
+# define CLAN_MATRIX_H
+
+# include <stdio.h>
+# include <clan/macros.h>
+# include <clan/vector.h>
+
+
+# if defined(__cplusplus)
+extern "C"
   {
-#endif 
+# endif
 
 
 /**
@@ -65,6 +71,22 @@ typedef struct clan_matrix   clan_matrix_t;
 typedef struct clan_matrix * clan_matrix_p;
 
 
+/**
+ * The clan_matrix_list_t structure describes a (chained) list of
+ * matrices. It is used to store the list of matrices for the
+ * iteration domain of a statement (possibly being a union of
+ * convex domains).
+ *
+ */
+struct clan_matrix_list
+{
+  clan_matrix_p elt;             /**< An element of the list. */
+  struct clan_matrix_list* next; /**< Pointer to the next element of the list.*/
+};
+typedef struct clan_matrix_list		clan_matrix_list_t;
+typedef struct clan_matrix_list *	clan_matrix_list_p;
+
+
 /*+****************************************************************************
  *                          Structure display function                        *
  ******************************************************************************/
@@ -74,13 +96,29 @@ void          clan_matrix_print_dot_scop(FILE *, clan_matrix_p, int,
                                          int, char **, int, char **,
 					 int, char **);
 
+void          clan_matrix_list_print_structure(FILE *, clan_matrix_list_p, int);
+void          clan_matrix_list_print(FILE *, clan_matrix_list_p);
+void          clan_matrix_list_print_dot_scop(FILE *, clan_matrix_list_p, int,
+					      int, char **, int, char **,
+					      int, char **);
+
+
+/******************************************************************************
+ *                               Reading function                             *
+ ******************************************************************************/
+clan_matrix_p		clan_matrix_read(FILE *);
+clan_matrix_list_p	clan_matrix_list_read(FILE *);
+clan_matrix_p		clan_matrix_read_arrays(FILE *, char ***, int *);
+
 
 /*+****************************************************************************
  *                    Memory allocation/deallocation function                 *
  ******************************************************************************/
-clan_matrix_p clan_matrix_malloc(unsigned, unsigned);
-void          clan_matrix_free(clan_matrix_p);
+clan_matrix_p		clan_matrix_malloc(unsigned, unsigned);
+void			clan_matrix_free(clan_matrix_p);
 
+clan_matrix_list_p	clan_matrix_list_malloc();
+void			clan_matrix_list_free(clan_matrix_list_p);
 
 /*+****************************************************************************
  *                            Processing functions                            *
@@ -97,7 +135,7 @@ void          clan_matrix_tag_array(clan_matrix_p, int);
 clan_matrix_p clan_matrix_scheduling(int *, int);
 void          clan_matrix_compact(clan_matrix_p, int, int);
 
-#if defined(__cplusplus)
+# if defined(__cplusplus)
   }
-#endif 
+# endif
 #endif /* define CLAN_MATRIX_H */

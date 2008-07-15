@@ -1,13 +1,13 @@
 
    /*+------- <| --------------------------------------------------------**
-    **         A                     Clan                                **       
-    **---     /.\   -----------------------------------------------------**    
-    **   <|  [""M#                statement.h                            **  
+    **         A                     Clan                                **
+    **---     /.\   -----------------------------------------------------**
+    **   <|  [""M#                statement.h                            **
     **-   A   | #   -----------------------------------------------------**
     **   /.\ [""M#         First version: 30/04/2008                     **
-    **- [""M# | #  U"U#U  -----------------------------------------------**        
-         | #  | #  \ .:/    
-         | #  | #___| #     
+    **- [""M# | #  U"U#U  -----------------------------------------------**
+         | #  | #  \ .:/
+         | #  | #___| #
  ******  | "--'     .-"  ******************************************************
  *     |"-"-"-"-"-#-#-##   Clan : the Chunky Loop Analyzer (experimental)     *
  ****  |     # ## ######  *****************************************************
@@ -37,11 +37,16 @@
 
 
 #ifndef CLAN_STATEMENT_H
-#define CLAN_STATEMENT_H
-#if defined(__cplusplus)
-extern "C" 
+# define CLAN_STATEMENT_H
+
+# include <stdio.h>
+# include <clan/macros.h>
+# include <clan/matrix.h>
+
+# if defined(__cplusplus)
+extern "C"
   {
-#endif 
+# endif
 
 
 /**
@@ -50,7 +55,7 @@ extern "C"
  */
 struct clan_statement
 {
-  clan_matrix_p domain;         /**< Iteration domain of the statement */
+  clan_matrix_list_p domain;    /**< Iteration domain of the statement */
   clan_matrix_p schedule;       /**< Scheduling function for the statement */
   clan_matrix_p read;           /**< Array read access informations */
   clan_matrix_p write;          /**< Array write access informations */
@@ -72,6 +77,12 @@ void             clan_statement_print_dot_scop(FILE *, clan_statement_p,
                                                int, char **, int, char **);
 
 
+/******************************************************************************
+ *                               Reading function                             *
+ ******************************************************************************/
+clan_statement_p clan_statement_read (FILE*, int, char***, int*);
+
+
 /*+****************************************************************************
  *                    Memory allocation/deallocation function                 *
  ******************************************************************************/
@@ -87,7 +98,7 @@ void             clan_statement_compact(clan_statement_p, int);
 int              clan_statement_number(clan_statement_p);
 
 
-#if defined(__cplusplus)
+# if defined(__cplusplus)
   }
-#endif 
+# endif
 #endif /* define CLAN_STATEMENT_H */

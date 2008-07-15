@@ -1,13 +1,13 @@
 
    /*+------- <| --------------------------------------------------------**
-    **         A                     Clan                                **       
-    **---     /.\   -----------------------------------------------------**    
-    **   <|  [""M#                 vector.c                              **  
+    **         A                     Clan                                **
+    **---     /.\   -----------------------------------------------------**
+    **   <|  [""M#                 vector.c                              **
     **-   A   | #   -----------------------------------------------------**
     **   /.\ [""M#         First version: 01/05/2008                     **
-    **- [""M# | #  U"U#U  -----------------------------------------------**        
-         | #  | #  \ .:/    
-         | #  | #___| #     
+    **- [""M# | #  U"U#U  -----------------------------------------------**
+         | #  | #  \ .:/
+         | #  | #___| #
  ******  | "--'     .-"  ******************************************************
  *     |"-"-"-"-"-#-#-##   Clan : the Chunky Loop Analyzer (experimental)     *
  ****  |     # ## ######  *****************************************************
@@ -39,7 +39,7 @@
 # include <stdlib.h>
 # include <stdio.h>
 # include <ctype.h>
-# include "../include/clan/clan.h"
+# include <clan/vector.h>
 
 
 /*+****************************************************************************
@@ -116,7 +116,7 @@ clan_vector_print_structure(FILE * file, clan_vector_p vector, int level)
  */
 void
 clan_vector_print(FILE * file, clan_vector_p vector)
-{ 
+{
   clan_vector_print_structure(file,vector,0);
 }
 
@@ -143,24 +143,24 @@ clan_vector_malloc(unsigned Size)
   int i ;
 
   vector = (clan_vector_p)malloc(sizeof(clan_vector_t));
-  if (vector == NULL) 	
+  if (vector == NULL)
   {
     fprintf(stderr, "[Clan] Memory Overflow.\n");
     exit(1);
   }
   vector->Size = Size;
-  if (Size == 0) 
+  if (Size == 0)
     vector->p = NULL;
-  else 
+  else
   {
     p = (Value *)malloc(Size * sizeof(Value));
-    if (p == NULL) 
+    if (p == NULL)
     {
       fprintf(stderr, "[Clan] Memory Overflow.\n");
       exit(1);
     }
     vector->p = p;
-    for (i = 0; i < Size; i++)   
+    for (i = 0; i < Size; i++)
       CLAN_init_set_si(vector->p[i],0);
   }
   return vector;
@@ -176,12 +176,12 @@ clan_vector_malloc(unsigned Size)
  */
 void
 clan_vector_free(clan_vector_p vector)
-{ 
+{
   int i;
   Value * p;
 
   p = vector->p;
-  for (i = 0; i < vector->Size; i++) 
+  for (i = 0; i < vector->Size; i++)
     CLAN_clear(*p++);
 
   if (vector != NULL)
@@ -214,16 +214,16 @@ clan_vector_term(clan_symbol_p symbol, int coefficient, char * identifier)
 {
   int rank, size;
   clan_vector_p vector;
-  
+
   size = CLAN_MAX_DEPTH + CLAN_MAX_PARAMETERS + 2 ;
   vector = clan_vector_malloc(size);
 
   if (identifier == NULL)
     CLAN_set_si(vector->p[size - 1],coefficient);
   else
-  { 
+  {
     rank = clan_symbol_get_rank(symbol,identifier);
-    
+
     if (clan_symbol_get_type(symbol,identifier) == CLAN_TYPE_ITERATOR)
       CLAN_set_si(vector->p[rank],coefficient);
     else
@@ -248,7 +248,7 @@ clan_vector_add_scalar(clan_vector_p vector, int scalar)
 {
   int i;
   clan_vector_p result;
-  
+
   if ((vector == NULL) || (vector->Size < 2))
   {
     fprintf(stderr,"[Clan] Error: incompatible vector for addition\n");
@@ -279,7 +279,7 @@ clan_vector_add(clan_vector_p v1, clan_vector_p v2)
 {
   int i;
   clan_vector_p v3;
-  
+
   if ((v1 == NULL) || (v2 == NULL) || (v1->Size != v2->Size))
   {
     fprintf(stderr,"[Clan] Error: incompatible vectors for addition\n");
@@ -309,7 +309,7 @@ clan_vector_sub(clan_vector_p v1, clan_vector_p v2)
 {
   int i;
   clan_vector_p v3;
-  
+
   if ((v1 == NULL) || (v2 == NULL) || (v1->Size != v2->Size))
   {
     fprintf(stderr,"[Clan] Error: incompatible vectors for subtraction\n");

@@ -42,34 +42,51 @@
 
 
 #############################################################################
-SUBDIRS 		= doc source include tests
-
+SUBDIRS 		=
 
 #############################################################################
-ACLOCAL_AMFLAGS		= -I autoconf
 
-m4datadir		= $(datadir)/aclocal
+MAINTAINERCLEANFILES	= Makefile.in
+
+EXTRA_DIST		=			\
+	htmldoc.tar.gz				\
+	clan.pdf				\
+	S4.cloog				\
+	ascii-art.txt				\
+	images/basic.eps			\
+	images/basic.fig			\
+	images/basic.jpg			\
+	images/basic.pdf			\
+	images/basic.txt			\
+	images/basic1.eps			\
+	images/basic1.fig			\
+	images/basic1.jpg			\
+	images/basic1.pdf			\
+	images/basic1.txt			\
+	images/basic2.eps			\
+	images/basic2.fig			\
+	images/basic2.jpg			\
+	images/basic2.pdf			\
+	images/basic2.txt			\
+	images/tree.eps				\
+	images/tree.fig				\
+	images/tree.jpg				\
+	images/tree.pdf				\
+	images/tree.txt
 
 
-AUX_DIST                =			\
-	$(ac_aux_dir)/config.guess		\
-	$(ac_aux_dir)/config.sub		\
-	$(ac_aux_dir)/install-sh		\
-	$(ac_aux_dir)/ltmain.sh			\
-	$(ac_aux_dir)/missing			\
-	$(ac_aux_dir)/depcomp
+info_TEXINFOS		= clan.texi
 
+DOCDIR			= htmldoc
+DOXYFILE		= Doxyfile
+DOXYGEN			= @DOXYGEN@
 
-MAINTAINERCLEANFILES 	=			\
-	Makefile.in				\
-	aclocal.m4				\
-	configure				\
-	source/stamp-h.in			\
-	$(AUX_DIST)
+# The following requires a fixed version of the Emacs 19.30 etags.
+ETAGS_ARGS		= --lang=none \
+ --regex='/^@node[ \t]+\([^,]+\)/\1/' $(srcdir)/doc/clan.texi
+TAGS_DEPENDENCIES	= clan.texi $(DOXYFILE).in
 
-
-dist-hook:
-	(cd $(distdir) && mkdir -p $(ac_aux_dir))
-	for file in $(AUX_DIST) $(AUX_DIST_EXTRA); do \
-	  cp $$file $(distdir)/$$file; \
-	done
+htmldoc.tar.gz:
+	mkdir -p $(top_srcdir)/doc/htmldoc
+	$(DOXYGEN) $(DOXYFILE)
+	tar czf htmldoc.tar.gz htmldoc

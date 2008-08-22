@@ -116,6 +116,7 @@ clan_options_help()
   "                        value: when used, output is standard output\n"
   "                        (default setting: stdout).\n"
   "  -inputscop            Read a .scop as the input.\n"
+  "  -arraystag            Dump the arrays table in the <arrays> tag.\n"
   "  -v, --version         Display the release information (and more).\n"
   "  -h, --help            Display this information.\n\n");
   printf(
@@ -225,7 +226,8 @@ clan_options_malloc(void)
   options->castle    = 1;    /* Do print the Clan McCloog castle in output. */
   options->structure = 0;    /* Don't print internal structure.*/
   options->inputscop = 0;    /* Default input is a source file, not a .scop.*/
-
+  options->arraystag = 0;    /* Don't dump the array list in the
+				<arrays> tag. */
   return options;
 }
 
@@ -273,6 +275,9 @@ clan_options_read(int argv, char ** argc, FILE ** input, FILE ** output)
       else
       if (strcmp(argc[i],"-inputscop") == 0)
         options->inputscop = 1;
+      else
+      if (strcmp(argc[i],"-arraystag") == 0)
+        options->arraystag = 1;
       else
       if ((strcmp(argc[i],"--help") == 0) || (strcmp(argc[i],"-h") == 0))
       {

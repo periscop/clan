@@ -120,6 +120,7 @@ program:
         parser_scop->nb_arrays = nb_arrays;
         parser_scop->context = clan_matrix_malloc(0,nb_parameters+2);
       }
+  |
   ;
 
 instruction_list:

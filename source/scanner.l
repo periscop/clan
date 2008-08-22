@@ -52,12 +52,32 @@
    extern clan_symbol_p parser_symbol;    /**< Top of the symbol table */
 
    int  scanner_parsing = CLAN_FALSE;     /**< Do we parse or not ? */
+   int  scanner_comment = 0;              /**< Comment nesting depth */
    char scanner_latest_text[CLAN_MAX_STRING]; /**< Latest text read */
 %}
 
+%x LINECOMMENT
+%x FULLCOMMENT
+
 %%
 
-[ \t\n]*               ; /* Skip whitespace */
+<FULLCOMMENT>"*/"      { 
+                         scanner_comment --;
+                         if (scanner_comment == 0)
+                           BEGIN INITIAL;   /* Quit any mode */
+                       }
+<FULLCOMMENT>"/*"      { scanner_comment ++; }
+<FULLCOMMENT>.         ; /* Do nothing */
+
+<LINECOMMENT>\n        { BEGIN INITIAL;     /* Quit any mode */ }
+<LINECOMMENT>.         ; /* Do nothing */
+
+[ \t\n]*               ; /* Skip whitespaces */
+"//"                   { BEGIN LINECOMMENT; /* Enter LINECOMMENT mode */ }
+"/*"                   { 
+                         BEGIN FULLCOMMENT; /* Enter FULLCOMMENT mode */
+                         scanner_comment ++;
+                       }
 "#pragma"[ ]+"scop"    { scanner_parsing = CLAN_TRUE;  /* Start parsing */ }
 "#pragma"[ ]+"endscop" { scanner_parsing = CLAN_FALSE; /* Stop  parsing */ }
 "if"                   { return clan_scanner(IF,   yytext,"IF");   }

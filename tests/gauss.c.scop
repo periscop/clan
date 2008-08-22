@@ -173,7 +173,8 @@ a[i][j]=a[i][j]-a[k][j]*a[i][k];
 
 
 # =============================================== Options
-<Comments>
-
-<\Comments>
-
+<arrays>
+2
+1 s
+2 a
+</arrays>

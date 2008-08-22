@@ -351,7 +351,13 @@ output[i]=sum;
 
 
 # =============================================== Options
-<Comments>
-
-<\Comments>
-
+<arrays>
+7
+1 sum
+2 input
+3 state_2
+4 internal_state
+5 state_1
+6 coefficient
+7 output
+</arrays>

@@ -133,7 +133,9 @@ c[i][j]=c[i][j]+a[i][k]*b[k][j];
 
 
 # =============================================== Options
-<Comments>
-
-<\Comments>
-
+<arrays>
+3
+1 c
+2 a
+3 b
+</arrays>

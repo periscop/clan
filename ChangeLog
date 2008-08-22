@@ -1,3 +1,46 @@
+2008-08-21  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+
+	* source/scop.c: Minor fix in option tags handling.
+	* include/clan/options.h: Typo.
+
+2008-07-24  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+
+	* include/clan/scop.h,
+	* source/scop.c: Add the clan_scop_tag_content_from_string
+	function, which returns the content between two tags in a given
+	string. Fix a small bug in clan_scop_print_dot_scop.
+
+2008-07-20  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+	This patch adds the support of the <arrays></arrays> tag, to dump
+	the table of referenced arrays in the optional section. The option
+	section is made persistent for the clan_scop_read
+	function. Finally, a 'usr' void* pointer is added for library
+	users convenience.
+
+	* include/clan/scop.h: Add two new fields in the scop_t structure:
+	a 'usr' void* field, managed by the user, and a field to store the
+	options provided after the statement definitions.
+	* source/scop.c: Add support for the new fields. Dump the array
+	list in the <arrays></arrays> tags.
+
+	* tests/matmul.c.scop,
+	* tests/unitary/simplecond.c.scop,
+	* tests/unitary/empty.c.scop,
+	* tests/unitary/assigniter.c.scop,
+	* tests/unitary/classicloop.c.scop,
+	* tests/unitary/basicnest.c.scop,
+	* tests/unitary/simpleloop.c.scop,
+	* tests/unitary/increment.c.scop,
+	* tests/unitary/comments.c.scop,
+	* tests/ax-do.c.scop,
+	* tests/iir_4_64.c.scop,
+	* tests/swim.c.scop,
+	* tests/gauss.c.scop,
+	* tests/gemver.c.scop: Update the reference files.
+	* tests/checker.sh: Use the -arraystag option.
+
+	* doc/clan.texi: Update the documentation.
+
 2008-07-14  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
 
 	* tests/check_unitary.sh,

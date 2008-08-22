@@ -42,7 +42,7 @@ echo "[CHECK:] $1";
 for i in $TEST_FILES; do
     outtemp=0
     echo "[TEST:] Source parser test:== $i ==";
-    $top_builddir/source/clan $i > $i.test 2>/tmp/clanout
+    $top_builddir/source/clan $i -arraystag > $i.test 2>/tmp/clanout
     z=`diff $i.test $i.scop 2>&1`
     err=`cat /tmp/clanout`;
     if ! [ -z "$z" ]; then

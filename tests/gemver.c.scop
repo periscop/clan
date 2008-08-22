@@ -214,7 +214,17 @@ w[i]=w[i]+alpha*A[i][j]*x[j];
 
 
 # =============================================== Options
-<Comments>
-
-<\Comments>
-
+<arrays>
+11
+1 A
+2 u1
+3 v1
+4 u2
+5 v2
+6 x
+7 beta
+8 y
+9 z
+10 w
+11 alpha
+</arrays>

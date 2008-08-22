@@ -252,10 +252,24 @@ clan_scop_print_dot_scop(FILE * file, clan_scop_p scop, clan_options_p options)
 			        scop->nb_arrays,scop->arrays);
 
   fprintf(file,"# =============================================== Options\n");
-  fprintf(file,"<Comments>\n");
-  fprintf(file,"\n");
-  fprintf(file,"<\\Comments>\n");
-  fprintf(file,"\n");
+  if (scop->optiontags)
+    fprintf(file, "%s", scop->optiontags);
+  if (options->arraystag)
+    {
+      /* If the <array> tag is present in the option tags, don't dump it. */
+      char* content = clan_scop_tag_content (scop, "<arrays>", "</arrays>");
+      if (! content)
+	{
+	  /* It isn't, so dump the list of arrays. */
+	  fprintf(file, "<arrays>\n");
+	  fprintf(file, "%d\n", scop->nb_arrays);
+	  for (i = 0; i < scop->nb_arrays; ++i)
+	    fprintf(file, "%d %s\n", i + 1, scop->arrays[i]);
+	  fprintf(file, "</arrays>\n");
+	}
+      else
+	free(content);
+    }
 }
 
 
@@ -303,6 +317,7 @@ clan_scop_read_strings(FILE* file, int nb_strings)
   return res;
 }
 
+
 /**
  * Internal function. Read an int on the input 'file'.
  *
@@ -310,16 +325,54 @@ clan_scop_read_strings(FILE* file, int nb_strings)
  */
 static
 int
-clan_scop_read_int(FILE* file)
+clan_scop_read_int(FILE* file, char** str)
 {
   char s[CLAN_MAX_STRING];
   int res;
+  int i = 0;
+  int read_int = 0;
 
-  /* Skip blank/commented lines. */
-  while (fgets(s, CLAN_MAX_STRING, file) == 0 || s[0] == '#' ||
-	 isspace(s[0]))
-    ;
-  sscanf(s, "%d", &res);
+  if (file != NULL && str != NULL)
+    {
+      fprintf(stderr, "[Clan] Error: only one of the two parameters of"
+	      " scop_read_int can be non-NULL\n");
+      exit (1);
+    }
+
+  if (file != NULL)
+    {
+      /* Parse from a file. */
+      /* Skip blank/commented lines. */
+      while (fgets(s, CLAN_MAX_STRING, file) == 0 || s[0] == '#' ||
+	     isspace(s[0]))
+	;
+      sscanf(s, "%d", &res);
+    }
+  if (str != NULL)
+    {
+      /* Parse from a string. */
+      /* Skip blank/commented lines. */
+      do
+	{
+	  while (*str && **str && isspace(**str))
+	    ++(*str);
+	  if (**str == '#')
+	    {
+	      while (**str && **str != '\n')
+		++(*str);
+	    }
+	  else
+	    {
+	      /* Build the chain to analyze. */
+	      while (**str && !isspace(**str) && **str != '\n')
+		s[i++] = *((*str)++);
+	      s[i] = '\0';
+	      sscanf(s, "%d", &res);
+	      read_int = 1;
+	    }
+	}
+      while (! read_int);
+    }
 
   return res;
 }
@@ -359,6 +412,68 @@ clan_scop_generate_names(char* seed, int nb)
 
 
 /**
+ * clan_scop_tag_content function:
+ * This function returns a freshly allocated string containing the
+ * content, in the optional tags section, between the tag 'tag' and
+ * the tag 'endtag'. If the tag 'tag' is not found, returns NULL.
+ */
+char*
+clan_scop_tag_content(clan_scop_p scop, char* tag, char* endtag)
+{
+  return clan_scop_tag_content_from_string(scop->optiontags, tag, endtag);
+}
+
+
+/**
+ * clan_scop_tag_content_from_string function:
+ * This function returns a freshly allocated string containing the
+ * content, in the given string 'str', between the tag 'tag' and
+ * the tag 'endtag'. If the tag 'tag' is not found, returns NULL.
+ */
+char*
+clan_scop_tag_content_from_string(char* str, char* tag, char* endtag)
+{
+  int i;
+  char* start;
+  char* stop;
+  int size = 0;
+  int lentag;
+  char* res = NULL;
+
+  if (str)
+    {
+      start = str;
+      lentag = strlen(tag);
+      for (; start && *start && strncmp(start, tag, lentag); ++start)
+	;
+      /* The tag 'tag' was not found.*/
+      if (! *start)
+	return NULL;
+      start += lentag;
+      stop = start;
+      lentag = strlen(endtag);
+      for (size = 0; *stop && strncmp(stop, endtag, lentag); ++stop, ++size)
+	;
+      /* the tag 'endtag' was not found. */
+      if (! *stop)
+	return NULL;
+      res = (char*) malloc((size + 1) * sizeof(char));
+      if (res == NULL)
+	{
+	  fprintf(stderr, "[Clan] Error: memory exhausted\n");
+	  exit(1);
+	}
+      /* Copy the chain between the two tags. */
+      for (++start, i = 0; start != stop; ++start, ++i)
+	res[i] = *start;
+      res[i] = '\0';
+    }
+
+  return res;
+}
+
+
+/**
  * clan_scop_read function:
  * This function reads a clan_scop_t structure from an input stream
  * (possibly stdin) corresponding to a clan SCoP dump.
@@ -368,106 +483,177 @@ clan_scop_generate_names(char* seed, int nb)
 clan_scop_p
 clan_scop_read(FILE* file, clan_options_p options)
 {
+  char tmpbuff[CLAN_MAX_STRING];
   clan_scop_p scop = NULL;
+  clan_statement_p stmt = NULL;
+  clan_statement_p prev = NULL;
+  int nb_statements;
+  char** tmp;
+  int i;
+  char* content;
 
-  if (file != NULL)
+  if (file == NULL)
+    return NULL;
+
+  scop = clan_scop_malloc();
+
+  /* Backup the arrays of the program. Buffer is reajustable. */
+  int nb_arr = CLAN_MAX_STRING;
+  char** arrays = (char**) malloc (sizeof(char*) * nb_arr);
+  for (i = 0; i < nb_arr; ++i)
+    arrays[i] = NULL;
+
+  /* Ensure the file is a .scop. */
+  tmp = clan_scop_read_strings(file, 1);
+  if (strcmp(*tmp, "SCoP"))
     {
-      scop = clan_scop_malloc();
-      clan_statement_p stmt = NULL;
-      clan_statement_p prev = NULL;
-      int nb_statements;
-      char** tmp;
-      int i;
-      /* Backup the arrays of the program. Buffer is reajustable. */
-      int nb_arr = CLAN_MAX_STRING;
-      char** arrays = (char**) malloc (sizeof(char*) * nb_arr);
-      for (i = 0; i < nb_arr; ++i)
-	arrays[i] = NULL;
-
-      /* Ensure the file is a .scop. */
-      tmp = clan_scop_read_strings(file, 1);
-      if (strcmp(*tmp, "SCoP"))
-	{
-	  fprintf(stderr, "[Clan] Error. The file is not a .scop\n");
-	  exit (1);
-	}
-      free(*tmp);
-      free(tmp);
-
-      /* Read the language. */
-      char** language =  clan_scop_read_strings(file, 1);
-      if (strcmp(*language, "C") && strcmp(*language, "JAVA") &&
-	  strcmp(*language, "C#"))
-	{
-	  fprintf(stderr, "[Clan] Error. The language is not recognized\n");
-	  exit (1);
-	}
-      /* language is not used so far. */
-      free(*language);
-      free(language);
-
-      /* Read the context. */
-      scop->context  = clan_matrix_read (file);
-      scop->nb_parameters = scop->context->NbColumns - 2;
-
-      /* Read the parameter names, if any. */
-      if (clan_scop_read_int(file) > 0)
-	scop->parameters = clan_scop_read_strings (file, scop->nb_parameters);
-      else
-	scop->parameters = clan_scop_generate_names("M", scop->nb_parameters);
-
-      /* Read the number of statements. */
-      nb_statements = clan_scop_read_int (file);
-
-      for (i = 0; i < nb_statements; ++i)
-	{
-	  /* Read each statement. */
-	  stmt = clan_statement_read (file, scop->nb_parameters,
-				      &arrays, &nb_arr);
-	  if (scop->statement == NULL)
-	    scop->statement = stmt;
-	  else
-	    prev->next = stmt;
-	  prev = stmt;
-	}
-
-      /* Count the number of referenced arrays/variables. */
-      scop->nb_arrays = 0;
-      for (stmt = scop->statement; stmt; stmt = stmt->next)
-	{
-	  if (stmt->read)
-	    for (i = 0; i < stmt->read->NbRows; ++i)
-	      if (scop->nb_arrays < CLAN_get_si(stmt->read->p[i][0]))
-		scop->nb_arrays = CLAN_get_si(stmt->read->p[i][0]);
-	  if (stmt->write)
-	    for (i = 0; i < stmt->write->NbRows; ++i)
-	      if (scop->nb_arrays < CLAN_get_si(stmt->write->p[i][0]))
-		scop->nb_arrays = CLAN_get_si(stmt->write->p[i][0]);
-	}
-
-      /* Fill the array of array names. */
-      scop->arrays = (char**) malloc(sizeof(char*) * (scop->nb_arrays + 1));
-      char** tmparrays = clan_scop_generate_names("var", scop->nb_arrays);
-      for (i = 0; i < scop->nb_arrays; ++i)
-	{
-	  if (arrays[i] == NULL || arrays[i][0] == '\0')
-	    {
-	      /* Use a generated name in case no array name was parsed. */
-	      scop->arrays[i] = tmparrays[i];
-	      if (arrays[i])
-		free(arrays[i]);
-	    }
-	  else
-	    {
-	      /* Use the parsed array name. */
-	      scop->arrays[i] = arrays[i];
-	      free(tmparrays[i]);
-	    }
-	}
-      scop->arrays[i] = NULL;
-      free(arrays);
-      free(tmparrays);
+      fprintf(stderr, "[Clan] Error. The file is not a .scop\n");
+      exit (1);
     }
+  free(*tmp);
+  free(tmp);
+
+  /* Read the language. */
+  char** language =  clan_scop_read_strings(file, 1);
+  if (strcmp(*language, "C") && strcmp(*language, "JAVA") &&
+      strcmp(*language, "C#"))
+    {
+      fprintf(stderr, "[Clan] Error. The language is not recognized\n");
+      exit (1);
+    }
+  /* language is not used so far. */
+  free(*language);
+  free(language);
+
+  /* Read the context. */
+  scop->context  = clan_matrix_read (file);
+  scop->nb_parameters = scop->context->NbColumns - 2;
+
+  /* Read the parameter names, if any. */
+  if (clan_scop_read_int(file, NULL) > 0)
+    scop->parameters = clan_scop_read_strings (file, scop->nb_parameters);
+  else
+    scop->parameters = clan_scop_generate_names("M", scop->nb_parameters);
+
+  /* Read the number of statements. */
+  nb_statements = clan_scop_read_int (file, NULL);
+
+  for (i = 0; i < nb_statements; ++i)
+    {
+      /* Read each statement. */
+      stmt = clan_statement_read (file, scop->nb_parameters,
+				  &arrays, &nb_arr);
+      if (scop->statement == NULL)
+	scop->statement = stmt;
+      else
+	prev->next = stmt;
+      prev = stmt;
+    }
+
+  /* Read the remainder of the file, and store it in the optiontags
+     field. */
+  /* Skip blank lines. */
+  while (! feof(file) &&
+	 (fgets(tmpbuff, CLAN_MAX_STRING, file) == 0 ||
+	  tmpbuff[0] == '#' || isspace(tmpbuff[0]) || tmpbuff[0] != '<'))
+    ;
+  /* Store the remainder of the file, if any. */
+  if (tmpbuff[0])
+    {
+      int count = strlen(tmpbuff);
+      int pos = 0;
+      int bufs = CLAN_MAX_STRING;
+      scop->optiontags = (char*) malloc(bufs * sizeof(char));
+      do
+	{
+	  scop->optiontags = (char*) realloc
+	    (scop->optiontags, (bufs += count) * sizeof(char));
+	  for (i = 0; i < count; ++i)
+	    scop->optiontags[pos++] = tmpbuff[i];
+	}
+      while ((count = fread(tmpbuff, sizeof(char), CLAN_MAX_STRING, file)) > 0);
+    }
+
+  /* Count the number of referenced arrays/variables. */
+  scop->nb_arrays = 0;
+  for (stmt = scop->statement; stmt; stmt = stmt->next)
+    {
+      if (stmt->read)
+	for (i = 0; i < stmt->read->NbRows; ++i)
+	  if (scop->nb_arrays < CLAN_get_si(stmt->read->p[i][0]))
+	    scop->nb_arrays = CLAN_get_si(stmt->read->p[i][0]);
+      if (stmt->write)
+	for (i = 0; i < stmt->write->NbRows; ++i)
+	  if (scop->nb_arrays < CLAN_get_si(stmt->write->p[i][0]))
+	    scop->nb_arrays = CLAN_get_si(stmt->write->p[i][0]);
+    }
+
+  /* Allocate the array names array. */
+  scop->arrays = (char**) malloc(sizeof(char*) * (scop->nb_arrays + 1));
+  for (i = 0; i < scop->nb_arrays; ++i)
+    scop->arrays[i] = NULL;
+
+  /* Populate the array list with referenced in the <array> tag, if
+     any. */
+  if ((content = clan_scop_tag_content(scop, "<arrays>", "</arrays>")))
+    {
+      char* start = content;
+      int n_arr = clan_scop_read_int(NULL, &content);
+      char buff2[CLAN_MAX_STRING];
+      int idx_array;
+      i = 0;
+      while (n_arr--)
+	{
+	  /* Skip blank or commented lines. */
+	  while (*content == '#' || *content == '\n')
+	    {
+	      for (; *content != '\n'; ++content)
+		;
+	      ++content;
+	    }
+	  /* Get the variable id. */
+	  for (i = 0; *content && ! isspace(*content); ++i, ++content)
+	    buff2[i] = *content;
+	  buff2[i] = '\0';
+	  sscanf (buff2, "%d", &idx_array);
+	  /* Get the variable name. */
+	  while (*content && isspace(*content))
+	    ++content;
+	  for (i = 0; *content && ! isspace(*content); ++i, ++content)
+	    buff2[i] = *content;
+	  buff2[i] = '\0';
+	  /* array is in 0-basis. */
+	  if (arrays[idx_array - 1])
+	    free(arrays[idx_array - 1]);
+	  arrays[idx_array - 1] = strdup(buff2);
+	  /* Go to the end of line. */
+	  while (*content && *content != '\n')
+	    ++content;
+	}
+      content = start;
+    }
+
+  /* Fill the array of array names. */
+  char** tmparrays = clan_scop_generate_names("var", scop->nb_arrays);
+  for (i = 0; i < scop->nb_arrays; ++i)
+    {
+      if (arrays[i] == NULL || arrays[i][0] == '\0')
+	{
+	  /* Use a generated name in case no array name was parsed. */
+	  scop->arrays[i] = tmparrays[i];
+	  if (arrays[i])
+	    free(arrays[i]);
+	}
+      else
+	{
+	  /* Use the parsed array name. */
+	  scop->arrays[i] = arrays[i];
+	  free(tmparrays[i]);
+	}
+    }
+  scop->arrays[i] = NULL;
+  free(arrays);
+  free(tmparrays);
 
   return scop;
 }
@@ -505,6 +691,8 @@ clan_scop_malloc()
   scop->nb_arrays     = 0;
   scop->arrays        = NULL;
   scop->statement     = NULL;
+  scop->optiontags    = NULL;
+  scop->usr	      = NULL;
 
   return scop;
 }
@@ -538,6 +726,7 @@ clan_scop_free(clan_scop_p scop)
       free(scop->arrays);
     }
     clan_statement_free(scop->statement);
+    free(scop->optiontags);
     free(scop);
   }
 }

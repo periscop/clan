@@ -60,6 +60,8 @@ struct clan_options
   int structure; /**< 1 to print the clan_scop structure, 0 otherwise. */
   int inputscop; /**< 1 to read a .scop on the input, 0 to read a
 		    source file (default). */
+  int arraystag; /**< 1 to dump the table of array names between the
+		    <arrays></arrays> tags, 0 otherwise (default). */
 };
 typedef struct clan_options   clan_options_t;
 typedef struct clan_options * clan_options_p;
@@ -74,7 +76,7 @@ void clan_options_print(FILE *, clan_options_p);
 /*+****************************************************************************
  *                    Memory allocation/deallocation function                 *
  ******************************************************************************/
-clan_options_p clan_option_malloc();
+clan_options_p clan_options_malloc();
 void           clan_options_free(clan_options_p);
 
 

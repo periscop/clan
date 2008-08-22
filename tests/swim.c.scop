@@ -2553,7 +2553,30 @@ P[M][N]=P[0][0];
 
 
 # =============================================== Options
-<Comments>
-
-<\Comments>
-
+<arrays>
+24
+1 FSDX
+2 DX
+3 FSDY
+4 DY
+5 CU
+6 P
+7 U
+8 CV
+9 V
+10 Z
+11 H
+12 TDTS8
+13 TDT
+14 TDTSDX
+15 TDTSDY
+16 UNEW
+17 UOLD
+18 VNEW
+19 VOLD
+20 PNEW
+21 POLD
+22 time
+23 DT
+24 ALPHA
+</arrays>

@@ -67,7 +67,7 @@ Copyright @copyright{} 2008 C@'edric Bastoul.
 
 @c quotation
 Permission is granted to copy, distribute and/or modify this document under
-the terms of the GNU Free Documentation License, Version 1.2 
+the terms of the GNU Free Documentation License, Version 1.2
 published by the Free Software Foundation. To receive a copy of the
 GNU Free Documentation License, write to the Free Software Foundation, Inc.,
 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA.
@@ -83,13 +83,13 @@ GNU Free Documentation License, write to the Free Software Foundation, Inc.,
 @subtitle Edition @value{EDITION}, for Clan @value{VERSION}
 @subtitle @value{UPDATED}
 @author C@'edric Bastoul
-     
+
 @c The following two commands start the copyright page.
 @page
 @vskip 0pt plus 1filll
 @insertcopying
 @end titlepage
-     
+
 @c Output the table of contents at the beginning.
 @contents
 
@@ -99,7 +99,7 @@ GNU Free Documentation License, write to the Free Software Foundation, Inc.,
 @ifnottex
 @node Top
 @top CLooG
-     
+
 @insertcopying
 @end ifnottex
 
@@ -113,7 +113,7 @@ GNU Free Documentation License, write to the Free Software Foundation, Inc.,
 * Documentation::
 * References::
 @end menu
- 
+
 
 
 @c % /*************************************************************************
@@ -125,7 +125,7 @@ GNU Free Documentation License, write to the Free Software Foundation, Inc.,
 @chapter Introduction
 Clan is a free software and library that translates some particular parts of
 high level programs written in C, C++, C# or Java into a polyhedral representation.
-This representation 
+This representation
 may be manipulated by other tools to, e.g., achieve complex program
 restructurations (for optimization, parallelization or any other kind of
 manipulation). It has been created to avoid tedious and error-prone input
@@ -191,7 +191,7 @@ The list of such
 "architectural features" is growing with each new generation of processors.
 To achieve the best performance, the object program must do a smart use
 of these features.
-Programmers use high level languages for productivity and portability: 
+Programmers use high level languages for productivity and portability:
 typically they do not have to take care of the target architecture but
 to ensure they do write programs that produce the right output. Hence,
 the problem of mapping the program to the target architecture in the most
@@ -387,7 +387,7 @@ at the notation @code{S2(3)} would show that it denotes the instance of
 statement @code{S2} for the iteration vector @code{(2)}.
 
 Obviously, dealing with statement instances does not mean we have to unroll all
-loops. First because there would be probably too many instances to deal with, 
+loops. First because there would be probably too many instances to deal with,
 and second because we probably just don't know how many instances there are.
 For instance in the following loop it is not possible to know (at compile time)
 how many times the statement @code{S3} will be executed:
@@ -403,7 +403,7 @@ for (i = 2; i <= N; i++)
 @noindent Such a loop is said to be @emph{parametric}: it depends on
 (at least) a value called a @emph{parameter} which is not modified
 during the execution of the whole loop, but is unknown at compile time.
-Here the only parameter is @code{N}. 
+Here the only parameter is @code{N}.
 
 A compact way to represent all the instances of a given statement
 is to consider the set of all possible values of its iteration vector.
@@ -517,7 +517,7 @@ texinfo manual !):
 @noindent The domain matrix (along with the iteration vector which
 is most of the time an implicit information) will
 be used in all our tools to provide the informations on the iteration
-domain of a given statement. 
+domain of a given statement.
 
 @node Scattering Function
 @subsection Scattering Function
@@ -574,7 +574,7 @@ $\theta_{S3} = 1$
 @group
 T_S1 = 1
 T_S2 = 2
-T_S3 = 3  
+T_S3 = 3
 @end group
 @end example
 @end ifnottex
@@ -617,7 +617,7 @@ $\theta_{S3} = 1$
 @group
 T_S1 = 1
 T_S2 = 2
-T_S3 = 1  
+T_S3 = 1
 @end group
 @end example
 @end ifnottex
@@ -907,7 +907,7 @@ iteration vector       logical date
 @end example
 
 Polyhedral Model users do not have to take care about the generation of a
-target code that respects the scattering: the CLooG tool is there to 
+target code that respects the scattering: the CLooG tool is there to
 solve the problem quite easily (@code{http://www.cloog.org}). For the previous
 example, the target code would be the following (@code{t1} and @code{t2}
 corresponds to the two dimensions of the logical date):
@@ -1024,7 +1024,7 @@ T_S4(i,j)   = (0,i,2,j,1)
 
 @noindent These schedules depend on the iterators and give for each instance
 of each statement a unique execution date. Using such scattering functions
-allows CLooG to re-generate the input code. 
+allows CLooG to re-generate the input code.
 
 @noindent To easily manipulate the scattering function of any
 statement @code{S}, we translate it to the matrix form:
@@ -1055,7 +1055,7 @@ T_S4([ j ]) = [  3  1  0 ] * [ j ]
 @noindent The scattering matrix (along with the iteration vector which
 is most of the time an implicit information) will
 be used in all our tools to provide the informations on the scattering
-of a given statement. 
+of a given statement.
 
 
 @node Access Function
@@ -1102,7 +1102,7 @@ F_A([ j ]) = [  0  1  0  0 ] * [ j ]
 @noindent The access matrix (along with the iteration vector which
 is most of the time an implicit information) will
 be used in all our tools to provide the informations on the access
-of a given statement. 
+of a given statement.
 
 
 
@@ -1147,7 +1147,7 @@ matrix-matrix multiply kernel:
 
 int main() @{
   int   i,j,k;
-  float a[N][N], b[N][N], c[N][N]; 
+  float a[N][N], b[N][N], c[N][N];
 
   /* We read matrix a then matrix b */
   for (i = 0; i < N; i++)
@@ -1173,7 +1173,7 @@ int main() @{
       printf("%6.2f ",c[i][j]);
     printf("\n");
   @}
-  
+
   return 0;
 @}
 @end example
@@ -1205,7 +1205,7 @@ C
 # Parameter names are provided
 1
 # Parameter names
-N 
+N
 
 # Number of statements
 2
@@ -1245,7 +1245,7 @@ N
 # Statement body is provided
 1
 # Original iterator names
-i j 
+i j
 # Statement body
 c[i][j]=0.0;
 
@@ -1295,15 +1295,12 @@ c[i][j]=0.0;
 # Statement body is provided
 1
 # Original iterator names
-i j k 
+i j k
 # Statement body
 c[i][j]=c[i][j]+a[i][k]*b[k][j];
 
 
 # =============================================== Options
-<Comments>
-
-<\Comments>
 @end example
 
 We will not describe here precisely the structure and the components of this
@@ -1384,7 +1381,7 @@ The following grammar describes the structure of the first part of the
 .scop file format where terminals are preceeded by "_". Each
 relevant part will be explained in more details momentarily. Its looks
 long but it has been artificially extended to be easily understood and
-it can be easily simplified: 
+it can be easily simplified:
 
 @example
 File                ::= SCoP
@@ -1435,7 +1432,7 @@ Body_text           ::= _String
        be generated by the code generator (this is the case when using CLooG)
        or will be extracted from another input source.
 @item  @samp{Statements} represents the informations on the statements.
-       @samp{Nb_statements} is the number of statements in the program, 
+       @samp{Nb_statements} is the number of statements in the program,
        i.e. the number of @samp{Statement} items in the @samp{Statement_list}.
        @samp{Statement} represents the informations on a given statement.
        To each statement is associated four informations, the first one is
@@ -1455,7 +1452,7 @@ Body_text           ::= _String
        parts: first, the list of surrounding loop counters in the original
        program and second, the text string of the statement. This
        representation allows to apply the substitution of the original
-       iterators with new iterators in the target program. 
+       iterators with new iterators in the target program.
 @end itemize
 
 The main terminal parts (domains, scattering and access functions) are
@@ -1512,7 +1509,7 @@ i + j - k >= 0
 @group
 # This is a domain
 3 7                      # 3 lines and 7 columns
-# eq/in i  j  k  m  n  1 
+# eq/in i  j  k  m  n  1
     1  -1  0  0  1  0  0 #    -i + m >= 0
     1   0 -1  0  0  1  0 #    -j + n >= 0
     1   1  1 -1  0  0  0 # i + j - k >= 0
@@ -1530,7 +1527,7 @@ For instance, let us consider the following pseudo-code:
 for (i = 1; i <= n; i++) @{
   if ((i >= m) || (i <= 2*m))
     S1;
-@} 
+@}
 @end group
 @end example
 
@@ -1542,13 +1539,13 @@ polyhedra and written in the .scop file as follows:
 2 # Number of polyhedra in the union
 # First domain
 3 5                # 3 lines and 5 columns
-# eq/in i  m  n  1 
+# eq/in i  m  n  1
     1   1  0  0 -1 #  i >= 1
     1  -1  0  1  0 #  i <= n
     1   1 -1  0  0 #  i >= m
 # Second domain
 3 5                # 3 lines and 5 columns
-# eq/in i  m  n  1 
+# eq/in i  m  n  1
     1   1  0  0 -1 #  i >= 1
     1  -1  0  1  0 #  i <= n
     1  -1  2  0  0 #  i <= 2*m
@@ -1566,7 +1563,7 @@ the constraint is an equality or an inequality for domains)
 followed by the parameter coefficients. The last element is the constant
 factor. For instance, assuming that @samp{i}, @samp{j} and @samp{k} are the loop
 iterators and @samp{m} and @samp{n} are the parameters, the scattering
-function 
+function
 @tex
 $\theta_{S}(i,j,k) = (j+2,3*i+j,k+n+1)$
 @end tex
@@ -1581,7 +1578,7 @@ may be written in a .scop file in the following way:
 @group
 # A scattering function
 3 7                      # 3 dimensions and 7 columns
-# 0  i  j  k  m  n  1 
+# 0  i  j  k  m  n  1
   0  0  1  0  0  0  2    # j+2
   0  3  1  0  0  0  0    # 3*i+j
   0  0  0  1  0  1  1    # k+n+1
@@ -1622,7 +1619,7 @@ may be written in a .scop file in the following way:
 @group
 # A set of access functions
 7 7                      # 7 rows and 7 columns
-# id  i  j  k  m  n  1 
+# id  i  j  k  m  n  1
    1  2  1  0  0  0  0   # A[2*i+j][j][i+n]
    0  0  1  0  0  0  0   #
    0  1  0  0  0  1  0   #
@@ -1639,7 +1636,7 @@ may be written in a .scop file in the following way:
 
 The end of the .scop file is made of a succession of options delimited using
 XML-like tags. Each tool will take care of known options and will ignore the
-others. There is no specification for the option body as it is 
+others. There is no specification for the option body as it is
 tool-dependent. Nevertheless, authors are invited to put the name of
 the tool inside the option name to avoid conflicts. A reserved
 option name is @samp{Comments} that allows to put some comments in the second
@@ -1659,6 +1656,21 @@ second part of a .scop file:
 @end group
 @end example
 
+A second reserved name is @samp{arrays}, Clan can optionally print a
+table of the arrays referenced in the access functions. For instance, for a program referencing first the array @samp{FOO}, then the array @samp{BAR}:
+
+@example
+@group
+<arrays>
+# Number of referenced arrays
+2
+# First reference
+1 FOO
+# Second reference
+2 BAR
+</arrays>
+@end group
+@end example
 
 
 
@@ -1690,6 +1702,7 @@ input file @code{basic.c} with default options by typing:
 
 @menu
 * Output::
+* Arrays Tag::
 * Help::
 * Version ::
 @end menu
@@ -1700,6 +1713,13 @@ input file @code{basic.c} with default options by typing:
      @code{-o <output>}: this option sets the output file. @code{stdout} is a
      special value: when used, output is standard output.
      Default value is @code{stdout}.
+
+@node Arrays Tag
+@subsection Arrays Tag @code{-arraystag}
+
+@code{-arraystag}: this option dumps the table of referenced arrays at
+the end of the .scop file, between the @samp{<arrays>} and
+@samp{</arrays} tags.
 
 @node Help
 @subsection Help @code{--help} or @code{-h}
@@ -1779,7 +1799,7 @@ typedef struct clan_matrix * clan_matrix_p;
 @code{p_Init} address. @code{p} is an array of pointers where
 @code{p[i]} points to the first element of the @math{i^{th}} row.
 @code{NbRows} and @code{NbColumns} are respectively the number of
-rows and columns of the matrix. 
+rows and columns of the matrix.
 
 @noindent To be able to provide different precision versions (Clan
 supports 32 bits, 64 bits and arbitrary precision through the GMP library),
@@ -1844,6 +1864,10 @@ struct clan_scop
   int nb_arrays;              /* Number of arrays accessed in the SCoP */
   char ** arrays;             /* Array of array names */
   clan_statement_p statement; /* Statement list of the SCoP */
+  char* optiontags;	      /**< The content (as a 0 terminated
+				 string) of the optional tags. */
+  void* usr;		      /**< A user-defined field, not touched
+				 by clan. */
 @};
 typedef struct clan_scop   clan_scop_t;
 typedef struct clan_scop * clan_scop_p;
@@ -1856,18 +1880,22 @@ It contains the informations about the context (what is common to all
 statements in the SCoP) and the list of statements @code{statement}.
 The context is made of the constraints on the global parameters
 @code{context}. The representation of the context using the
-@code{clan_matrix_t} data structure is described with the output file format
-(this is a domain, @pxref{Reading The Output File}).
-The list of parameter names is provided as an array of
-@code{nb_parameters} strings called @code{parameters} (@code{nb_parameters}
-is somewhat redundant as it is supposed to be equal to
-@code{context->NbColumns - 2}). The list of array names is provided as an
-array of @code{nb_arrays} strings called @code{arrays}. Each accessed array in
-the SCoP has a unique identifier (a strictly positive number,
-@pxref{Access Representation}),
+@code{clan_matrix_t} data structure is described with the output file
+format (this is a domain, @pxref{Reading The Output File}).  The list of
+parameter names is provided as an array of @code{nb_parameters} strings
+called @code{parameters} (@code{nb_parameters} is somewhat redundant as
+it is supposed to be equal to @code{context->NbColumns - 2}). The list
+of array names is provided as an array of @code{nb_arrays} strings
+called @code{arrays}. Each accessed array in the SCoP has a unique
+identifier (a strictly positive number, @pxref{Access Representation}),
 @code{arrays} provides the correspondance between an identifier and the
 real name of the accessed array. If an array has the identifier
-@samp{id}, then its real name is @samp{arrays[id - 1]}.
+@samp{id}, then its real name is @samp{arrays[id - 1]}. The
+@code{optiontags} field contains the remainder of the SCoP description
+file, as a @code{char*} string. Optional tags specified in the
+@samp{Options} section are stored there. Finally, the @code{usr} field
+is a pointer for library users convenience. This field is not touched by
+Clan.
 
 As an example, let us consider again the matrix-matrix multiply program
 (@pxref{A First Example}).
@@ -1956,7 +1984,7 @@ output the internal representation using the command line option
 |       |       +-- Original body: c[i][j]=c[i][j]+a[i][k]*b[k][j];
 |       |       |
 |       |
-|  
+|
 @end smallexample
 
 
@@ -1984,6 +2012,8 @@ are mainly internal options, but it's going to change in the future.
 @menu
 * clan_scop_extract::
 * clan_scop_print_dot_scop::
+* clan_scop_read::
+* clan_scop_tag_content::
 * Allocation and Initialization Functions::
 * Memory Deallocation Functions::
 * Printing Functions::
@@ -2027,6 +2057,45 @@ the pointer @code{output} (the file, possibly @code{stdout}, has to be open
 for writing), according to some options provided thanks to the pointer
 @code{options} to a @code{clan_options_t} data structure
 (@pxref{clan_options_t}).
+
+
+
+@node clan_scop_read
+@subsection clan_scop_read
+@example
+@group
+clan_scop_p clan_scop_read
+(
+  FILE * input,
+  clan_options_p options
+);
+@end group
+@end example
+
+@noindent The function @code{clan_scop_read} reads a .scop file from
+the standard input, and returns a pointer on a freshly allocated
+@code{clan_scop_t} structure containing the SCoP information.
+
+
+@node clan_scop_tag_content
+@subsection clan_scop_tag_content
+@example
+@group
+char* clan_scop_tag_content
+(
+  clan_scop_p scop,
+  char* from,
+  char* to
+);
+@end group
+@end example
+
+@noindent The function @code{clan_scop_tag_content} reads the list of
+optional tags for the @code{clan_scop_t} (stored in the
+@code{optiontags} string), and returns a freshly allocated string of all
+characters between the two given strings @code{from} and @code{to}. If
+one or the other given strings are not found, or if there was no
+optional part specified in the .scop, @code{NULL} is returned.
 
 
 @node Allocation and Initialization Functions
@@ -2099,13 +2168,13 @@ int main()
 @{
   clan_scop_p scop;
   clan_options_p options;
- 
+
   /* Default option setting. */
   options = clan_options_malloc() ;
 
   /* Extraction of the SCoP. */
   scop = clan_scop_extract(stdin, options);
-  
+
   /* Output of the .scop file. */
   clan_scop_print_dot_scop(stdout, scop, options);
 
@@ -2227,8 +2296,8 @@ files that the @code{configure} script created (so you can compile the
 package for a different kind of computer) type @code{make distclean}.
 
 
-@node Optional Features 
-@section Optional Features  
+@node Optional Features
+@section Optional Features
 The @code{configure} shell script attempts to guess correct values for
 various system-dependent variables and user options used during compilation.
 It uses those values to create the @code{Makefile}. Various user options
@@ -2255,8 +2324,8 @@ locations. If necessary, the user can specify the GMP path by giving
 @code{configure} the option @code{--with-gmp=PATH}.
 @end itemize
 
-@node Uninstallation 
-@section Uninstallation  
+@node Uninstallation
+@section Uninstallation
 The user can easily remove the Clan software and library from his system
 by typing (as root if necessary) from the Clan top-level directory
 @code{make uninstall}.
@@ -2291,7 +2360,7 @@ option to generate a single HTML file) or info format
 @item
 @anchor{Bas03a}[Bas03a] C. Bastoul, P. Feautrier. Improving data locality
 by chunking. CC'12 International Conference on Compiler Construction,
-LNCS 2622, pages 320-335, Warsaw, april 2003. 
+LNCS 2622, pages 320-335, Warsaw, april 2003.
 
 @item
 @anchor{Bas03}[Bas03] C. Bastoul and A. Cohen and S. Girbal and
@@ -2325,7 +2394,7 @@ Technical Report 785, IRISA, Rennes, France, 1993.
 @c %  *                       PART VI: END OF THE DOCUMENT                    *
 @c %  *************************************************************************/
 @c @unnumbered Index
-     
+
 @c @printindex cp
-     
+
 @bye

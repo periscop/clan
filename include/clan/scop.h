@@ -39,6 +39,8 @@
 #ifndef CLAN_SCOP_H
 # define CLAN_SCOP_H
 
+# include <unistd.h>
+
 # include <clan/macros.h>
 # include <clan/matrix.h>
 # include <clan/statement.h>
@@ -62,6 +64,10 @@ struct clan_scop
   int nb_arrays;              /**< Number of arrays accessed in the SCoP */
   char ** arrays;             /**< Array of (nb_arrays) array names */
   clan_statement_p statement; /**< Statement list of the SCoP */
+  char* optiontags;	      /**< The content (as a 0 terminated
+				 string) of the optional tags. */
+  void* usr;		      /**< A user-defined field, not touched
+				 by clan. */
 };
 typedef struct clan_scop   clan_scop_t;
 typedef struct clan_scop * clan_scop_p;
@@ -79,6 +85,8 @@ void        clan_scop_print_dot_scop(FILE *, clan_scop_p, clan_options_p);
  *                               Reading function                             *
  ******************************************************************************/
 clan_scop_p clan_scop_read(FILE *, clan_options_p);
+char*	    clan_scop_tag_content(clan_scop_p, char*, char*);
+char*	    clan_scop_tag_content_from_string(char*, char*, char*);
 
 
 /*+****************************************************************************

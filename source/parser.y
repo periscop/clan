@@ -70,6 +70,7 @@
    clan_matrix_p    parser_domain;      /**< Current iteration domain */
    int              parser_nb_cons = 0; /**< Current number of constraints */
    int *            parser_consperdim;  /**< Constraint nb for each dimension */
+
 %}
 
 %union { int value;                     /**< An integer value for integers */
@@ -81,34 +82,51 @@
 
 %token IGNORE
 %token IF ELSE FOR
+%token MIN MAX
 %token REAL
 %token <symbol> ID
 %token <value>  INTEGER
 
 %token syRPARENTHESIS syLPARENTHESIS syRBRACKET syLBRACKET syRBRACE syLBRACE
-%token sySEMICOLON syPOINT
+%token sySEMICOLON syCOMMA syPOINT 
 
-%token opEQUAL opLEQ opGEG opLOWER opGREATER opPLUS opMINUS
-%token opMULTIPLY opDIVIDE opASSIGNMENT opINCREMENTATION
+%token opEQUAL opLEQ opGEQ opLOWER opGREATER opPLUS opMINUS
+%token opINCREMENTATION opDECREMENTATION opNOT
+%token opMULTIPLY opDIVIDE opMOD opAND opOR opCOMP
+%token opASSIGNMENT
 %token opPLUSEQUAL opMINUSEQUAL opMULTIPLYEQUAL opDIVIDEEQUAL
+%token opMODEQUAL opANDEQUAL opOREQUAL opCOMPEQUAL
+%token opLAND opLOR opQMARK opCOLON 
 
 %left opPLUS opMINUS
-%left opMULTIPLY opDIVIDE
+%left opMULTIPLY opDIVIDE opMOD opAND opOR opCOMP
+%left opEQUAL opLEQ opGEQ opLOWER opGREATER opLAND opCOLON opQMARK
+%left opNOT
+%left MAXPRIORITY /* Dummy token to help in removing shift/reduce conflicts */
 
-%type <affex> condition
+%type <setex> condition
+%type <setex> min_affine_expression
+%type <setex> max_affine_expression
 %type <affex> affine_expression
 %type <affex> term
 %type <setex> array_index
 %type <setex> variable
+%type <setex> variable_list
 %type <setex> expression
 %type <rw>    assignment
 
 %%
 
+/*
+ * Start rule.
+ *
+ */
 program:
     instruction_list
       {
-        int nb_parameters, nb_arrays;
+	/* The full program was parsed. Allocate and fill the final
+	   .scop structures. */
+	int nb_parameters, nb_arrays;
 
         parser_scop->parameters = clan_symbol_id_array(parser_symbol,
                                                        CLAN_TYPE_PARAMETER,
@@ -123,6 +141,10 @@ program:
   |
   ;
 
+/*
+ * Rules for a list of instructions
+ *
+ */
 instruction_list:
     instruction
   | instruction_list instruction
@@ -130,12 +152,32 @@ instruction_list:
   | instruction_list IGNORE
   ;
 
+
+/*
+ * Rules for a bloc of instructions.
+ */
 bloc:
+/*
+ * Rule 1: bloc -> instruction
+ */
     instruction
+/*
+ * Rule 2: bloc -> { instruction_list }
+ */
   | syRBRACE instruction_list syLBRACE
   ;
 
+
+/*
+ * Rules for a program instruction. Either a for(..., if(..., or a
+ * regular statement.
+ *
+ */
 instruction:
+/*
+ * Rule 1: instruction -> for ( id = <setex>; condition; increment) bloc
+ *
+ */
     FOR
     syRPARENTHESIS
     ID
@@ -147,7 +189,9 @@ instruction:
 	   either from the same type. */
 	if (symbol->type != CLAN_TYPE_ITERATOR)
 	  {
-	    fprintf (stderr, "[Clan] Error: the input file is not a SCoP\nA loop iterator was previously used as a parameter\n");
+	    fprintf (stderr, "[Clan] Error: the input file is not a SCoP\n"
+		     "\t> A loop iterator was previously used as a parameter"
+		     "\n");
 	    exit(1);
 	  }
 	/* Update the rank, in case a symbol with the same name was
@@ -155,30 +199,34 @@ instruction:
 	if (symbol->rank != parser_depth + 1)
 	  symbol->rank = parser_depth + 1;
         parser_iterators[parser_depth] = symbol;
+	/* Memorize the current iterator as a negative constraint prefix */
       }
     opASSIGNMENT
-    affine_expression
+    max_affine_expression
       {
-        /* Loop lower bound i = a translates to i-a>=0 constraint */
-        clan_vector_p i_term;
-        clan_vector_p constraint;
-        i_term = clan_vector_term(parser_symbol,1,$3);
-        free($3);
-        constraint = clan_vector_sub(i_term,$6);
-        clan_vector_tag_inequality(constraint);
-        clan_vector_free(i_term);
-        clan_vector_free($6);
+        clan_vector_p parser_i_term = clan_vector_term(parser_symbol,1,$3);
+	clan_vector_tag_inequality(parser_i_term);
+	int i, j;
+	for (i = 0; i < $6->NbRows; ++i)
+	  {
+	    for (j = 1; j < $6->NbColumns; ++j)
+	      CLAN_oppose($6->p[i][j],$6->p[i][j]);
+	    clan_matrix_add_vector($6,parser_i_term,i);
+	  }
+	clan_matrix_insert_matrix(parser_domain,$6,parser_nb_cons);
 
-        clan_matrix_replace_vector(parser_domain,constraint,parser_nb_cons);
-        parser_nb_cons++;
-        parser_consperdim[parser_depth]++;
+        parser_nb_cons += $6->NbRows;
+        parser_consperdim[parser_depth] += $6->NbRows;
+	clan_vector_free(parser_i_term);
+        free($3);
+	clan_matrix_free($6);
       }
     sySEMICOLON
     condition
       {
-        clan_matrix_replace_vector(parser_domain,$9,parser_nb_cons);
-        parser_nb_cons++;
-        parser_consperdim[parser_depth]++;
+	clan_matrix_insert_matrix(parser_domain,$9,parser_nb_cons);
+        parser_nb_cons += $9->NbRows;
+        parser_consperdim[parser_depth] += $9->NbRows;
       }
     sySEMICOLON
     incrementation
@@ -194,7 +242,29 @@ instruction:
         parser_nb_cons -= parser_consperdim[parser_depth];
         parser_consperdim[parser_depth] = 0;
       }
-  | IF syRPARENTHESIS condition syLPARENTHESIS bloc
+/*
+ * Rule 2: instruction -> if (condition) bloc
+ *
+ */
+  |  IF syRPARENTHESIS condition syLPARENTHESIS
+      {
+	/* Insert the condition constraint in the current parser domain. */
+	clan_matrix_insert_matrix(parser_domain,$3,parser_nb_cons);
+        parser_nb_cons += $3->NbRows;
+      }
+    bloc
+      {
+        parser_nb_cons -= $3->NbRows;
+	/* Remove the condition constraint from the current parser domain. */
+	int i, j;
+	for (i = parser_nb_cons; i < parser_domain->NbRows - 1; ++i)
+	  for (j = 0; j < parser_domain->NbColumns; ++j)
+	    CLAN_assign(parser_domain->p[i][j],parser_domain->p[i+1][j]);
+      }
+/*
+ * Rule 3: instruction -> assignment
+ *
+ */
   |   {
         parser_statement = clan_statement_malloc();
         parser_record = (char *)malloc(CLAN_MAX_STRING * sizeof(char));
@@ -207,6 +277,28 @@ instruction:
       }
     assignment
       {
+	/* Deal with statements without surrounding loop by adding a
+	   fake iterator */
+	int old_parser_depth = parser_depth;
+	if (parser_depth == 0)
+	  {
+	    char* fakeiter = strdup("fakeiter");
+	    clan_symbol_p symbol = clan_symbol_lookup(parser_symbol, fakeiter);
+	    if (symbol)
+	      free(fakeiter);
+	    else
+	      symbol = clan_symbol_add(&parser_symbol,fakeiter,
+				       CLAN_TYPE_ITERATOR,parser_depth+1);
+	    parser_iterators[parser_depth] = symbol;
+	    clan_vector_p constraint =
+	      clan_vector_malloc(parser_domain->NbColumns);
+	    CLAN_set_si(constraint->p[1],1);
+	    parser_depth++;
+	    clan_matrix_replace_vector(parser_domain,constraint,parser_nb_cons);
+	    parser_nb_cons++;
+	    clan_vector_free(constraint);
+	  }
+	/* Construct the statement structure from the parser state */
 	parser_statement->domain = clan_matrix_list_malloc();
 	parser_statement->domain->elt = clan_matrix_ncopy(parser_domain,
 							  parser_nb_cons);
@@ -220,10 +312,25 @@ instruction:
                                                             parser_depth);
         parser_recording = CLAN_FALSE;
         clan_statement_add(&(parser_scop->statement),parser_statement);
+	/* We were parsing a statement without iterator. Restore the
+	   original state */
+	if (old_parser_depth == 0)
+	  {
+	    --parser_depth;
+	    --parser_nb_cons;
+	    parser_consperdim[parser_depth] = 0;
+	  }
         parser_scheduling[parser_depth]++;
       }
   ;
 
+
+/*
+ * Rules for the for loop increment.
+ * Handled cases:
+ * i++, ++i, i = i + 1, i += 1
+ *
+ */
 incrementation:
     ID opINCREMENTATION
       {
@@ -233,57 +340,71 @@ incrementation:
       {
         free($2);
       }
+  | ID opASSIGNMENT ID opPLUS INTEGER
+     {
+       if ($5 != 1)
+	 {
+	   fprintf (stderr, "[Clan] Error: loop increment is not 1\n");
+	   exit (1);
+	 }
+       free ($1);
+       free ($3);
+     }
+  | ID opPLUSEQUAL INTEGER
+     {
+       if ($3 != 1)
+	 {
+	   fprintf (stderr, "[Clan] Error: loop increment is not 1\n");
+	   exit (1);
+	 }
+       free ($1);
+     }
   ;
 
-condition:
-    affine_expression opLOWER affine_expression
+
+/*
+ * Reduction rules for min(... operators.
+ * return <setex>
+ *
+ */
+min_affine_expression:
+    affine_expression
       {
-        /* a<b translates to b-a-1>=0 */
-        clan_vector_p temp;
-        temp = clan_vector_sub($3,$1);
-        $$   = clan_vector_add_scalar(temp,-1);
-        clan_vector_tag_inequality($$);
+	$$ = clan_matrix_from_vector($1);
         clan_vector_free($1);
-        clan_vector_free($3);
-        clan_vector_free(temp);
       }
-  | affine_expression opGREATER affine_expression
-      {
-        /* a>b translates to a-b-1>=0 */
-        clan_vector_p temp;
-        temp = clan_vector_sub($1,$3);
-        $$   = clan_vector_add_scalar(temp,-1);
-        clan_vector_tag_inequality($$);
-        clan_vector_free($1);
-        clan_vector_free($3);
-        clan_vector_free(temp);
-      }
-  | affine_expression opLEQ affine_expression
-      {
-        /* a<=b translates to b-a>=0 */
-        $$ = clan_vector_sub($3,$1);
-        clan_vector_tag_inequality($$);
-        clan_vector_free($1);
-        clan_vector_free($3);
-      }
-  | affine_expression opGEG affine_expression
-      {
-        /* a>=b translates to a-b>=0 */
-        $$ = clan_vector_sub($1,$3);
-        clan_vector_tag_inequality($$);
-        clan_vector_free($1);
-        clan_vector_free($3);
-      }
-  | affine_expression opEQUAL affine_expression
-      {
-        /* a==b translates to a-b==0 */
-        $$ = clan_vector_sub($1,$3);
-        clan_vector_tag_equality($$);
-        clan_vector_free($1);
-        clan_vector_free($3);
-      }
+  | MIN syRPARENTHESIS min_affine_expression syCOMMA min_affine_expression
+    syLPARENTHESIS
+     {
+       $$ = clan_matrix_concat($3, $5);
+     }
   ;
 
+
+/*
+ * Reduction rules for max(... operators.
+ * return <setex>
+ *
+ */
+max_affine_expression:
+    affine_expression
+      {
+	$$ = clan_matrix_from_vector($1);
+        clan_vector_free($1);
+      }
+  | MAX syRPARENTHESIS max_affine_expression syCOMMA max_affine_expression
+    syLPARENTHESIS
+     {
+       $$ = clan_matrix_concat($3, $5);
+     }
+  ;
+
+
+/*
+ * Reduction rules for affine expression.
+ * return <affex>
+ *
+ */
 affine_expression:
     term
       {
@@ -307,27 +428,48 @@ affine_expression:
       }
   ;
 
+
+/*
+ * Reduction rules for a term.
+ * return <affex>
+ *
+ */
 term:
+/*
+ * Rule 1: term -> INT
+ */
     INTEGER
       {
         $$ = clan_vector_term(parser_symbol,$1,NULL);
       }
+/*
+ * Rule 2: term -> ID
+ */
   | ID
       {
         clan_symbol_add(&parser_symbol,$1,CLAN_TYPE_UNKNOWN,parser_depth);
         $$ = clan_vector_term(parser_symbol,1,$1);
         free($1);
       }
+/*
+ * Rule 3: term -> - INT
+ */
   | opMINUS INTEGER
       {
         $$ = clan_vector_term(parser_symbol,-($2),NULL);
       }
+/*
+ * Rule 4: term -> INT * ID
+ */
   | INTEGER opMULTIPLY ID
       {
         clan_symbol_add(&parser_symbol,$3,CLAN_TYPE_UNKNOWN,parser_depth);
         $$ = clan_vector_term(parser_symbol,$1,$3);
         free($3);
       }
+/*
+ * Rule 5: term -> - INT * ID
+ */
   | opMINUS INTEGER opMULTIPLY ID
       {
         clan_symbol_add(&parser_symbol,$4,CLAN_TYPE_UNKNOWN,parser_depth);
@@ -336,91 +478,292 @@ term:
       }
   ;
 
+
+/*
+ * Rules for defining a condition. A condition is an affine expression
+ * (possibly with min/max operator(s)) of the form 'affex1 op affex2'
+ * where affex2 may contain min operators iff op is '<' or '<=', and
+ * max operators iff op is '>' or '>='.
+ * return: <setex>
+ */
+condition:
+/*
+ * Rule 1: condition -> <affex> < min_affex
+ */
+    affine_expression opLOWER min_affine_expression
+      {
+        /* a<b translates to -a+b-1>=0 */
+	int i;
+	clan_vector_p tmp = clan_vector_add_scalar($1,1);
+	clan_vector_tag_inequality(tmp);
+	for (i = 0; i < $3->NbRows; ++i)
+	  clan_matrix_sub_vector($3, tmp, i);
+	clan_vector_free($1);
+	$$ = $3;
+      }
+/*
+ * Rule 2: condition -> <affex> > max_affex
+ */
+  | affine_expression opGREATER max_affine_expression
+      {
+        /* a>b translates to a-b-1>=0 */
+	int i, j;
+	clan_vector_p tmp = clan_vector_add_scalar($1,-1);
+	clan_vector_tag_inequality(tmp);
+	for (i = 0; i < $3->NbRows; ++i)
+	  {
+	    for (j = 1; j < $3->NbColumns; ++j)
+	      CLAN_oppose($3->p[i][j],$3->p[i][j]);
+	    clan_matrix_add_vector($3,tmp,i);
+	  }
+	clan_vector_free($1);
+	$$ = $3;
+      }
+/*
+ * Rule 3: condition -> <affex> <= min_affex
+ */
+  | affine_expression opLEQ min_affine_expression
+      {
+        /* a<=b translates to -a+b>=0 */
+	int i;
+	clan_vector_p tmp = clan_vector_add_scalar($1,0);
+	clan_vector_tag_inequality(tmp);
+	for (i = 0; i < $3->NbRows; ++i)
+	  clan_matrix_sub_vector($3,tmp,i);
+	clan_vector_free($1);
+	$$ = $3;
+      }
+/*
+ * Rule 4: condition -> <affex> >= max_affex
+ */
+  | affine_expression opGEQ max_affine_expression
+      {
+        /* a>=b translates to a-b>=0 */
+	int i, j;
+	clan_vector_p tmp = clan_vector_add_scalar($1,0);
+	clan_vector_tag_inequality(tmp);
+	for (i = 0; i < $3->NbRows; ++i)
+	  {
+	    for (j = 1; j < $3->NbColumns; ++j)
+	      CLAN_oppose($3->p[i][j],$3->p[i][j]);
+	    clan_matrix_add_vector($3,tmp,i);
+	  }
+	clan_vector_free($1);
+	$$ = $3;
+      }
+/*
+ * Rule 5: condition -> <affex> == <affex>
+ */
+  | affine_expression opEQUAL affine_expression
+      {
+        /* a==b translates to a-b==0 */
+	clan_vector_p res = clan_vector_sub($1,$3);
+	clan_vector_tag_equality(res);
+	$$ = clan_matrix_from_vector(res);
+	clan_vector_free(res);
+        clan_vector_free($1);
+        clan_vector_free($3);
+      }
+/*
+ * Rule 6: condition -> ( condition )
+ */
+  | syRPARENTHESIS condition syLPARENTHESIS
+      {
+	$$ = $2;
+      }
+/*
+ * Rule 7: condition -> condition && condition
+ */
+  | condition opLAND condition
+     {
+       $$ = clan_matrix_concat($1,$3);
+       clan_matrix_free($1);
+       clan_matrix_free($3);
+     }
+  ;
+
+
+/*
+ * Shortcut rules for reduction operators (+=, -=, ...)
+ *
+ */
+reduction_operator:
+    opPLUSEQUAL
+  | opMINUSEQUAL
+  | opMULTIPLYEQUAL
+  | opDIVIDEEQUAL
+  | opMODEQUAL
+  | opANDEQUAL
+  | opOREQUAL
+  | opCOMPEQUAL
+  ;
+
+/*
+ * Shortcut rules for unary increment/decrement operators (-- and ++)
+ *
+ */
+unary_operator:
+    opINCREMENTATION
+  | opDECREMENTATION
+  ;
+
+
+/*
+ * Rules for an assignment (an instruction which is not a 'for' nor an 'if')
+ * return: <rw>
+ *
+ */
 assignment:
+/*
+ * Rule 1: assignment -> var = expression;
+ */
     variable opASSIGNMENT expression sySEMICOLON
       {
         $$[0] = $3;
         $$[1] = $1;
       }
-  | variable opPLUSEQUAL expression sySEMICOLON
+/*
+ * Rule 2: assignment -> var red_op expression;
+ */
+  | variable reduction_operator expression sySEMICOLON
       {
         $$[0] = clan_matrix_concat($1,$3);
         clan_matrix_free($3);
         $$[1] = $1;
       }
-  | variable opMINUSEQUAL expression sySEMICOLON
-      {
-        $$[0] = clan_matrix_concat($1,$3);
-        clan_matrix_free($3);
-        $$[1] = $1;
-      }
-  | variable opMULTIPLYEQUAL expression sySEMICOLON
-      {
-        $$[0] = clan_matrix_concat($1,$3);
-        clan_matrix_free($3);
-        $$[1] = $1;
-      }
-  | variable opDIVIDEEQUAL expression sySEMICOLON
-      {
-        $$[0] = clan_matrix_concat($1,$3);
-        clan_matrix_free($3);
-        $$[1] = $1;
-      }
+/*
+ * Rule 3: assignment -> var un_op;
+ */
+  | variable unary_operator sySEMICOLON
+    {
+       $$[0] = $1;
+       $$[1] = clan_matrix_copy($1);
+    }
+/*
+ * Rule 4: assignment -> un_op var;
+ */
+  | unary_operator variable sySEMICOLON
+    {
+       $$[0] = $2;
+       $$[1] = clan_matrix_copy($2);
+    }
+/*
+ * Rule 5: assignment -> var;
+ */
+  | variable sySEMICOLON
+     {
+       $$[0] = $1;
+       $$[1] = NULL;
+     }
   ;
 
+
+/*
+ * Shortcut rules for all binary operators BUT '='.
+ *
+ */
+binary_operator:
+    opPLUS
+  | opMINUS
+  | opMULTIPLY
+  | opDIVIDE
+  | opMOD
+  | opGEQ
+  | opGREATER
+  | opLEQ
+  | opLOWER
+  | opEQUAL
+  | opAND
+  | opOR
+  | opCOMP
+  ;
+
+/*
+ * Rules for an expression.
+ * return: <setex>
+ */
 expression:
+/*
+ * Rule 1: expression -> number
+ */
     NUMBER
       {
         $$ = NULL;
       }
+/*
+ * Rule 2: expression -> - number
+ */
   | opMINUS NUMBER
       {
         $$ = NULL;
       }
-  | expression opPLUS expression
-      {
-        $$ = clan_matrix_concat($1,$3);
-        clan_matrix_free($1);
-        clan_matrix_free($3);
-      }
-  | expression opMINUS expression
-      {
-        $$ = clan_matrix_concat($1,$3);
-        clan_matrix_free($1);
-        clan_matrix_free($3);
-      }
-  | expression opMULTIPLY expression
-      {
-        $$ = clan_matrix_concat($1,$3);
-        clan_matrix_free($1);
-        clan_matrix_free($3);
-      }
-  | expression opDIVIDE expression
-      {
-        $$ = clan_matrix_concat($1,$3);
-        clan_matrix_free($1);
-        clan_matrix_free($3);
-      }
-  | syRPARENTHESIS expression syLPARENTHESIS
-      {
-        $$ = $2;
-      }
+/*
+ * Rule 3: expression -> variable
+ */
   | variable
       {
         $$ = $1;
       }
-  | ID syRPARENTHESIS syLPARENTHESIS
+/*
+ * Rule 4: expression -> expression bin_op expression
+ * The %prec is a hack to force to shift in this rule.
+ */
+  | expression binary_operator expression %prec MAXPRIORITY
       {
-        $$ = NULL;
-        free($1);
+        $$ = clan_matrix_concat($1,$3);
+        clan_matrix_free($1);
+        clan_matrix_free($3);
+      }
+/*
+ * Rule 5: expression -> ! expression
+ */
+  | opNOT expression
+      {
+        $$ = $2;
+      }
+/*
+ * Rule 6: expression -> ( expression )
+ */
+  | syRPARENTHESIS expression syLPARENTHESIS
+      {
+        $$ = $2;
+      }
+/*
+ * Rule 7: expression -> expression : expression ? expression
+ */
+  | expression opQMARK expression opCOLON expression
+      {
+	clan_matrix_p tmp = clan_matrix_concat($1,$3);
+        $$ = clan_matrix_concat(tmp,$5);
+	clan_matrix_free(tmp);
+	clan_matrix_free($1);
+	clan_matrix_free($3);
+	clan_matrix_free($5);
       }
   ;
 
+
+/*
+ * Rules to describe a variable. It can be a scalar ('a'), a
+ * n-dimensional array ('a[i]'), or a procedure call ('a(b,c,d)')
+ * return: <setex>
+ */
 variable:
+/*
+ * Rule 1: variable -> id
+ * ex: variable -> a
+ */
     ID
       {
         int rank;
         clan_matrix_p matrix;
+	clan_symbol_p symbol = clan_symbol_lookup(parser_symbol, (char*)$1);
+	if (symbol && symbol->type == CLAN_TYPE_ITERATOR)
+	  {
+	    fprintf(stderr,"[Clan] Error: the input file is not a valid SCoP"
+		     "\n\t> An iterator is used as the RHS of an assignment\n");
+	    exit(1);
+	  }
         clan_symbol_add(&parser_symbol,$1,CLAN_TYPE_ARRAY,parser_depth);
         rank = clan_symbol_get_rank(parser_symbol,$1);
         matrix = clan_matrix_malloc(1,CLAN_MAX_DEPTH + CLAN_MAX_PARAMETERS + 2);
@@ -428,6 +771,10 @@ variable:
         $$ = matrix;
         free($1);
       }
+/*
+ * Rule 2: variable -> id array_index
+ * ex: variable -> a[i][j]
+ */
   | ID array_index
       {
         int rank;
@@ -437,14 +784,78 @@ variable:
         $$ = $2;
         free($1);
       }
+/*
+ * Rule 3: variable -> id ( variable_list )
+ * ex: variable -> a(b,c,d)
+ */
+   | ID syRPARENTHESIS variable_list syLPARENTHESIS
+      {
+	$$ = $3;
+	free($1);
+      }
+/*
+ * Rule 4: variable -> - variable
+ */
+   | opMINUS variable
+      {
+	$$ = $2;
+      }
+/*
+ * Rule 5: variable -> + variable
+ */
+   | opPLUS variable
+      {
+	$$ = $2;
+      }
   ;
 
+
+/*
+ * Rules to describe a list of variables, separated by a comma.
+ * return: <setex>
+ */
+variable_list:
+/*
+ * Rule 1: variable_list -> variable
+ */
+    variable
+      {
+	$$ = $1;
+      }
+/*
+ * Rule 2: variable_list -> variable_list , variable
+ */
+  | variable_list syCOMMA variable
+      {
+	$$ = clan_matrix_concat($1,$3);
+      }
+/*
+ * Rule 3: variable_list ->
+ */
+  |
+      {
+	$$ = NULL;
+      }
+  ;
+
+
+/*
+ * Rules for n-level array indices
+ * return: <setex>
+ *
+ */
 array_index:
+/*
+ * Rule 1: array_index -> [ <affex> ]
+ */
     syRBRACKET affine_expression syLBRACKET
       {
         $$ = clan_matrix_from_vector($2);
         clan_vector_free($2);
       }
+/*
+ * Rule 2: array_index -> array_index [ <affex> ]
+ */
   | array_index syRBRACKET affine_expression syLBRACKET
       {
         clan_matrix_insert_vector($1,$3,CLAN_END);

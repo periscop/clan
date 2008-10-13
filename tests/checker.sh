@@ -37,9 +37,11 @@
 # *****************************************************************************/
 
 output=0
+nb_tests=0;
 TEST_FILES="$2";
 echo "[CHECK:] $1";
 for i in $TEST_FILES; do
+    nb_tests=$(($nb_tests + 1))
     outtemp=0
     echo "[TEST:] Source parser test:== $i ==";
     $top_builddir/source/clan $i -arraystag > $i.test 2>/tmp/clanout
@@ -48,6 +50,7 @@ for i in $TEST_FILES; do
     if ! [ -z "$z" ]; then
 	echo -e "\033[31m[FAIL:] Source parser test: Wrong .scop generated\033[0m";
 	outtemp=1;
+	output=1
     fi
     if ! [ -z "$err" ]; then
 	if [ $outtemp = "0" ]; then
@@ -77,6 +80,6 @@ done
 if [ $output = "1" ]; then
     echo -e "\033[31m[FAIL:] $1\033[0m";
 else
-    echo "[PASS:] $1";
+    echo "[PASS:] $1 ($nb_tests + $nb_tests tests)";
 fi
 exit $output

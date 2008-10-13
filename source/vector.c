@@ -180,12 +180,12 @@ clan_vector_free(clan_vector_p vector)
   int i;
   Value * p;
 
-  p = vector->p;
-  for (i = 0; i < vector->Size; i++)
-    CLAN_clear(*p++);
-
   if (vector != NULL)
   {
+    p = vector->p;
+    for (i = 0; i < vector->Size; i++)
+      CLAN_clear(*p++);
+
     free(vector->p);
     free(vector);
   }

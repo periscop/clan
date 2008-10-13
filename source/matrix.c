@@ -882,6 +882,66 @@ clan_matrix_replace_vector(clan_matrix_p matrix, clan_vector_p vector, int row)
 
 
 /**
+ * clan_matrix_add_vector function:
+ * this function adds the "row"^th row of a matrix "matrix" with the
+ * vector "vector". It directly updates "matrix".
+ * \param matrix The matrix we want to change a row.
+ * \param vector The vector that will replace a row of the matrix.
+ * \param row    The row of the matrix to be replaced.
+ **
+ * - 08/28/2008: first version.
+ */
+void
+clan_matrix_add_vector(clan_matrix_p matrix, clan_vector_p vector, int row)
+{
+  int i;
+
+  if ((matrix == NULL) || (vector == NULL) ||
+      (matrix->NbColumns != vector->Size) ||
+      (row >= matrix->NbRows) || (row < 0))
+  {
+    fprintf(stderr,"[Clan] Error: vector cannot replace a matrix row\n");
+    exit(1);
+  }
+
+  if (CLAN_get_si(matrix->p[row][0]) == 0)
+    CLAN_assign(matrix->p[row][0],vector->p[0]);
+  for (i = 1; i < vector->Size; i++)
+    CLAN_addto(matrix->p[row][i],matrix->p[row][i],vector->p[i]);
+}
+
+
+
+/**
+ * clan_matrix_sub_vector function:
+ * this function substracts the vector "vector" to the "row"^th row of
+ * a matrix "matrix. It directly updates "matrix".
+ * \param matrix The matrix we want to change a row.
+ * \param vector The vector that will replace a row of the matrix.
+ * \param row    The row of the matrix to be replaced.
+ **
+ * - 08/28/2008: first version.
+ */
+void
+clan_matrix_sub_vector(clan_matrix_p matrix, clan_vector_p vector, int row)
+{
+  int i;
+
+  if ((matrix == NULL) || (vector == NULL) ||
+      (matrix->NbColumns != vector->Size) ||
+      (row >= matrix->NbRows) || (row < 0))
+  {
+    fprintf(stderr,"[Clan] Error: vector cannot replace a matrix row\n");
+    exit(1);
+  }
+
+  if (CLAN_get_si(matrix->p[row][0]) == 0)
+    CLAN_assign(matrix->p[row][0],vector->p[0]);
+  for (i = 1; i < vector->Size; i++)
+    CLAN_subtract(matrix->p[row][i],matrix->p[row][i],vector->p[i]);
+}
+
+/**
  * clan_matrix_insert_vector function:
  * this function adds a new row corresponding to the vector "vector" to
  * the matrix "matrix" by inserting it at the "row"^th row. It directly

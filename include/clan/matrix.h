@@ -127,6 +127,8 @@ clan_matrix_p clan_matrix_ncopy(clan_matrix_p, int);
 clan_matrix_p clan_matrix_copy(clan_matrix_p);
 void          clan_matrix_replace_vector(clan_matrix_p, clan_vector_p, int);
 void          clan_matrix_insert_vector(clan_matrix_p, clan_vector_p, int);
+void	      clan_matrix_add_vector(clan_matrix_p, clan_vector_p, int);
+void	      clan_matrix_sub_vector(clan_matrix_p, clan_vector_p, int);
 clan_matrix_p clan_matrix_from_vector(clan_vector_p);
 void          clan_matrix_replace_matrix(clan_matrix_p, clan_matrix_p, int);
 void          clan_matrix_insert_matrix(clan_matrix_p, clan_matrix_p, int);

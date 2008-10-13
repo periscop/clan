@@ -63,10 +63,10 @@ n
 # Access informations are provided
 1
 # Read access informations
-0 4
-# Write access informations
 1 4
    1    0    0    0    ## a[0]
+# Write access informations
+0 4
 
 # ----------------------------------------------  1.4 Body
 # Statement body is provided

@@ -1,3 +1,159 @@
+2008-10-07  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+	This patch fixes a bug in the parser. Assignments such as 'a = -b'
+	where incorrectly handled.
+
+	* source/parser.y: Fix the parser grammar.
+
+	* tests/unitary/negassign.c,
+	* tests/unitary/negassign.c.scop: New test file covering the case.
+
+	* tests/Makefile.am: Update accordingly.
+
+2008-08-26  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+	This patch allows C-like ternary operator to be correctly
+	parsed in assignment statements. Example:
+	b = c < d ? a + 1 : 2 * b;
+
+	* source/parser.y,
+	* source/scanner.l: Extend the grammar to deal with ternary operator.
+
+	* tests/unitary/ternary.c,
+	* tests/unitary/ternary.c.scop: New. Test files for ternary operator.
+	* tests/Makefile.am: Update accordingly.
+
+2008-08-25  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+	This patch (1) fixes, cleans and comments the grammar (2)
+	changes the type of 'condition' from <affex> to <setex> (3) allows
+	conjunction of conditions (A && B) to be correctly parsed.
+
+	* source/parser.y,
+	* source/scanner.l: Fix, clean and improve the lexer/parser.
+
+	* source/vector.c: Fix a potential bug in clan_vector_free.
+
+	* include/clan/matrix.h,
+	* source/matrix.c: Add clan_matrix_add_vector and
+	clan_matrix_sub_vector functions.
+
+	* tests/unitary/twocondincond.c,
+	* tests/unitary/twocondincond.c.scop: New. Test files for multiple
+	affine expressions in a condition.
+	* tests/Makefile.am: Update accordingly.
+
+2008-08-23  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+	This patch allows complex C unary and binary operators to be correctly
+	parsed when present in assignments. Examples:
+	a ^= (b | (c + 2)) % 2 - !(a[n]/2);
+	a--;
+
+	* source/scanner.l,
+	* source/parser.y: Improve the lexer/scanner to deal with various
+	C-like operators in assignments.
+
+	* tests/unitary/binop.c,
+	* tests/unitary/binop.c.scop,
+	* tests/unitary/complexop.c,
+	* tests/unitary/complexop.c.scop: New. Test files for complex
+	operators in assignments.
+
+	* tests/Makefile.am: Update accordingly.
+
+	* tests/checker.sh: Minor fix to improve verbosity.
+
+2008-08-23  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+	This patch enables correct parsing of multiple parenthesis in
+	conditions.
+
+	* source/parser.y: Support multiple parenthesis in conditions.
+
+	* tests/unitary/multiparenthcond.c,
+	* tests/unitary/multiparenthcond.c.scop: New. Test files for
+	multiple parenthesis inside a condition.
+	* tests/Makefile.am: Update accordingly.
+
+2008-08-23  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+	This patch fixes a bug in the parser: statements not surrounded by
+	any loop were having an infinite domain. Fix the parser by
+	creating a fake iterator "fakeiter" for those statements.
+
+	* source/parser.y: Fix the parser.
+
+	* tests/unitary/twoconds.c,
+	* tests/unitary/noloop.c,
+	* tests/unitary/noloop2.c,
+	* tests/unitary/complexprog.c,
+	* tests/unitary/complexprog.c.scop,
+	* tests/unitary/twoconds.c.scop,
+	* tests/unitary/noloop.c.scop,
+	* tests/unitary/noloop2.c.scop: New. Test files for statements
+	surrounded by no loop, in several situations.
+	* tests/Makefile.am: Update accordingly.
+
+	* tests/iir_4_64.c.scop: Fix the test.
+
+2008-08-23  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+
+	* source/parser.y: Minor fix to clean useless rule type.
+
+2008-08-23  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+	This patch provides support for cascading min/max functions in
+	loop bound specification. min/max is not supported in regular
+	conditions, only in loop bounds.
+
+	* source/parser.y,
+	* source/scanner.l: Improve the lexer/parser to deal with min/max
+	in loop bounds.
+
+	* tests/unitary/minloopsimple.c,
+	* tests/unitary/minloopsimple.c.scop,
+	* tests/unitary/minloopcomplex.c,
+	* tests/unitary/minloopcomplex.c.scop,
+	* tests/unitary/maxloopsimple.c,
+	* tests/unitary/maxloopsimple.c.scop,
+	* tests/unitary/maxloopcomplex.c,
+	* tests/unitary/maxloopcomplex.c.scop,
+	* tests/unitary/minmax.c,
+	* tests/unitary/minmax.c.scop: New. Test files for min/max in loop
+	bounds.
+	* tests/Makefile.am: Update accordingly.
+
+2008-08-22  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+
+	* tests/unitary/redefiter.c,
+	* tests/unitary/redefiter.c.scop: Add missing test files.
+
+2008-08-22  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+	This patch improves the parser by allowing the support of: (1)
+	function calls in statements (function arguments are marked as
+	read items); (2) conditionals (without OR and AND operators); (3)
+	error detection when an iterator is assigned to a variable (this
+	is not a SCoP). The test suite passes now.
+
+	* source/scanner.l,
+	* source/parser.y: Fix the lexer/parser.
+
+	* tests/unitary/assigniter.c,
+	* tests/unitary/assigniter.c.scop: Remove this test.
+	* tests/unitary/simplecond.c.scop,
+	* tests/unitary/simpleloop.c.scop,
+	* tests/unitary/basicnest.c.scop: Fix the reference files.
+	* tests/unitary/complexcond.c,
+	* tests/unitary/complexcond.c.scop: New. Test files for complex
+	conditionals in the SCoP.
+	* tests/unitary/functioncall.c,
+	* tests/unitary/functioncall.c.scop: New. Test files for function
+	calls.
+	* tests/Makefile.am: Update accordingly.
+
+	* tests/checker.sh: Minor fix to improve output.
+
+2008-08-22  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+
+	* source/parser.y,
+	* source/scanner.l: Merge from trunk.
+
+	* tests/unitary/comments.c: Make the test harder.
+
 2008-08-21  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
 
 	* source/scop.c: Minor fix in option tags handling.

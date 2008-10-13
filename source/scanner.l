@@ -61,7 +61,7 @@
 
 %%
 
-<FULLCOMMENT>"*/"      { 
+<FULLCOMMENT>"*/"      {
                          scanner_comment --;
                          if (scanner_comment == 0)
                            BEGIN INITIAL;   /* Quit any mode */
@@ -74,7 +74,7 @@
 
 [ \t\n]*               ; /* Skip whitespaces */
 "//"                   { BEGIN LINECOMMENT; /* Enter LINECOMMENT mode */ }
-"/*"                   { 
+"/*"                   {
                          BEGIN FULLCOMMENT; /* Enter FULLCOMMENT mode */
                          scanner_comment ++;
                        }
@@ -83,6 +83,8 @@
 "if"                   { return clan_scanner(IF,   yytext,"IF");   }
 "else"                 { return clan_scanner(ELSE, yytext,"ELSE"); }
 "for"                  { return clan_scanner(FOR,  yytext,"FOR");  }
+"min"                  { return clan_scanner(MIN,  yytext,"min");  }
+"max"                  { return clan_scanner(MAX,  yytext,"max");  }
 
 [A-Za-z][A-Za-z0-9_]*  {
                          char * word;
@@ -103,23 +105,38 @@
 "]"                    { return clan_scanner(syLBRACKET,       yytext,"]");  }
 "{"                    { return clan_scanner(syRBRACE,         yytext,"{");  }
 "}"                    { return clan_scanner(syLBRACE,         yytext,"}");  }
+","                    { return clan_scanner(syCOMMA,          yytext,",");  }
 ";"                    { return clan_scanner(sySEMICOLON,      yytext,";");  }
 "."                    { return clan_scanner(syPOINT,          yytext,".");  }
+":"                    { return clan_scanner(opCOLON,          yytext,":");  }
+"!"                    { return clan_scanner(opNOT,            yytext,"!");  }
+"?"                    { return clan_scanner(opQMARK,          yytext,"?");  }
 "++"                   { return clan_scanner(opINCREMENTATION, yytext,"++"); }
+"--"                   { return clan_scanner(opDECREMENTATION, yytext,"--"); }
 "+="                   { return clan_scanner(opPLUSEQUAL,      yytext,"+="); }
 "-="                   { return clan_scanner(opMINUSEQUAL,     yytext,"-="); }
 "*="                   { return clan_scanner(opMULTIPLYEQUAL,  yytext,"*="); }
 "/="                   { return clan_scanner(opDIVIDEEQUAL,    yytext,"/="); }
+"|="                   { return clan_scanner(opOREQUAL,        yytext,"|="); }
+"^="                   { return clan_scanner(opCOMPEQUAL,      yytext,"^="); }
+"&="                   { return clan_scanner(opANDEQUAL,       yytext,"&="); }
+"%="                   { return clan_scanner(opMODEQUAL,       yytext,"%="); }
 "=="                   { return clan_scanner(opEQUAL,          yytext,"=="); }
 "<="                   { return clan_scanner(opLEQ,            yytext,"<="); }
-">="                   { return clan_scanner(opGEG,            yytext,">="); }
+">="                   { return clan_scanner(opGEQ,            yytext,">="); }
 "<"                    { return clan_scanner(opLOWER,          yytext,"<");  }
 ">"                    { return clan_scanner(opGREATER,        yytext,">");  }
 "+"                    { return clan_scanner(opPLUS,           yytext,"+");  }
 "-"                    { return clan_scanner(opMINUS,          yytext,"-");  }
 "*"                    { return clan_scanner(opMULTIPLY,       yytext,"*");  }
 "/"                    { return clan_scanner(opDIVIDE,         yytext,"/");  }
-"="                    { return clan_scanner(opASSIGNMENT,    yytext,"=");  }
+"%"                    { return clan_scanner(opMOD,            yytext,"%");  }
+"&"                    { return clan_scanner(opAND,            yytext,"&");  }
+"&&"                   { return clan_scanner(opLAND,           yytext,"&&"); }
+"|"                    { return clan_scanner(opOR,             yytext,"|");  }
+"||"                   { return clan_scanner(opLOR,            yytext,"||"); }
+"^"                    { return clan_scanner(opCOMP,           yytext,"^");  }
+"="                    { return clan_scanner(opASSIGNMENT,     yytext,"=");  }
 
 .                      { if (scanner_parsing == CLAN_TRUE)
                          {

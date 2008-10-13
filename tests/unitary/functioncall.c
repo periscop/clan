@@ -1,4 +1,4 @@
 #pragma scop
 for (i = 0; i < n; ++i)
-    a = i;
+   printf (a[i+1],b[n]);
 #pragma endscop

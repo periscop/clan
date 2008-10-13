@@ -1,6 +1,7 @@
 #pragma scop
-  for (i=1;i<=n;i++)                 
+/* A comment in the scop. */
+  for (i=1;i<=n;i++)
+    // A C++ comment.
     c[i] = 0;
-/* a comment in the scop */
-// another comment.
+/* Another comment in the scop. */
 #pragma endscop

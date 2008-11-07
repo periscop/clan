@@ -61,11 +61,11 @@ extern "C"
  */
 struct clan_matrix
 {
-  unsigned NbRows;    /**< The number of rows */
-  unsigned NbColumns; /**< The number of columns */
-  Value ** p;         /**< An array of pointers to the beginning of each row */
-  Value * p_Init;     /**< The matrix is stored here, contiguously in memory */
-  int p_Init_size;    /**< Needed to free the memory allocated by mpz_init. */
+  unsigned NbRows;     /**< The number of rows */
+  unsigned NbColumns;  /**< The number of columns */
+  clan_int_t ** p;     /**< An array of pointers to the beginning of each row */
+  clan_int_t * p_Init; /**< The matrix is stored here, contiguously in memory */
+  int p_Init_size;     /**< Needed to free the memory allocated by mpz_init. */
 };
 typedef struct clan_matrix   clan_matrix_t;
 typedef struct clan_matrix * clan_matrix_p;

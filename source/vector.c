@@ -153,7 +153,7 @@ clan_vector_malloc(unsigned Size)
     vector->p = NULL;
   else
   {
-    p = (clan_int_t *)malloc(Size * sizeof(Value));
+    p = (clan_int_t *)malloc(Size * sizeof(clan_int_t));
     if (p == NULL)
     {
       fprintf(stderr, "[Clan] Memory Overflow.\n");

@@ -1767,6 +1767,7 @@ fields are not described here.
 
 @menu
 * clan_matrix_t::
+* clan_matrix_list_t::
 * clan_statement_t::
 * clan_scop_t::
 * clan_options_t::
@@ -1784,11 +1785,11 @@ directly by tools using this format with a simple cast.
 @group
 struct clan_matrix
 @{
-  unsigned NbRows;    /* The number of rows */
-  unsigned NbColumns; /* The number of columns */
-  Value ** p;         /* An array of pointers to the matrix row */
-  Value * p_Init;     /* The matrix rows contiguously in memory */
-  int p_Init_size;    /* Initial size of p_Init. */
+  unsigned NbRows;     /* The number of rows */
+  unsigned NbColumns;  /* The number of columns */
+  clan_int_t ** p;     /* An array of pointers to the matrix row */
+  clan_int_t * p_Init; /* The matrix rows contiguously in memory */
+  int p_Init_size;     /* Initial size of p_Init */
 @};
 typedef struct clan_matrix   clan_matrix_t;
 typedef struct clan_matrix * clan_matrix_p;
@@ -1803,13 +1804,35 @@ rows and columns of the matrix.
 
 @noindent To be able to provide different precision versions (Clan
 supports 32 bits, 64 bits and arbitrary precision through the GMP library),
-the @code{Value} type depends on the configuration options (it may be
+the @code{clan_int_t} type depends on the configuration options (it may be
 @code{long int} for 32 bits version, @code{long long int} for 64 bits version,
 and @code{mpz_t} for multiple precision version).
 The @code{p_Init_size} field is needed to free
 the memory allocated by @code{mpz_init} in the multiple precision version.
 Set this field to the initial size of the @code{p_Init} array
 (its size may vary during processing, for instance if you are using PolyLib).
+
+
+@node clan_matrix_list_t
+@subsection clan_matrix_list_t
+
+@example
+@group
+struct clan_matrix_list
+@{
+  clan_matrix_p elt;             /* An element of the list. */
+  struct clan_matrix_list* next; /* Pointer to the next element. */
+@};
+typedef struct clan_matrix_list	  clan_matrix_list_t;
+typedef struct clan_matrix_list * clan_matrix_list_p;
+@end group
+@end example
+
+@noindent The @code{clan_matrix_list_t} structure is a @code{NULL}-terminated
+linked list of @code{clan_matrix_t} data structures. It is used for instance
+to represent a union of convex domains (each matrix representing a convex
+part of the union). @code{elt} is a matrix element of the list and
+@code{next} is the pointer to the next element of the list.
 
 
 @node clan_statement_t
@@ -1836,7 +1859,7 @@ typedef struct clan_statement * clan_statement_p;
 terminated linked list of statements. The structure contains all
 elements of the polyhedral representation of the statement. It uses a
 @code{clan_matrix_list_t} data structure to represent a union for the
-iteration domain @code{domain} (it is simply a chained list of
+iteration domain @code{domain} (it is simply a linked list of
 @code{clan_matrix_t} elements), and a @code{clan_matrix_t} data
 structure for the rest: the scattering function @code{scattering}, the
 set of array read accesses @code{read} and the set of array write
@@ -1864,10 +1887,10 @@ struct clan_scop
   int nb_arrays;              /* Number of arrays accessed in the SCoP */
   char ** arrays;             /* Array of array names */
   clan_statement_p statement; /* Statement list of the SCoP */
-  char* optiontags;	      /**< The content (as a 0 terminated
-				 string) of the optional tags. */
-  void* usr;		      /**< A user-defined field, not touched
-				 by clan. */
+  char * optiontags;          /* The content (as a 0 terminated
+                                 string) of the optional tags. */
+  void * usr;                 /* A user-defined field,
+                                 not touched by clan. */
 @};
 typedef struct clan_scop   clan_scop_t;
 typedef struct clan_scop * clan_scop_p;
@@ -1917,13 +1940,16 @@ output the internal representation using the command line option
 |       |
 |       +-- clan_statement_t (S1)
 |       |       |
-|       |       +-- clan_matrix_t
-|       |       |       4 5
-|       |       |       [    1    1    0    0    0 ]
-|       |       |       [    1   -1    0    1   -1 ]
-|       |       |       [    1    0    1    0    0 ]
-|       |       |       [    1    0   -1    1   -1 ]
-|       |       |
+|       |       +-- clan_matrix_list_t
+|       |       |       |	
+|       |       |       +-- clan_matrix_t
+|       |       |       |       4 5
+|       |       |       |       [    1    1    0    0    0 ]
+|       |       |       |       [    1   -1    0    1   -1 ]
+|       |       |       |       [    1    0    1    0    0 ]
+|       |       |       |       [    1    0   -1    1   -1 ]
+|       |       |       |	
+|       |       |	
 |       |       +-- clan_matrix_t
 |       |       |       5 5
 |       |       |       [    0    0    0    0    0 ]
@@ -1946,14 +1972,17 @@ output the internal representation using the command line option
 |       |       V
 |       |   clan_statement_t (S2)
 |       |       |
-|       |       +-- clan_matrix_t
-|       |       |       6 6
-|       |       |       [    1    1    0    0    0    0 ]
-|       |       |       [    1   -1    0    0    1   -1 ]
-|       |       |       [    1    0    1    0    0    0 ]
-|       |       |       [    1    0   -1    0    1   -1 ]
-|       |       |       [    1    0    0    1    0    0 ]
-|       |       |       [    1    0    0   -1    1   -1 ]
+|       |       +-- clan_matrix_list_t
+|       |       |       |	
+|       |       |       +-- clan_matrix_t
+|       |       |       |       6 6
+|       |       |       |       [    1    1    0    0    0    0 ]
+|       |       |       |       [    1   -1    0    0    1   -1 ]
+|       |       |       |       [    1    0    1    0    0    0 ]
+|       |       |       |       [    1    0   -1    0    1   -1 ]
+|       |       |       |       [    1    0    0    1    0    0 ]
+|       |       |       |	[    1    0    0   -1    1   -1 ]
+|       |       |       |	
 |       |       |
 |       |       +-- clan_matrix_t
 |       |       |       7 6

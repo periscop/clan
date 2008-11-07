@@ -67,20 +67,14 @@ clan_statement_print_structure(FILE * file, clan_statement_p statement,
 {
   int i, j, first = 1, number = 1;
 
+  /* Go to the right level. */
+  for (j = 0; j < level; j++)
+    fprintf(file,"|\t");
+     
   if (statement != NULL)
-  {
-    /* Go to the right level. */
-    for (j = 0; j < level; j++)
-      fprintf(file,"|\t");
     fprintf(file,"+-- clan_statement_t (S%d)\n",number);
-  }
   else
-  {
-    /* Go to the right level. */
-    for (j = 0; j < level; j++)
-      fprintf(file,"|\t");
     fprintf(file,"+-- NULL statement\n");
-  }
 
   while (statement != NULL)
   { if (!first)

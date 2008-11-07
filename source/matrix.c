@@ -66,11 +66,12 @@ clan_matrix_print_structure(FILE * file, clan_matrix_p matrix, int level)
 {
   int i, j;
 
+  /* Go to the right level. */
+  for (j = 0; j < level; j++)
+    fprintf(file,"|\t");  
+
   if (matrix != NULL)
   {
-    /* Go to the right level. */
-    for (j = 0; j < level; j++)
-      fprintf(file,"|\t");
     fprintf(file,"+-- clan_matrix_t\n");
 
     for(j = 0; j <= level; j++)
@@ -95,12 +96,7 @@ clan_matrix_print_structure(FILE * file, clan_matrix_p matrix, int level)
     }
   }
   else
-  {
-    /* Go to the right level. */
-    for (j = 0; j < level; j++)
-      fprintf(file,"|\t");
     fprintf(file,"+-- NULL matrix\n");
-  }
 
   /* The last line. */
   for (j = 0; j <= level; j++)
@@ -355,30 +351,53 @@ clan_matrix_print_dot_scop(FILE * file, clan_matrix_p matrix, int type,
 void
 clan_matrix_list_print_structure(FILE * file, clan_matrix_list_p l, int level)
 {
-  int i;
-  /* Go to the right level. */
-  for (i = 0; i < level; i++)
-    fprintf(file, "|\t");
-  fprintf(file,"+-- clan_matrix_list_t\n");
+  int j, first = 1;
 
-  /* Print the list. */
-  while (l)
+  /* Go to the right level. */
+  for (j = 0; j < level; j++)
+    fprintf(file,"|\t");
+     
+  if (l != NULL)
+    fprintf(file,"+-- clan_matrix_list_t\n");
+  else
+    fprintf(file,"+-- NULL matrix list\n");
+
+  while (l != NULL)
+  {
+    if (!first)
     {
-      clan_matrix_print_structure(file, l->elt, level + 1);
-      l = l->next;
-      /* Print the arrow of the chained list. */
-      if (l)
-	{
-	  for (i = 0; i < level; i++)
-	    fprintf(file, "|\t");
-	  fprintf(file, "V\n");
-	}
+      /* Go to the right level. */
+      for (j = 0; j < level; j++)
+        fprintf(file,"|\t");
+      fprintf(file,"|   clan_matrix_list_t\n");
     }
-  /* Print the termination of the chained list. */
-  for (i = 0; i <= level; i++)
-    fprintf(file, "|\t");
-  fprintf(file, "\n");
-}
+    else
+      first = 0;
+
+    /* A blank line. */
+    for (j = 0; j <= level+1; j++)
+      fprintf(file,"|\t");
+    fprintf(file,"\n");
+
+    /* Print a matrix. */
+    clan_matrix_print_structure(file,l->elt,level+1);
+    
+    l = l->next;
+
+    /* Next line. */
+    if (l != NULL)
+    {
+      for (j = 0; j <= level; j++)
+        fprintf(file,"|\t");
+      fprintf(file,"V\n");
+    }
+  }
+
+  /* The last line. */
+  for (j = 0; j <= level; j++)
+    fprintf(file,"|\t");
+  fprintf(file,"\n");
+} 
 
 
 /**
@@ -421,17 +440,17 @@ clan_matrix_list_print_dot_scop(FILE * file, clan_matrix_list_p list, int type,
   clan_matrix_list_p head = list;
 
   /* Count the number of elements in the list. */
-  for (i = 0; list; list = list->next)
+  for (i = 0; list; list = list->next, i++)
     ;
   /* Print it. */
-  fprintf(file,"%d\n", i + 1);
+  fprintf(file,"%d\n", i);
   /* Print each element of the matrix list. */
   while (head)
-    {
-      clan_matrix_print_dot_scop(file, head->elt, type, nb_iterators, iterators,
-				 nb_parameters, parameters, nb_arrays, arrays);
-      head = head->next;
-    }
+  {
+    clan_matrix_print_dot_scop(file, head->elt, type, nb_iterators, iterators,
+                               nb_parameters, parameters, nb_arrays, arrays);
+    head = head->next;
+  }
 }
 
 /******************************************************************************
@@ -669,13 +688,13 @@ clan_matrix_malloc(unsigned NbRows, unsigned NbColumns)
   }
   else
   {
-    p = (clan_int_t **)malloc(NbRows*sizeof(Value *));
+    p = (clan_int_t **)malloc(NbRows*sizeof(clan_int_t *));
     if (p == NULL)
     {
       fprintf(stderr, "[Clan] Memory Overflow.\n");
       exit(1);
     }
-    q = (clan_int_t *)malloc(NbRows * NbColumns * sizeof(Value));
+    q = (clan_int_t *)malloc(NbRows * NbColumns * sizeof(clan_int_t));
     if (q == NULL)
     {
       fprintf(stderr, "[Clan] Memory Overflow.\n");

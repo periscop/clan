@@ -1,3 +1,11 @@
+2008-11-01  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+
+	* Makefile.am: Remove useless re-copy of config/fm.m4 in dist-hook.
+
+2008-10-15  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+
+	* source/scanner.l: Remove systematic print of unknown characters.
+
 2008-10-07  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
 	This patch fixes a bug in the parser. Assignments such as 'a = -b'
 	where incorrectly handled.

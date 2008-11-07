@@ -68,8 +68,10 @@ MAINTAINERCLEANFILES 	=			\
 	$(AUX_DIST)
 
 
+#############################################################################
 dist-hook:
 	(cd $(distdir) && mkdir -p $(ac_aux_dir))
-	for file in $(AUX_DIST) $(AUX_DIST_EXTRA); do \
+	for file in $(AUX_DIST); do \
 	  cp $$file $(distdir)/$$file; \
 	done
+#############################################################################

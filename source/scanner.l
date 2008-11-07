@@ -140,7 +140,8 @@
 
 .                      { if (scanner_parsing == CLAN_TRUE)
                          {
-			   printf("Lex: Unknown character (%s)\n",yytext);
+			    //if (CLAN_DEBUG)
+			    //   printf("Lex: Unknown character (%s)\n",yytext);
 			   //yyerror("Lex: Unknown character");
                          }
 		       }

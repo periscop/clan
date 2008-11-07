@@ -139,7 +139,7 @@ clan_vector_p
 clan_vector_malloc(unsigned Size)
 {
   clan_vector_p vector;
-  Value * p;
+  clan_int_t * p;
   int i ;
 
   vector = (clan_vector_p)malloc(sizeof(clan_vector_t));
@@ -153,7 +153,7 @@ clan_vector_malloc(unsigned Size)
     vector->p = NULL;
   else
   {
-    p = (Value *)malloc(Size * sizeof(Value));
+    p = (clan_int_t *)malloc(Size * sizeof(Value));
     if (p == NULL)
     {
       fprintf(stderr, "[Clan] Memory Overflow.\n");
@@ -178,7 +178,7 @@ void
 clan_vector_free(clan_vector_p vector)
 {
   int i;
-  Value * p;
+  clan_int_t * p;
 
   if (vector != NULL)
   {

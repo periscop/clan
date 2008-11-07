@@ -42,17 +42,17 @@
 # if defined(LINEAR_VALUE_IS_LONGLONG)
 #  define CLAN_FMT     "%4lld"
 #  define CLAN_FMT_TXT "%lld"
-#  define Value long long
+#  define clan_int_t long long
 
 # elif defined(LINEAR_VALUE_IS_LONG)
 #  define CLAN_FMT     "%4ld"
 #  define CLAN_FMT_TXT "%ld"
-#  define Value long int
+#  define clan_int_t long int
 
 # elif defined(LINEAR_VALUE_IS_MP)  /* GNUMP */
 #  define CLAN_FMT     "%4s"
 #  define CLAN_FMT_TXT "%s"
-#  define Value mpz_t
+#  define clan_int_t mpz_t
 
 # else
 #  error Define LINEAR_VALUE_IS_xxx to use this file.
@@ -98,18 +98,18 @@
                                         sprintf((Dst),(fmt),str); free(str); \
                                         }
 
-/* Boolean operators on 'Value' */
+/* Boolean operators on 'clan_int_t' */
 #  define CLAN_eq(v1,v2)                (mpz_cmp((v1),(v2)) == 0)
 #  define CLAN_ne(v1,v2)                (mpz_cmp((v1),(v2)) != 0)
 
-/* Binary operators on 'Value' */
+/* Binary operators on 'clan_int_t' */
 #  define CLAN_increment(ref,val)       (mpz_add_ui((ref),(val),1))
 #  define CLAN_addto(ref,val1,val2)     (mpz_add((ref),(val1),(val2)))
 #  define CLAN_add_int(ref,val,vint)    (mpz_add_ui((ref),(val),(long)(vint)))
 #  define CLAN_subtract(ref,val1,val2)  (mpz_sub((ref),(val1),(val2)))
 #  define CLAN_oppose(ref,val)          (mpz_neg((ref),(val)))
 
-/* Conditional operations on 'Value' */
+/* Conditional operations on 'clan_int_t' */
 #  define CLAN_pos_p(val)               (mpz_sgn(val) >  0)
 #  define CLAN_neg_p(val)               (mpz_sgn(val) <  0)
 #  define CLAN_zero_p(val)              (mpz_sgn(val) == 0)
@@ -124,27 +124,27 @@
 /* Basic Macros */
 #  define CLAN_init(val)                ((val) = 0)
 #  define CLAN_assign(v1,v2)            ((v1)  = (v2))
-#  define CLAN_set_si(val,i)            ((val) = (Value)(i))
+#  define CLAN_set_si(val,i)            ((val) = (clan_int_t)(i))
 #  define CLAN_get_si(val)              ((val))
-#  define CLAN_init_set_si(val,i)       ((val) = (Value)(i))
+#  define CLAN_init_set_si(val,i)       ((val) = (clan_int_t)(i))
 #  define CLAN_clear(val)               ((val) = 0)
 #  define CLAN_print(Dst,fmt,val)       (fprintf((Dst),(fmt),(val)))
 #  define CLAN_sprint(Dst,fmt,val)      (sprintf((Dst),(fmt),(val)))
 
-/* Boolean operators on 'Value' */
+/* Boolean operators on 'clan_int_t' */
 #  define CLAN_eq(v1,v2)                ((v1)==(v2))
 #  define CLAN_ne(v1,v2)                ((v1)!=(v2))
 #  define CLAN_lt(v1,v2)                ((v1)<(v2))
 #  define CLAN_gt(v1,v2)                ((v1)>(v2))
 
-/* Binary operators on 'Value' */
-#  define CLAN_increment(ref,val)       ((ref) = (val)+(Value)(1))
+/* Binary operators on 'clan_int_t' */
+#  define CLAN_increment(ref,val)       ((ref) = (val)+(clan_int_t)(1))
 #  define CLAN_addto(ref,val1,val2)     ((ref) = (val1)+(val2))
-#  define CLAN_add_int(ref,val,vint)    ((ref) = (val)+(Value)(vint))
+#  define CLAN_add_int(ref,val,vint)    ((ref) = (val)+(clan_int_t)(vint))
 #  define CLAN_subtract(ref,val1,val2)  ((ref) = (val1)-(val2))
 #  define CLAN_oppose(ref,val)          ((ref) = (-(val)))
 
-/* Conditional operations on 'Value' */
+/* Conditional operations on 'clan_int_t' */
 #  define CLAN_pos_p(val)               CLAN_gt(val,0)
 #  define CLAN_neg_p(val)               CLAN_lt(val,0)
 #  define CLAN_zero_p(val)              CLAN_eq(val,0)

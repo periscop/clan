@@ -138,7 +138,7 @@ clan_matrix_print(FILE * file, clan_matrix_p matrix)
  * - 03/05/2008: first version (from CLooG 0.14.0, glorious pprint_val).
  */
 char *
-clan_matrix_expression_element(Value val, int * first, int cst, char * name)
+clan_matrix_expression_element(clan_int_t val, int * first, int cst, char * name)
 {
   char * sval, * body, * temp;
 
@@ -456,7 +456,7 @@ clan_matrix_read(FILE* foo)
   int i, j, n;
   char* c, s[CLAN_MAX_STRING], str[CLAN_MAX_STRING];
   clan_matrix_p matrix;
-  Value* p;
+  clan_int_t* p;
 
   while (fgets(s, CLAN_MAX_STRING, foo) == 0)
     ;
@@ -558,7 +558,7 @@ clan_matrix_read_arrays(FILE* foo, char*** arrays, int* nb_arr)
   int count;
   char* c, s[CLAN_MAX_STRING], str[CLAN_MAX_STRING], buff[CLAN_MAX_STRING];
   clan_matrix_p matrix;
-  Value* p;
+  clan_int_t* p;
 
   while (fgets(s, CLAN_MAX_STRING, foo) == 0)
     ;
@@ -650,7 +650,7 @@ clan_matrix_p
 clan_matrix_malloc(unsigned NbRows, unsigned NbColumns)
 {
   clan_matrix_p matrix;
-  Value ** p, * q;
+  clan_int_t ** p, * q;
   int i, j;
 
   matrix = (clan_matrix_p)malloc(sizeof(clan_matrix_t));
@@ -669,13 +669,13 @@ clan_matrix_malloc(unsigned NbRows, unsigned NbColumns)
   }
   else
   {
-    p = (Value **)malloc(NbRows*sizeof(Value *));
+    p = (clan_int_t **)malloc(NbRows*sizeof(Value *));
     if (p == NULL)
     {
       fprintf(stderr, "[Clan] Memory Overflow.\n");
       exit(1);
     }
-    q = (Value *)malloc(NbRows * NbColumns * sizeof(Value));
+    q = (clan_int_t *)malloc(NbRows * NbColumns * sizeof(Value));
     if (q == NULL)
     {
       fprintf(stderr, "[Clan] Memory Overflow.\n");
@@ -707,7 +707,7 @@ void
 clan_matrix_free_inside(clan_matrix_p matrix)
 {
   int i;
-  Value * p;
+  clan_int_t * p;
 
   if (matrix == NULL)
     return;

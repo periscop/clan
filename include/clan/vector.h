@@ -60,7 +60,7 @@ extern "C"
 struct clan_vector
 {
   unsigned Size;  /**< The number of vector entries */
-  Value * p;      /**< An array of values */
+  clan_int_t * p; /**< An array of values */
 };
 typedef struct clan_vector   clan_vector_t;
 typedef struct clan_vector * clan_vector_p;

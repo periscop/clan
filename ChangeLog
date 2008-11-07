@@ -1,3 +1,11 @@
+2008-11-01  Cedric Bastoul  <cedric.bastoul@inria.fr>
+	Replace Polylib "Value" with "clan_int_t" to denote the integer type.
+
+	* source/vector.c
+	* source/matrix.c
+	* include/vector.c
+	* include/macros.c
+
 2008-11-01  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
 
 	* Makefile.am: Remove useless re-copy of config/fm.m4 in dist-hook.

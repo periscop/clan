@@ -41,7 +41,7 @@ dnl Input file for autoconf to build a configuration shellscript.
 
 AC_PREREQ(2.13)
 dnl Fill here the @bug email adress.
-AC_INIT([clan], [0.4.0], [cedric.bastoul@inria.fr])
+AC_INIT([clan], [0.5.0], [cedric.bastoul@inria.fr])
 dnl A common file, which serve as a test.
 AC_CONFIG_SRCDIR([include/clan/scop.h])
 dnl Put as most as possible configuration files to an auxialiry

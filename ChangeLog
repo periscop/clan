@@ -1,11 +1,50 @@
-2008-11-01  Cedric Bastoul  <cedric.bastoul@inria.fr>
+2009-01-30  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+	NOTE: Clan has been bumped to 0.5.0 at some point.
+	
+	* tests/change_clan_version_in_refs.sh: New. Test script to update
+	the version of clan in the test files. Must be used after each
+	modification of the version in configure.ac.
+
+	* tests/matmul.c.scop,
+	* tests/unitary/empty.c.scop,
+	* tests/unitary/minloopcomplex.c.scop,
+	* tests/unitary/maxloopcomplex.c.scop,
+	* tests/unitary/redefiter.c.scop,
+	* tests/unitary/classicloop.c.scop,
+	* tests/unitary/complexcond.c.scop,
+	* tests/unitary/multiparenthcond.c.scop,
+	* tests/unitary/functioncall.c.scop,
+	* tests/unitary/ternary.c.scop,
+	* tests/unitary/increment.c.scop,
+	* tests/unitary/comments.c.scop,
+	* tests/unitary/minloopsimple.c.scop,
+	* tests/unitary/maxloopsimple.c.scop,
+	* tests/unitary/minmax.c.scop,
+	* tests/unitary/simplecond.c.scop,
+	* tests/unitary/complexprog.c.scop,
+	* tests/unitary/twoconds.c.scop,
+	* tests/unitary/complexop.c.scop,
+	* tests/unitary/noloop.c.scop,
+	* tests/unitary/binop.c.scop,
+	* tests/unitary/twocondincond.c.scop,
+	* tests/unitary/basicnest.c.scop,
+	* tests/unitary/negassign.c.scop,
+	* tests/unitary/simpleloop.c.scop,
+	* tests/unitary/noloop2.c.scop,
+	* tests/ax-do.c.scop,
+	* tests/swim.c.scop,
+	* tests/iir_4_64.c.scop,
+	* tests/gauss.c.scop,
+	* tests/gemver.c.scop: Update the reference files.
+
+2009-01-30  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
 
 	* source/scanner.l: Allow variable id to start with _.
 
 	* tests/unitary/underscore.c,
 	* tests/unitary/underscore.c.scop: Add test case.
 	* tests/Makefile.am: Update accordingly.
-	
+
 2008-11-01  Cedric Bastoul  <cedric.bastoul@inria.fr>
 	Replace Polylib "Value" with "clan_int_t" to denote the integer type.
 	Plus some fixes on matrix list handling.

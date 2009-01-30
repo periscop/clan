@@ -1,4 +1,12 @@
 2008-11-01  Cedric Bastoul  <cedric.bastoul@inria.fr>
+
+	* source/scanner.l: Allow variable id to start with _.
+
+	* tests/unitary/underscore.c,
+	* tests/unitary/underscore.c.scop: Add test case.
+	* tests/Makefile.am: Update accordingly.
+	
+2008-11-01  Cedric Bastoul  <cedric.bastoul@inria.fr>
 	Replace Polylib "Value" with "clan_int_t" to denote the integer type.
 	Plus some fixes on matrix list handling.
 

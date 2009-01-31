@@ -46,6 +46,7 @@
 
 # define CLAN_RELEASE "@PACKAGE_VERSION@"
 # define CLAN_VERSION "@BITS@"
+# define @CLAN_INT_T@
 
 # include <clan/macros.h>
 # include <clan/matrix.h>

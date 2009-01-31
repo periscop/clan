@@ -54,7 +54,7 @@ AM_INIT_AUTOMAKE([1.9 tar-ustar no-define foreign dist-bzip2])
 
 dnl default version
 BITS="64"
-CPPFLAGS=-DLINEAR_VALUE_IS_LONGLONG
+CLAN_INT_T=CLAN_INT_T_IS_LONGLONG
 
 
 dnl /**************************************************************************
@@ -103,7 +103,7 @@ AC_ARG_WITH(gmp,
 	  gmp_package=$withval &&
           GMP_INC=$gmp_package/include &&
           GMP_LIB=$gmp_package/lib &&
-          CPPFLAGS=-DLINEAR_VALUE_IS_MP &&
+          CLAN_INT_T=CLAN_INT_T_IS_MP &&
           NEED_MP="yes"])
 
 AC_ARG_WITH(gmp-include,
@@ -111,7 +111,7 @@ AC_ARG_WITH(gmp-include,
 	[ echo "Package gmp-include : $withval" &&
 	  gmp_include_package=$withval &&
           GMP_INC=$gmp_include_package &&
-          CPPFLAGS=-DLINEAR_VALUE_IS_MP &&
+          CLAN_INT_T=CLAN_INT_T_IS_MP &&
 	  NEED_MP="yes"])
 
 AC_ARG_WITH(gmp-library,
@@ -119,27 +119,30 @@ AC_ARG_WITH(gmp-library,
 	[ echo "Package gmp-library : $withval" &&
 	  gmp_library_package=$withval &&
           GMP_LIB=$gmp_library_package &&
-          CPPFLAGS=-DLINEAR_VALUE_IS_MP &&
+          CLAN_INT_T=CLAN_INT_T_IS_MP &&
 	  NEED_MP="yes"])
 
 AC_ARG_ENABLE(int-version,
 	[  --enable-int-version    'int' (32 bits) version is built],
 	[ echo "Package int : $enableval" &&
 	  BITS="32" &&
-          CPPFLAGS=-DLINEAR_VALUE_IS_LONG])
+          CLAN_INT_T=CLAN_INT_T_IS_LONG])
 
 AC_ARG_ENABLE(llint-version,
 	[  --enable-llint-version  'long long int' (64 bits) version is built],
 	[ echo "Package long long int : $enableval" &&
 	  BITS="64" &&
-          CPPFLAGS=-DLINEAR_VALUE_IS_LONGLONG])
+          CLAN_INT_T=CLAN_INT_T_IS_LONGLONG])
 
 AC_ARG_ENABLE(mp-version,
 	[  --enable-mp-version     'MP' (multiple precision) version is built],
 	[ echo "Package mp : $enableval" &&
 	  BITS="MP" &&
-          CPPFLAGS=-DLINEAR_VALUE_IS_MP &&
+          CLAN_INT_T=CLAN_INT_T_IS_MP &&
           NEED_MP="yes"])
+
+dnl FIXME: should be removed...
+CPPFLAGS=-D$CLAN_INT_T
 
 dnl /**************************************************************************
 dnl  *                            Where is GMP?                               *
@@ -207,6 +210,7 @@ dnl  **************************************************************************/
 
 dnl Substitutions to do.
 AC_SUBST(BITS)
+AC_SUBST(CLAN_INT_T)
 AC_SUBST(ac_aux_dir)
 
 dnl Configure Makefiles.

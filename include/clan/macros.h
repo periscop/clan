@@ -39,23 +39,23 @@
 # define CLAN_MACROS_H
 
 
-# if defined(LINEAR_VALUE_IS_LONGLONG)
+# if defined(CLAN_INT_T_IS_LONGLONG)
 #  define CLAN_FMT     "%4lld"
 #  define CLAN_FMT_TXT "%lld"
 #  define clan_int_t long long
 
-# elif defined(LINEAR_VALUE_IS_LONG)
+# elif defined(CLAN_INT_T_IS_LONG)
 #  define CLAN_FMT     "%4ld"
 #  define CLAN_FMT_TXT "%ld"
 #  define clan_int_t long int
 
-# elif defined(LINEAR_VALUE_IS_MP)  /* GNUMP */
+# elif defined(CLAN_INT_T_IS_MP)  /* GNUMP */
 #  define CLAN_FMT     "%4s"
 #  define CLAN_FMT_TXT "%s"
 #  define clan_int_t mpz_t
 
 # else
-#  error Define LINEAR_VALUE_IS_xxx to use this file.
+#  error Define CLAN_INT_T_IS_xxx to use this file.
 
 # endif
 

@@ -1,11 +1,19 @@
 2009-01-30  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
 
+	* NEWS,
+	* README,
+	* THANKS,
+	* AUTHORS,
+	* COPYING.LESSER: Add standard GNU/LGPL files.
+
+2009-01-30  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+
 	* tests/checker.sh: Add --ignore-matching-line diff option to
 	avoid failures on test reference files when Clan version changes.
 
 2009-01-30  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
 	NOTE: Clan has been bumped to 0.5.0 at some point.
-	
+
 	* tests/change_clan_version_in_refs.sh: New. Test script to update
 	the version of clan in the test files. Must be used after each
 	modification of the version in configure.ac.

@@ -1,3 +1,8 @@
+2009-02-01  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+
+	* source/parser.y: Ensure null read/written info is always a
+	0-sized matrix.
+
 2009-01-30  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
 
 	* NEWS,
@@ -70,7 +75,7 @@
 
 2008-11-01  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
 
-	* Makefile.am: Remove useless re-copy of config/fm.m4 in dist-hook.
+	* Makefile.am: Remove useless re-copy of config/clan.m4 in dist-hook.
 
 2008-10-15  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
 

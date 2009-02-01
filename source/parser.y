@@ -310,6 +310,12 @@ instruction:
         parser_statement->nb_iterators = parser_depth;
         parser_statement->iterators = clan_symbol_iterators(parser_iterators,
                                                             parser_depth);
+	if (parser_statement->write == NULL)
+	  parser_statement->write = 
+	    clan_matrix_malloc(0, parser_domain->NbColumns);
+	if (parser_statement->read == NULL)
+	  parser_statement->read = 
+	    clan_matrix_malloc(0, parser_domain->NbColumns);
         parser_recording = CLAN_FALSE;
         clan_statement_add(&(parser_scop->statement),parser_statement);
 	/* We were parsing a statement without iterator. Restore the

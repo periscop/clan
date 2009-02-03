@@ -1,5 +1,9 @@
 2009-02-01  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
 
+	* include/clan/macros.h: Increase the maximal sizes of loops.
+
+2009-02-01  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+
 	* source/parser.y: Ensure null read/written info is always a
 	0-sized matrix.
 

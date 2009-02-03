@@ -61,9 +61,9 @@
 
 # define CLAN_DEBUG             1 /* Set to 1 for debug mode, 0 otherwise */
 
-# define CLAN_MAX_STRING     1024 /* Max string length (e.g. stmt bodies) */
-# define CLAN_MAX_DEPTH         5 /* Max loop depth (max iterator number) */
-# define CLAN_MAX_PARAMETERS    5 /* Max parameter number */
+# define CLAN_MAX_STRING     2048 /* Max string length (e.g. stmt bodies) */
+# define CLAN_MAX_DEPTH        10 /* Max loop depth (max iterator number) */
+# define CLAN_MAX_PARAMETERS   10 /* Max parameter number */
 # define CLAN_MAX_CONSTRAINTS  10 /* Max contraint number for a domain */
 # define CLAN_TRUE              1
 # define CLAN_FALSE             0

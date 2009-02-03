@@ -88,7 +88,7 @@
 %token <value>  INTEGER
 
 %token syRPARENTHESIS syLPARENTHESIS syRBRACKET syLBRACKET syRBRACE syLBRACE
-%token sySEMICOLON syCOMMA syPOINT 
+%token sySEMICOLON syCOMMA syPOINT
 
 %token opEQUAL opLEQ opGEQ opLOWER opGREATER opPLUS opMINUS
 %token opINCREMENTATION opDECREMENTATION opNOT
@@ -96,7 +96,7 @@
 %token opASSIGNMENT
 %token opPLUSEQUAL opMINUSEQUAL opMULTIPLYEQUAL opDIVIDEEQUAL
 %token opMODEQUAL opANDEQUAL opOREQUAL opCOMPEQUAL
-%token opLAND opLOR opQMARK opCOLON 
+%token opLAND opLOR opQMARK opCOLON
 
 %left opPLUS opMINUS
 %left opMULTIPLY opDIVIDE opMOD opAND opOR opCOMP
@@ -311,10 +311,10 @@ instruction:
         parser_statement->iterators = clan_symbol_iterators(parser_iterators,
                                                             parser_depth);
 	if (parser_statement->write == NULL)
-	  parser_statement->write = 
+	  parser_statement->write =
 	    clan_matrix_malloc(0, parser_domain->NbColumns);
 	if (parser_statement->read == NULL)
-	  parser_statement->read = 
+	  parser_statement->read =
 	    clan_matrix_malloc(0, parser_domain->NbColumns);
         parser_recording = CLAN_FALSE;
         clan_statement_add(&(parser_scop->statement),parser_statement);
@@ -425,7 +425,7 @@ affine_expression:
   | affine_expression opMINUS affine_expression
       {
         $$ = clan_vector_sub($1,$3);
-        clan_vector_free($1);
+	clan_vector_free($1);
         clan_vector_free($3);
       }
   | syRPARENTHESIS affine_expression syLPARENTHESIS
@@ -568,7 +568,7 @@ condition:
 	$$ = clan_matrix_from_vector(res);
 	clan_vector_free(res);
         clan_vector_free($1);
-        clan_vector_free($3);
+	clan_vector_free($3);
       }
 /*
  * Rule 6: condition -> ( condition )
@@ -717,7 +717,7 @@ expression:
   | expression binary_operator expression %prec MAXPRIORITY
       {
         $$ = clan_matrix_concat($1,$3);
-        clan_matrix_free($1);
+	clan_matrix_free($1);
         clan_matrix_free($3);
       }
 /*

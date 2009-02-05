@@ -93,6 +93,7 @@ UNITARY_TEST_FILES             	=			\
 	$(top_srcdir)/tests/unitary/redefiter.c		\
 	$(top_srcdir)/tests/unitary/comments.c		\
 	$(top_srcdir)/tests/unitary/underscore.c	\
+	$(top_srcdir)/tests/unitary/parenthesis.c	\
 	$(top_srcdir)/tests/unitary/increment.c
 
 

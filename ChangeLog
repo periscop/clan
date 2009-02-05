@@ -1,3 +1,16 @@
+2009-02-05  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+	This patch adds the support for expression such as
+	..(i).. everywhere.  Expressions such as ..(i+..).. are not
+	handled yet: for ex 2 * (i+1).
+
+	* source/parser.y: Fix the grammar to handle parenthesis around an
+	identifier.
+
+	* tests/unitary/parenthesis.c,
+	* tests/unitary/parenthesis.scop: New. Unitary test files for
+	parenthesis around identifiers.
+	* tests/Makefile.am: Update accordingly.
+
 2009-02-01  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
 
 	* include/clan/macros.h: Increase the maximal sizes of loops.

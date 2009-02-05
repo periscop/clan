@@ -104,16 +104,17 @@
 %left opNOT
 %left MAXPRIORITY /* Dummy token to help in removing shift/reduce conflicts */
 
-%type <setex> condition
-%type <setex> min_affine_expression
-%type <setex> max_affine_expression
-%type <affex> affine_expression
-%type <affex> term
-%type <setex> array_index
-%type <setex> variable
-%type <setex> variable_list
-%type <setex> expression
-%type <rw>    assignment
+%type <setex>  condition
+%type <setex>  min_affine_expression
+%type <setex>  max_affine_expression
+%type <affex>  affine_expression
+%type <affex>  term
+%type <setex>  array_index
+%type <setex>  variable
+%type <setex>  variable_list
+%type <setex>  expression
+%type <rw>     assignment
+%type <symbol> id
 
 %%
 
@@ -180,7 +181,7 @@ instruction:
  */
     FOR
     syRPARENTHESIS
-    ID
+    id
       {
         clan_symbol_p symbol;
         symbol = clan_symbol_add(&parser_symbol,$3,
@@ -338,15 +339,15 @@ instruction:
  *
  */
 incrementation:
-    ID opINCREMENTATION
+    id opINCREMENTATION
       {
         free($1);
       }
-  | opINCREMENTATION ID
+  | opINCREMENTATION id
       {
         free($2);
       }
-  | ID opASSIGNMENT ID opPLUS INTEGER
+  | id opASSIGNMENT id opPLUS INTEGER
      {
        if ($5 != 1)
 	 {
@@ -356,7 +357,7 @@ incrementation:
        free ($1);
        free ($3);
      }
-  | ID opPLUSEQUAL INTEGER
+  | id opPLUSEQUAL INTEGER
      {
        if ($3 != 1)
 	 {
@@ -416,7 +417,7 @@ affine_expression:
       {
         $$ = $1;
       }
-  | affine_expression opPLUS  affine_expression
+  | affine_expression opPLUS affine_expression
       {
         $$ = clan_vector_add($1,$3);
         clan_vector_free($1);
@@ -449,9 +450,9 @@ term:
         $$ = clan_vector_term(parser_symbol,$1,NULL);
       }
 /*
- * Rule 2: term -> ID
+ * Rule 2: term -> id
  */
-  | ID
+  | id
       {
         clan_symbol_add(&parser_symbol,$1,CLAN_TYPE_UNKNOWN,parser_depth);
         $$ = clan_vector_term(parser_symbol,1,$1);
@@ -465,18 +466,18 @@ term:
         $$ = clan_vector_term(parser_symbol,-($2),NULL);
       }
 /*
- * Rule 4: term -> INT * ID
+ * Rule 4: term -> INT * id
  */
-  | INTEGER opMULTIPLY ID
+  | INTEGER opMULTIPLY id
       {
         clan_symbol_add(&parser_symbol,$3,CLAN_TYPE_UNKNOWN,parser_depth);
         $$ = clan_vector_term(parser_symbol,$1,$3);
         free($3);
       }
 /*
- * Rule 5: term -> - INT * ID
+ * Rule 5: term -> - INT * id
  */
-  | opMINUS INTEGER opMULTIPLY ID
+  | opMINUS INTEGER opMULTIPLY id
       {
         clan_symbol_add(&parser_symbol,$4,CLAN_TYPE_UNKNOWN,parser_depth);
         $$ = clan_vector_term(parser_symbol,-($2),$4);
@@ -759,7 +760,7 @@ variable:
  * Rule 1: variable -> id
  * ex: variable -> a
  */
-    ID
+    id
       {
         int rank;
         clan_matrix_p matrix;
@@ -781,7 +782,7 @@ variable:
  * Rule 2: variable -> id array_index
  * ex: variable -> a[i][j]
  */
-  | ID array_index
+  | id array_index
       {
         int rank;
         clan_symbol_add(&parser_symbol,$1,CLAN_TYPE_ARRAY,parser_depth);
@@ -794,7 +795,7 @@ variable:
  * Rule 3: variable -> id ( variable_list )
  * ex: variable -> a(b,c,d)
  */
-   | ID syRPARENTHESIS variable_list syLPARENTHESIS
+   | id syRPARENTHESIS variable_list syLPARENTHESIS
       {
 	$$ = $3;
 	free($1);
@@ -868,6 +869,29 @@ array_index:
         clan_vector_free($3);
         $$ = $1;
       }
+  ;
+
+
+/*
+ * Rules to eliminate the parenthesis around an identifier.
+ *
+ * return <symbol>
+ */
+id:
+/*
+ * Rule 1: id -> ID
+ */
+    ID 
+     {
+       $$ = $1;
+     }
+/*
+ * Rule 2: id -> ( ID )
+ */
+  | syRPARENTHESIS ID syLPARENTHESIS
+     {
+       $$ = $2;
+     }
   ;
 
 NUMBER:

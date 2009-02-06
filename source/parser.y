@@ -482,28 +482,14 @@ term:
         $$ = clan_vector_term(parser_symbol, ($1) * ($3), NULL);
       }
 /*
- * Rule 6: term -> INT + INT
- */
-  | INTEGER opPLUS INTEGER
-      {
-        $$ = clan_vector_term(parser_symbol, ($1) + ($3), NULL);
-      }
-/*
- * Rule 7: term -> INT - INT
- */
-  | INTEGER opMINUS INTEGER
-      {
-        $$ = clan_vector_term(parser_symbol, ($1) - ($3), NULL);
-      }
-/*
- * Rule 8: term -> INT / INT
+ * Rule 6: term -> INT / INT
  */
   | INTEGER opDIVIDE INTEGER
       {
         $$ = clan_vector_term(parser_symbol, ($1) / ($3), NULL);
       }
 /*
- * Rule 9: term -> - INT * id
+ * Rule 7: term -> - INT * id
  */
   | opMINUS INTEGER opMULTIPLY id
       {

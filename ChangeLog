@@ -1,3 +1,12 @@
+2009-02-06  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+
+	* source/parser.y: Fix a minor regression.
+
+	* tests/unitary/intaddit.c,
+	* tests/unitary/intaddit.c.scop: New. Test case for the
+	regression.
+	* tests/Makefile.am: Update accordingly.
+
 2009-02-05  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
 	This patch adds the support for expression such as
 	..(i).. everywhere.  Expressions such as ..(i+..).. are not

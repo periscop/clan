@@ -1,3 +1,19 @@
+2009-02-10  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+	This patch adds the support of iterators as RHS of assignments,
+	for instance x = i * j.
+
+	* include/clan/clan.h.in,
+	* include/clan/macros.h,
+	* source/parser.y,
+	* source/matrix.c,
+	* source/statement.c: Support the assignment of an iterator as an
+	RHS of a statement.
+
+	* tests/unitary/assigniter.c,
+	* tests/unitary/assigniter.c.scop: New. Test case for iterator
+	assignment.
+	* tests/Makefile.am: Update accordingly.
+
 2009-02-06  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
 
 	* source/parser.y: Fix a minor regression.

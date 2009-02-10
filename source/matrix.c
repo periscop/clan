@@ -318,7 +318,9 @@ clan_matrix_print_dot_scop(FILE * file, clan_matrix_p matrix, int type,
     {
       if (CLAN_notzero_p(matrix->p[i][0]))
       {
-	fprintf(file,"   ## %s",arrays[CLAN_get_si(matrix->p[i][0]) - 1]);
+	if (strncmp(arrays[CLAN_get_si(matrix->p[i][0]) - 1], 
+		    CLAN_FAKE_ARRAY, strlen(CLAN_FAKE_ARRAY)))
+	  fprintf(file,"   ## %s",arrays[CLAN_get_si(matrix->p[i][0]) - 1]);
 	k = i;
 	do
 	{

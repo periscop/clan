@@ -95,6 +95,7 @@ UNITARY_TEST_FILES             	=			\
 	$(top_srcdir)/tests/unitary/underscore.c	\
 	$(top_srcdir)/tests/unitary/parenthesis.c	\
 	$(top_srcdir)/tests/unitary/intaddit.c		\
+	$(top_srcdir)/tests/unitary/assigniter.c	\
 	$(top_srcdir)/tests/unitary/increment.c
 
 

@@ -70,6 +70,8 @@
    clan_matrix_p    parser_domain;      /**< Current iteration domain */
    int              parser_nb_cons = 0; /**< Current number of constraints */
    int *            parser_consperdim;  /**< Constraint nb for each dimension */
+   int              parser_fake_arrays = 0; /**< Current count of fake
+					       array ids */
 
 %}
 
@@ -778,17 +780,25 @@ variable:
       {
         int rank;
         clan_matrix_p matrix;
-	clan_symbol_p symbol = clan_symbol_lookup(parser_symbol, (char*)$1);
+	char* s = (char*) $1;
+	clan_symbol_p symbol = clan_symbol_lookup(parser_symbol, s);
+	int fake_array = 0;
+	// Special code to treat iterators as RHS. We emulate a fake
+	// array, with a distinct array name per access of the
+	// iterator as RHS.
 	if (symbol && symbol->type == CLAN_TYPE_ITERATOR)
 	  {
-	    fprintf(stderr,"[Clan] Error: the input file is not a valid SCoP"
-		     "\n\t> An iterator is used as the RHS of an assignment\n");
-	    exit(1);
+	    s = (char*) malloc(sizeof(char) * 12 + strlen(CLAN_FAKE_ARRAY));
+	    sprintf(s, "%s_%d", CLAN_FAKE_ARRAY, parser_fake_arrays++);
+	    symbol = clan_symbol_lookup(parser_symbol, s);
+	    fake_array = 1;
 	  }
-        clan_symbol_add(&parser_symbol,$1,CLAN_TYPE_ARRAY,parser_depth);
-        rank = clan_symbol_get_rank(parser_symbol,$1);
+        clan_symbol_add(&parser_symbol, s, CLAN_TYPE_ARRAY, parser_depth);
+        rank = clan_symbol_get_rank(parser_symbol, s);
         matrix = clan_matrix_malloc(1,CLAN_MAX_DEPTH + CLAN_MAX_PARAMETERS + 2);
-        clan_matrix_tag_array(matrix,rank);
+        clan_matrix_tag_array(matrix, rank);
+	if (fake_array) 
+	  CLAN_set_si(matrix->p[0][clan_symbol_get_rank(parser_symbol, $1)], 1);
         $$ = matrix;
         free($1);
       }
@@ -895,7 +905,7 @@ id:
 /*
  * Rule 1: id -> ID
  */
-    ID 
+    ID
      {
        $$ = $1;
      }

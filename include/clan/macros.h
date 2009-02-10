@@ -76,7 +76,11 @@
 # define CLAN_TYPE_SCATTERING   7
 # define CLAN_TYPE_ACCESS       8
 # define CLAN_TYPE_UNKNOWN      9
-
+# define CLAN_FAKE_ARRAY	"fakearray" /* Name prefix of the fake
+					       arrays identifiers
+					       created when an
+					       iterator is on the RHS
+					       of a statement. */
 
 /*+****************************************************************************
  *                              CLAN GMP MACROS                               *

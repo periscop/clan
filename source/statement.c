@@ -70,7 +70,7 @@ clan_statement_print_structure(FILE * file, clan_statement_p statement,
   /* Go to the right level. */
   for (j = 0; j < level; j++)
     fprintf(file,"|\t");
-     
+
   if (statement != NULL)
     fprintf(file,"+-- clan_statement_t (S%d)\n",number);
   else

@@ -516,6 +516,7 @@ clan_matrix_read(FILE* foo)
 	      exit(1);
 	    }
 #if defined(LINEAR_VALUE_IS_MP)
+      long long val;
 	  sscanf(str, "%lld", &val);
 	  mpz_set_si(*p++, val);
 #else
@@ -619,6 +620,7 @@ clan_matrix_read_arrays(FILE* foo, char*** arrays, int* nb_arr)
 	      exit(1);
 	    }
 #if defined(LINEAR_VALUE_IS_MP)
+      long long val;
 	  sscanf(str, "%lld", &val);
 	  mpz_set_si(*p++, val);
 #else

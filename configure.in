@@ -139,10 +139,11 @@ AC_ARG_ENABLE(mp-version,
 	[ echo "Package mp : $enableval" &&
 	  BITS="MP" &&
           CLAN_INT_T=CLAN_INT_T_IS_MP &&
+          CPPFLAGS="$CPPFLAGS -DLINEAR_VALUE_IS_MP"
           NEED_MP="yes"])
 
 dnl FIXME: should be removed...
-CPPFLAGS=-D$CLAN_INT_T
+CPPFLAGS="$CPPFLAGS -D$CLAN_INT_T"
 
 dnl /**************************************************************************
 dnl  *                            Where is GMP?                               *

@@ -50,6 +50,7 @@
 #  define clan_int_t long int
 
 # elif defined(CLAN_INT_T_IS_MP)  /* GNUMP */
+#include <gmp.h>
 #  define CLAN_FMT     "%4s"
 #  define CLAN_FMT_TXT "%s"
 #  define clan_int_t mpz_t

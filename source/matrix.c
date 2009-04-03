@@ -639,9 +639,9 @@ clan_matrix_read_arrays(FILE* foo, char*** arrays, int* nb_arr)
 	  if (count && CLAN_get_si(matrix->p[i][0]))
 	    {
 	      /* Increase the buffer size if we run out of space. */
-	      if (CLAN_get_si(matrix->p[i][0] - 1) > *nb_arr)
+	      if (CLAN_get_si(matrix->p[i][0]) - 1 > *nb_arr)
 		{
-		  *nb_arr = CLAN_get_si(matrix->p[i][0] - 1);
+		  *nb_arr = CLAN_get_si(matrix->p[i][0]) - 1;
 		  *arrays = (char**) realloc(*arrays,
 					     sizeof(char*) * (*nb_arr + 1));
 		}

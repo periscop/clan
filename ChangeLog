@@ -1,4 +1,8 @@
-2009-03-21  Uday K Bondhugula  
+2009-04-27  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+
+	* source/scop.c: Add clan_scop_dup function.
+
+2009-03-21  Uday K Bondhugula
 	Fixes for gmp compilation
 
 	* trunk/configure.in (def of LINEAR_VALUE_IS_MP under --enable-mp-version)

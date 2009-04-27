@@ -94,6 +94,7 @@ char*	    clan_scop_tag_content_from_string(char*, char*, char*);
  ******************************************************************************/
 clan_scop_p clan_scop_malloc();
 void        clan_scop_free(clan_scop_p);
+clan_scop_p clan_scop_dup(clan_scop_p);
 
 
 /*+****************************************************************************

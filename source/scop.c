@@ -732,6 +732,61 @@ clan_scop_free(clan_scop_p scop)
 }
 
 
+
+/**
+ * clan_scop_dup function:
+ * This function returns a fresh identical (non shadow) copy of the
+ * input scop.
+ * \param scop   The scop whose information have to be printed.
+ **
+ */
+clan_scop_p
+clan_scop_dup(clan_scop_p scop)
+{
+  int i;
+  clan_statement_p stm;
+  clan_statement_p tmp;
+  clan_scop_p ret = clan_scop_malloc();
+  ret->context = clan_matrix_copy(scop->context);
+  ret->nb_parameters = scop->nb_parameters;
+  ret->parameters = (char**) malloc(sizeof(char*) * ret->nb_parameters);
+  for (i = 0; i < ret->nb_parameters; ++i)
+    ret->parameters[i] = strdup(scop->parameters[i]);
+  ret->nb_arrays = scop->nb_arrays;
+  ret->arrays = (char**) malloc(sizeof(char*) * ret->nb_arrays);
+  for (i = 0; i < ret->nb_arrays; ++i)
+    ret->arrays[i] = strdup(scop->arrays[i]);
+
+  for (stm = scop->statement; stm; stm = stm->next)
+    {
+      clan_statement_p newstm = clan_statement_malloc();
+      newstm->domain = clan_matrix_list_malloc();
+      newstm->domain->elt = clan_matrix_copy(stm->domain->elt);
+      newstm->schedule = clan_matrix_copy(stm->schedule);
+      newstm->read = clan_matrix_copy(stm->read);
+      newstm->write = clan_matrix_copy(stm->write);
+      newstm->nb_iterators = stm->nb_iterators;
+      newstm->iterators = (char**) malloc(sizeof(char*) * newstm->nb_iterators);
+      for (i = 0; i < newstm->nb_iterators; ++i)
+	newstm->iterators[i] = strdup(stm->iterators[i]);
+      newstm->body = strdup (stm->body);
+      if (ret->statement == NULL)
+	ret->statement = tmp = newstm;
+      else
+	{
+	  tmp->next = newstm;
+	  tmp = tmp->next;
+	}
+    }
+  if (scop->optiontags)
+    ret->optiontags = strdup(scop->optiontags);
+  ret->usr = scop->usr;
+
+  return ret;
+}
+
+
+
 /*+****************************************************************************
  *                            Processing functions                            *
  ******************************************************************************/

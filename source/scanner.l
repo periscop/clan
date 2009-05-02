@@ -53,7 +53,7 @@
 
    int  scanner_parsing = CLAN_FALSE;     /**< Do we parse or not ? */
    int  scanner_comment = 0;              /**< Comment nesting depth */
-   char scanner_latest_text[CLAN_MAX_STRING]; /**< Latest text read */
+   char scanner_latest_text[SCOPLIB_MAX_STRING]; /**< Latest text read */
 %}
 
 %x LINECOMMENT

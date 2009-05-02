@@ -51,7 +51,7 @@
    int yylex(void);
    void yyerror(char *);
    void clan_parser_log(char *);
-   clan_scop_p clan_parse(FILE *, clan_options_p);
+   scoplib_scop_p clan_parse(FILE *, clan_options_p);
 
    extern FILE * yyin;                  /**< File to be read by Lex */
    extern char scanner_latest_text[];   /**< Latest text read by Lex */
@@ -59,27 +59,29 @@
    /* This is the "parser state", a collection of variables that vary
     * during the parsing and thanks to we can extract all SCoP informations.
     */
-   clan_scop_p      parser_scop;        /**< SCoP in construction */
-   clan_statement_p parser_statement;   /**< Statement in construction */
-   clan_symbol_p    parser_symbol;      /**< Top of the symbol table */
-   int              parser_recording;   /**< Boolean: do we record or not? */
-   char *           parser_record;      /**< What we record (statement body) */
-   int              parser_depth = 0;   /**< Current loop depth */
-   int *            parser_scheduling;  /**< Current statement scheduling */
-   clan_symbol_p *  parser_iterators;   /**< Current iterator list */
-   clan_matrix_p    parser_domain;      /**< Current iteration domain */
-   int              parser_nb_cons = 0; /**< Current number of constraints */
-   int *            parser_consperdim;  /**< Constraint nb for each dimension */
-   int              parser_fake_arrays = 0; /**< Current count of fake
+   scoplib_scop_p      parser_scop;        /**< SCoP in construction */
+   scoplib_statement_p parser_statement;   /**< Statement in construction */
+   clan_symbol_p       parser_symbol;      /**< Top of the symbol table */
+   int                 parser_recording;   /**< Boolean: do we record or not? */
+   char *              parser_record;      /**< What we record
+					      (statement body) */
+   int                 parser_depth = 0;   /**< Current loop depth */
+   int *               parser_scheduling;  /**< Current statement scheduling */
+   clan_symbol_p *     parser_iterators;   /**< Current iterator list */
+   scoplib_matrix_p    parser_domain;      /**< Current iteration domain */
+   int                 parser_nb_cons = 0; /**< Current number of constraints */
+   int *               parser_consperdim;  /**< Constraint nb for each
+					      dimension */
+   int                 parser_fake_arrays = 0; /**< Current count of fake
 					       array ids */
 
 %}
 
 %union { int value;                     /**< An integer value for integers */
          char * symbol;                 /**< A string for identifiers */
-         clan_vector_p affex;           /**< An affine expression */
-         clan_matrix_p setex;           /**< A set of affine expressions */
-         clan_matrix_p rw[2];           /**< Read and write array accesses */
+         scoplib_vector_p affex;        /**< An affine expression */
+         scoplib_matrix_p setex;        /**< A set of affine expressions */
+         scoplib_matrix_p rw[2];        /**< Read and write array accesses */
        }
 
 %token IGNORE
@@ -132,14 +134,14 @@ program:
 	int nb_parameters, nb_arrays;
 
         parser_scop->parameters = clan_symbol_id_array(parser_symbol,
-                                                       CLAN_TYPE_PARAMETER,
+                                                       SCOPLIB_TYPE_PARAMETER,
                                                        &nb_parameters);
         parser_scop->nb_parameters = nb_parameters;
         parser_scop->arrays = clan_symbol_id_array(parser_symbol,
-                                                   CLAN_TYPE_ARRAY,
+                                                   SCOPLIB_TYPE_ARRAY,
                                                    &nb_arrays);
         parser_scop->nb_arrays = nb_arrays;
-        parser_scop->context = clan_matrix_malloc(0,nb_parameters+2);
+        parser_scop->context = scoplib_matrix_malloc(0,nb_parameters+2);
       }
   |
   ;
@@ -187,10 +189,10 @@ instruction:
       {
         clan_symbol_p symbol;
         symbol = clan_symbol_add(&parser_symbol,$3,
-                                 CLAN_TYPE_ITERATOR,parser_depth+1);
+                                 SCOPLIB_TYPE_ITERATOR,parser_depth+1);
 	/* Ensure that the returned symbol was either a new one,
 	   either from the same type. */
-	if (symbol->type != CLAN_TYPE_ITERATOR)
+	if (symbol->type != SCOPLIB_TYPE_ITERATOR)
 	  {
 	    fprintf (stderr, "[Clan] Error: the input file is not a SCoP\n"
 		     "\t> A loop iterator was previously used as a parameter"
@@ -207,27 +209,27 @@ instruction:
     opASSIGNMENT
     max_affine_expression
       {
-        clan_vector_p parser_i_term = clan_vector_term(parser_symbol,1,$3);
-	clan_vector_tag_inequality(parser_i_term);
+        scoplib_vector_p parser_i_term = clan_vector_term(parser_symbol,1,$3);
+	scoplib_vector_tag_inequality(parser_i_term);
 	int i, j;
 	for (i = 0; i < $6->NbRows; ++i)
 	  {
 	    for (j = 1; j < $6->NbColumns; ++j)
-	      CLAN_oppose($6->p[i][j],$6->p[i][j]);
-	    clan_matrix_add_vector($6,parser_i_term,i);
+	      SCOPVAL_oppose($6->p[i][j],$6->p[i][j]);
+	    scoplib_matrix_add_vector($6,parser_i_term,i);
 	  }
-	clan_matrix_insert_matrix(parser_domain,$6,parser_nb_cons);
+	scoplib_matrix_insert_matrix(parser_domain,$6,parser_nb_cons);
 
         parser_nb_cons += $6->NbRows;
         parser_consperdim[parser_depth] += $6->NbRows;
-	clan_vector_free(parser_i_term);
+	scoplib_vector_free(parser_i_term);
         free($3);
-	clan_matrix_free($6);
+	scoplib_matrix_free($6);
       }
     sySEMICOLON
     condition
       {
-	clan_matrix_insert_matrix(parser_domain,$9,parser_nb_cons);
+	scoplib_matrix_insert_matrix(parser_domain,$9,parser_nb_cons);
         parser_nb_cons += $9->NbRows;
         parser_consperdim[parser_depth] += $9->NbRows;
       }
@@ -252,7 +254,7 @@ instruction:
   |  IF syRPARENTHESIS condition syLPARENTHESIS
       {
 	/* Insert the condition constraint in the current parser domain. */
-	clan_matrix_insert_matrix(parser_domain,$3,parser_nb_cons);
+	scoplib_matrix_insert_matrix(parser_domain,$3,parser_nb_cons);
         parser_nb_cons += $3->NbRows;
       }
     bloc
@@ -262,15 +264,15 @@ instruction:
 	int i, j;
 	for (i = parser_nb_cons; i < parser_domain->NbRows - 1; ++i)
 	  for (j = 0; j < parser_domain->NbColumns; ++j)
-	    CLAN_assign(parser_domain->p[i][j],parser_domain->p[i+1][j]);
+	    SCOPVAL_assign(parser_domain->p[i][j],parser_domain->p[i+1][j]);
       }
 /*
  * Rule 3: instruction -> assignment
  *
  */
   |   {
-        parser_statement = clan_statement_malloc();
-        parser_record = (char *)malloc(CLAN_MAX_STRING * sizeof(char));
+        parser_statement = scoplib_statement_malloc();
+        parser_record = (char *)malloc(SCOPLIB_MAX_STRING * sizeof(char));
         parser_recording = CLAN_TRUE;
         /* Yacc needs Lex to read the next token to ensure we are starting
          * an assignment. So we keep track of the latest text Lex read
@@ -291,19 +293,19 @@ instruction:
 	      free(fakeiter);
 	    else
 	      symbol = clan_symbol_add(&parser_symbol,fakeiter,
-				       CLAN_TYPE_ITERATOR,parser_depth+1);
+				       SCOPLIB_TYPE_ITERATOR,parser_depth+1);
 	    parser_iterators[parser_depth] = symbol;
-	    clan_vector_p constraint =
-	      clan_vector_malloc(parser_domain->NbColumns);
-	    CLAN_set_si(constraint->p[1],1);
+	    scoplib_vector_p constraint =
+	      scoplib_vector_malloc(parser_domain->NbColumns);
+	    SCOPVAL_set_si(constraint->p[1],1);
 	    parser_depth++;
-	    clan_matrix_replace_vector(parser_domain,constraint,parser_nb_cons);
+	    scoplib_matrix_replace_vector(parser_domain,constraint,parser_nb_cons);
 	    parser_nb_cons++;
-	    clan_vector_free(constraint);
+	    scoplib_vector_free(constraint);
 	  }
 	/* Construct the statement structure from the parser state */
-	parser_statement->domain = clan_matrix_list_malloc();
-	parser_statement->domain->elt = clan_matrix_ncopy(parser_domain,
+	parser_statement->domain = scoplib_matrix_list_malloc();
+	parser_statement->domain->elt = scoplib_matrix_ncopy(parser_domain,
 							  parser_nb_cons);
         parser_statement->schedule = clan_matrix_scheduling(parser_scheduling,
                                                             parser_depth);
@@ -315,12 +317,12 @@ instruction:
                                                             parser_depth);
 	if (parser_statement->write == NULL)
 	  parser_statement->write =
-	    clan_matrix_malloc(0, parser_domain->NbColumns);
+	    scoplib_matrix_malloc(0, parser_domain->NbColumns);
 	if (parser_statement->read == NULL)
 	  parser_statement->read =
-	    clan_matrix_malloc(0, parser_domain->NbColumns);
+	    scoplib_matrix_malloc(0, parser_domain->NbColumns);
         parser_recording = CLAN_FALSE;
-        clan_statement_add(&(parser_scop->statement),parser_statement);
+        scoplib_statement_add(&(parser_scop->statement),parser_statement);
 	/* We were parsing a statement without iterator. Restore the
 	   original state */
 	if (old_parser_depth == 0)
@@ -379,13 +381,13 @@ incrementation:
 min_affine_expression:
     affine_expression
       {
-	$$ = clan_matrix_from_vector($1);
-        clan_vector_free($1);
+	$$ = scoplib_matrix_from_vector($1);
+        scoplib_vector_free($1);
       }
   | MIN syRPARENTHESIS min_affine_expression syCOMMA min_affine_expression
     syLPARENTHESIS
      {
-       $$ = clan_matrix_concat($3, $5);
+       $$ = scoplib_matrix_concat($3, $5);
      }
   ;
 
@@ -398,13 +400,13 @@ min_affine_expression:
 max_affine_expression:
     affine_expression
       {
-	$$ = clan_matrix_from_vector($1);
-        clan_vector_free($1);
+	$$ = scoplib_matrix_from_vector($1);
+        scoplib_vector_free($1);
       }
   | MAX syRPARENTHESIS max_affine_expression syCOMMA max_affine_expression
     syLPARENTHESIS
      {
-       $$ = clan_matrix_concat($3, $5);
+       $$ = scoplib_matrix_concat($3, $5);
      }
   ;
 
@@ -421,15 +423,15 @@ affine_expression:
       }
   | affine_expression opPLUS affine_expression
       {
-        $$ = clan_vector_add($1,$3);
-        clan_vector_free($1);
-        clan_vector_free($3);
+        $$ = scoplib_vector_add($1,$3);
+        scoplib_vector_free($1);
+        scoplib_vector_free($3);
       }
   | affine_expression opMINUS affine_expression
       {
-        $$ = clan_vector_sub($1,$3);
-	clan_vector_free($1);
-        clan_vector_free($3);
+        $$ = scoplib_vector_sub($1,$3);
+	scoplib_vector_free($1);
+        scoplib_vector_free($3);
       }
   | syRPARENTHESIS affine_expression syLPARENTHESIS
       {
@@ -456,7 +458,7 @@ term:
  */
   | id
       {
-        clan_symbol_add(&parser_symbol,$1,CLAN_TYPE_UNKNOWN,parser_depth);
+        clan_symbol_add(&parser_symbol,$1,SCOPLIB_TYPE_UNKNOWN,parser_depth);
         $$ = clan_vector_term(parser_symbol,1,$1);
         free($1);
       }
@@ -472,7 +474,7 @@ term:
  */
   | INTEGER opMULTIPLY id
       {
-        clan_symbol_add(&parser_symbol,$3,CLAN_TYPE_UNKNOWN,parser_depth);
+        clan_symbol_add(&parser_symbol,$3,SCOPLIB_TYPE_UNKNOWN,parser_depth);
         $$ = clan_vector_term(parser_symbol,$1,$3);
         free($3);
       }
@@ -495,7 +497,7 @@ term:
  */
   | opMINUS INTEGER opMULTIPLY id
       {
-        clan_symbol_add(&parser_symbol,$4,CLAN_TYPE_UNKNOWN,parser_depth);
+        clan_symbol_add(&parser_symbol,$4,SCOPLIB_TYPE_UNKNOWN,parser_depth);
         $$ = clan_vector_term(parser_symbol,-($2),$4);
         free($4);
       }
@@ -517,11 +519,11 @@ condition:
       {
         /* a<b translates to -a+b-1>=0 */
 	int i;
-	clan_vector_p tmp = clan_vector_add_scalar($1,1);
-	clan_vector_tag_inequality(tmp);
+	scoplib_vector_p tmp = scoplib_vector_add_scalar($1,1);
+	scoplib_vector_tag_inequality(tmp);
 	for (i = 0; i < $3->NbRows; ++i)
-	  clan_matrix_sub_vector($3, tmp, i);
-	clan_vector_free($1);
+	  scoplib_matrix_sub_vector($3, tmp, i);
+	scoplib_vector_free($1);
 	$$ = $3;
       }
 /*
@@ -531,15 +533,15 @@ condition:
       {
         /* a>b translates to a-b-1>=0 */
 	int i, j;
-	clan_vector_p tmp = clan_vector_add_scalar($1,-1);
-	clan_vector_tag_inequality(tmp);
+	scoplib_vector_p tmp = scoplib_vector_add_scalar($1,-1);
+	scoplib_vector_tag_inequality(tmp);
 	for (i = 0; i < $3->NbRows; ++i)
 	  {
 	    for (j = 1; j < $3->NbColumns; ++j)
-	      CLAN_oppose($3->p[i][j],$3->p[i][j]);
-	    clan_matrix_add_vector($3,tmp,i);
+	      SCOPVAL_oppose($3->p[i][j],$3->p[i][j]);
+	    scoplib_matrix_add_vector($3,tmp,i);
 	  }
-	clan_vector_free($1);
+	scoplib_vector_free($1);
 	$$ = $3;
       }
 /*
@@ -549,11 +551,11 @@ condition:
       {
         /* a<=b translates to -a+b>=0 */
 	int i;
-	clan_vector_p tmp = clan_vector_add_scalar($1,0);
-	clan_vector_tag_inequality(tmp);
+	scoplib_vector_p tmp = scoplib_vector_add_scalar($1,0);
+	scoplib_vector_tag_inequality(tmp);
 	for (i = 0; i < $3->NbRows; ++i)
-	  clan_matrix_sub_vector($3,tmp,i);
-	clan_vector_free($1);
+	  scoplib_matrix_sub_vector($3,tmp,i);
+	scoplib_vector_free($1);
 	$$ = $3;
       }
 /*
@@ -563,15 +565,15 @@ condition:
       {
         /* a>=b translates to a-b>=0 */
 	int i, j;
-	clan_vector_p tmp = clan_vector_add_scalar($1,0);
-	clan_vector_tag_inequality(tmp);
+	scoplib_vector_p tmp = scoplib_vector_add_scalar($1,0);
+	scoplib_vector_tag_inequality(tmp);
 	for (i = 0; i < $3->NbRows; ++i)
 	  {
 	    for (j = 1; j < $3->NbColumns; ++j)
-	      CLAN_oppose($3->p[i][j],$3->p[i][j]);
-	    clan_matrix_add_vector($3,tmp,i);
+	      SCOPVAL_oppose($3->p[i][j],$3->p[i][j]);
+	    scoplib_matrix_add_vector($3,tmp,i);
 	  }
-	clan_vector_free($1);
+	scoplib_vector_free($1);
 	$$ = $3;
       }
 /*
@@ -580,12 +582,12 @@ condition:
   | affine_expression opEQUAL affine_expression
       {
         /* a==b translates to a-b==0 */
-	clan_vector_p res = clan_vector_sub($1,$3);
-	clan_vector_tag_equality(res);
-	$$ = clan_matrix_from_vector(res);
-	clan_vector_free(res);
-        clan_vector_free($1);
-	clan_vector_free($3);
+	scoplib_vector_p res = scoplib_vector_sub($1,$3);
+	scoplib_vector_tag_equality(res);
+	$$ = scoplib_matrix_from_vector(res);
+	scoplib_vector_free(res);
+        scoplib_vector_free($1);
+	scoplib_vector_free($3);
       }
 /*
  * Rule 6: condition -> ( condition )
@@ -599,9 +601,9 @@ condition:
  */
   | condition opLAND condition
      {
-       $$ = clan_matrix_concat($1,$3);
-       clan_matrix_free($1);
-       clan_matrix_free($3);
+       $$ = scoplib_matrix_concat($1,$3);
+       scoplib_matrix_free($1);
+       scoplib_matrix_free($3);
      }
   ;
 
@@ -650,8 +652,8 @@ assignment:
  */
   | variable reduction_operator expression sySEMICOLON
       {
-        $$[0] = clan_matrix_concat($1,$3);
-        clan_matrix_free($3);
+        $$[0] = scoplib_matrix_concat($1,$3);
+        scoplib_matrix_free($3);
         $$[1] = $1;
       }
 /*
@@ -660,7 +662,7 @@ assignment:
   | variable unary_operator sySEMICOLON
     {
        $$[0] = $1;
-       $$[1] = clan_matrix_copy($1);
+       $$[1] = scoplib_matrix_copy($1);
     }
 /*
  * Rule 4: assignment -> un_op var;
@@ -668,7 +670,7 @@ assignment:
   | unary_operator variable sySEMICOLON
     {
        $$[0] = $2;
-       $$[1] = clan_matrix_copy($2);
+       $$[1] = scoplib_matrix_copy($2);
     }
 /*
  * Rule 5: assignment -> var;
@@ -733,9 +735,9 @@ expression:
  */
   | expression binary_operator expression %prec MAXPRIORITY
       {
-        $$ = clan_matrix_concat($1,$3);
-	clan_matrix_free($1);
-        clan_matrix_free($3);
+        $$ = scoplib_matrix_concat($1,$3);
+	scoplib_matrix_free($1);
+        scoplib_matrix_free($3);
       }
 /*
  * Rule 5: expression -> ! expression
@@ -756,12 +758,12 @@ expression:
  */
   | expression opQMARK expression opCOLON expression
       {
-	clan_matrix_p tmp = clan_matrix_concat($1,$3);
-        $$ = clan_matrix_concat(tmp,$5);
-	clan_matrix_free(tmp);
-	clan_matrix_free($1);
-	clan_matrix_free($3);
-	clan_matrix_free($5);
+	scoplib_matrix_p tmp = scoplib_matrix_concat($1,$3);
+        $$ = scoplib_matrix_concat(tmp,$5);
+	scoplib_matrix_free(tmp);
+	scoplib_matrix_free($1);
+	scoplib_matrix_free($3);
+	scoplib_matrix_free($5);
       }
   ;
 
@@ -779,26 +781,27 @@ variable:
     id
       {
         int rank;
-        clan_matrix_p matrix;
+        scoplib_matrix_p matrix;
 	char* s = (char*) $1;
 	clan_symbol_p symbol = clan_symbol_lookup(parser_symbol, s);
 	int fake_array = 0;
 	// Special code to treat iterators as RHS. We emulate a fake
 	// array, with a distinct array name per access of the
 	// iterator as RHS.
-	if (symbol && symbol->type == CLAN_TYPE_ITERATOR)
+	if (symbol && symbol->type == SCOPLIB_TYPE_ITERATOR)
 	  {
-	    s = (char*) malloc(sizeof(char) * 12 + strlen(CLAN_FAKE_ARRAY));
-	    sprintf(s, "%s_%d", CLAN_FAKE_ARRAY, parser_fake_arrays++);
+	    s = (char*) malloc(sizeof(char) * 12 + strlen(SCOPLIB_FAKE_ARRAY));
+	    sprintf(s, "%s_%d", SCOPLIB_FAKE_ARRAY, parser_fake_arrays++);
 	    symbol = clan_symbol_lookup(parser_symbol, s);
 	    fake_array = 1;
 	  }
-        clan_symbol_add(&parser_symbol, s, CLAN_TYPE_ARRAY, parser_depth);
+        clan_symbol_add(&parser_symbol, s, SCOPLIB_TYPE_ARRAY, parser_depth);
         rank = clan_symbol_get_rank(parser_symbol, s);
-        matrix = clan_matrix_malloc(1,CLAN_MAX_DEPTH + CLAN_MAX_PARAMETERS + 2);
+        matrix = scoplib_matrix_malloc(1,CLAN_MAX_DEPTH + CLAN_MAX_PARAMETERS + 2);
         clan_matrix_tag_array(matrix, rank);
 	if (fake_array) 
-	  CLAN_set_si(matrix->p[0][clan_symbol_get_rank(parser_symbol, $1)], 1);
+	  SCOPVAL_set_si(matrix->p[0][clan_symbol_get_rank(parser_symbol, $1)],
+			 1);
         $$ = matrix;
         free($1);
       }
@@ -809,7 +812,7 @@ variable:
   | id array_index
       {
         int rank;
-        clan_symbol_add(&parser_symbol,$1,CLAN_TYPE_ARRAY,parser_depth);
+        clan_symbol_add(&parser_symbol,$1,SCOPLIB_TYPE_ARRAY,parser_depth);
         rank = clan_symbol_get_rank(parser_symbol,$1);
         clan_matrix_tag_array($2,rank);
         $$ = $2;
@@ -858,7 +861,7 @@ variable_list:
  */
   | variable_list syCOMMA variable
       {
-	$$ = clan_matrix_concat($1,$3);
+	$$ = scoplib_matrix_concat($1,$3);
       }
 /*
  * Rule 3: variable_list ->
@@ -881,16 +884,17 @@ array_index:
  */
     syRBRACKET affine_expression syLBRACKET
       {
-        $$ = clan_matrix_from_vector($2);
-        clan_vector_free($2);
+        $$ = scoplib_matrix_from_vector($2);
+        scoplib_vector_free($2);
       }
 /*
  * Rule 2: array_index -> array_index [ <affex> ]
  */
   | array_index syRBRACKET affine_expression syLBRACKET
       {
-        clan_matrix_insert_vector($1,$3,CLAN_END);
-        clan_vector_free($3);
+	if ($1 != NULL)
+	  scoplib_matrix_insert_vector($1,$3,$1->NbRows);
+        scoplib_vector_free($3);
         $$ = $1;
       }
   ;
@@ -950,8 +954,8 @@ clan_parser_initialize_state()
   nb_columns = CLAN_MAX_DEPTH + CLAN_MAX_PARAMETERS + 2;
   depth      = CLAN_MAX_DEPTH;
 
-  parser_scop   = clan_scop_malloc();
-  parser_domain = clan_matrix_malloc(nb_rows,nb_columns);
+  parser_scop   = scoplib_scop_malloc();
+  parser_domain = scoplib_matrix_malloc(nb_rows,nb_columns);
   parser_symbol = NULL;
 
   parser_scheduling = (int *)malloc(depth * sizeof(int));
@@ -975,7 +979,7 @@ clan_parser_initialize_state()
 void
 clan_parser_free_state()
 {
-  clan_matrix_free(parser_domain);
+  scoplib_matrix_free(parser_domain);
   clan_symbol_free(parser_symbol);
   free(parser_scheduling);
   free(parser_consperdim);
@@ -986,13 +990,13 @@ clan_parser_free_state()
 /**
  * clan_parse function:
  * this function parses a file to extract a SCoP and returns, if successful,
- * a pointer to the clan_scop_t structure.
+ * a pointer to the scoplib_scop_t structure.
  * \param input   The file to parse (already open).
  * \param options Options for file parsing.
  **
  * - 01/05/2008: First version.
  */
-clan_scop_p
+scoplib_scop_p
 clan_parse(FILE * input, clan_options_p options)
 {
   yyin = input;

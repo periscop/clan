@@ -40,7 +40,8 @@
 # define CLAN_SYMBOL_H
 
 # include <stdio.h>
-# include <clan/macros.h>
+# include <scoplib/scop.h>
+# include <scoplib/macros.h>
 
 # if defined(__cplusplus)
 extern "C"

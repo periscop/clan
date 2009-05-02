@@ -41,9 +41,7 @@
 
 # include <unistd.h>
 
-# include <clan/macros.h>
-# include <clan/matrix.h>
-# include <clan/statement.h>
+# include <scoplib/scop.h>
 # include <clan/options.h>
 
 # if defined(__cplusplus)
@@ -52,57 +50,11 @@ extern "C"
 # endif
 
 
-/**
- * The clan_scop_t structure stores the useful informations of a static
- * control part of a program to process it within a polyhedral framework.
- */
-struct clan_scop
-{
-  clan_matrix_p context;      /**< Constraints on the SCoP parameters */
-  int nb_parameters;          /**< Number of parameters for the SCoP */
-  char ** parameters;         /**< Array of (nb_parameters) parameter names */
-  int nb_arrays;              /**< Number of arrays accessed in the SCoP */
-  char ** arrays;             /**< Array of (nb_arrays) array names */
-  clan_statement_p statement; /**< Statement list of the SCoP */
-  char* optiontags;	      /**< The content (as a 0 terminated
-				 string) of the optional tags. */
-  void* usr;		      /**< A user-defined field, not touched
-				 by clan. */
-};
-typedef struct clan_scop   clan_scop_t;
-typedef struct clan_scop * clan_scop_p;
-
-
-/*+****************************************************************************
- *                          Structure display function                        *
- ******************************************************************************/
-void        clan_scop_print_structure(FILE *, clan_scop_p, int);
-void        clan_scop_print(FILE *, clan_scop_p);
-void        clan_scop_print_dot_scop(FILE *, clan_scop_p, clan_options_p);
-
-
-/******************************************************************************
- *                               Reading function                             *
- ******************************************************************************/
-clan_scop_p clan_scop_read(FILE *, clan_options_p);
-char*	    clan_scop_tag_content(clan_scop_p, char*, char*);
-char*	    clan_scop_tag_content_from_string(char*, char*, char*);
-
-
-/*+****************************************************************************
- *                    Memory allocation/deallocation function                 *
- ******************************************************************************/
-clan_scop_p clan_scop_malloc();
-void        clan_scop_free(clan_scop_p);
-clan_scop_p clan_scop_dup(clan_scop_p);
-
-
 /*+****************************************************************************
  *                            Processing functions                            *
  ******************************************************************************/
-clan_scop_p clan_scop_extract(FILE *, clan_options_p);
-void        clan_scop_compact(clan_scop_p);
-char**	    clan_scop_generate_names(char*, int);
+scoplib_scop_p  clan_scop_extract(FILE *, clan_options_p);
+void		clan_scop_compact(scoplib_scop_p);
 
 
 # if defined(__cplusplus)

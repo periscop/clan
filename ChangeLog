@@ -1,3 +1,36 @@
+2009-05-02  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+	This patch updates Clan to use the ScopLib. All "generic"
+	functions on scop_t, statement_t, matrix_t and vector_t have been
+	substituted by their version from the ScopLib.  Embed a version of
+	the ScopLib, which is compiled by default if no option is
+	given. To use another installed version of the ScopLib, use
+	--disable-internal-scoplib [--with-scoplib=xxx].
+	
+	* include/clan/options.h,
+	* include/clan/clan.h.in,
+	* include/clan/vector.h,
+	* include/clan/macros.h,
+	* include/clan/matrix.h,
+	* include/clan/scop.h,
+	* include/clan/statement.h,
+	* include/clan/symbol.h,
+	* configure.in,
+	* source/parser.y,
+	* source/scanner.l,
+	* source/vector.c,
+	* source/matrix.c,
+	* source/scop.c,
+	* source/statement.c,
+	* source/symbol.c,
+	* source/options.c,
+	* source/clan.c,
+	* tests/checker.sh,
+	* Makefile.am: Remove all functions included in ScopLib,
+	accordingly substitute clan_xx_ types and functions to
+	scoplib_xx_.
+
+	* scoplib/scoplib-0.1.0.tar.gz: New. ScopLib hard copy.
+	
 2009-04-27  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
 
 	* source/scop.c: Add clan_scop_dup function.

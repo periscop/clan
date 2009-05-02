@@ -354,4 +354,3 @@ clan_options_read(int argv, char ** argc, FILE ** input, FILE ** output)
 
   return options;
 }
-

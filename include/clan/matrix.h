@@ -41,6 +41,8 @@
 
 # include <stdio.h>
 # include <clan/macros.h>
+# include <scoplib/matrix.h>
+# include <scoplib/vector.h>
 # include <clan/vector.h>
 
 
@@ -49,93 +51,12 @@ extern "C"
   {
 # endif
 
-
-/**
- * The clan_matrix_t structure stores a matrix information in the PolyLib
- * format (the first entry of each row has a specific meaning). When a row
- * describes a linear constraint, a 0 means it is an equality == 0, a 1 means
- * an inequality >= 0. When a row describes an array access, a number different
- * than 0 is the array identifier (the remainder of the row describes the
- * access function of the first dimension of this array), otherwise it means
- * the row describes access functions for next array dimensions.
- */
-struct clan_matrix
-{
-  unsigned NbRows;     /**< The number of rows */
-  unsigned NbColumns;  /**< The number of columns */
-  clan_int_t ** p;     /**< An array of pointers to the beginning of each row */
-  clan_int_t * p_Init; /**< The matrix is stored here, contiguously in memory */
-  int p_Init_size;     /**< Needed to free the memory allocated by mpz_init. */
-};
-typedef struct clan_matrix   clan_matrix_t;
-typedef struct clan_matrix * clan_matrix_p;
-
-
-/**
- * The clan_matrix_list_t structure describes a (chained) list of
- * matrices. It is used to store the list of matrices for the
- * iteration domain of a statement (possibly being a union of
- * convex domains).
- *
- */
-struct clan_matrix_list
-{
-  clan_matrix_p elt;             /**< An element of the list. */
-  struct clan_matrix_list* next; /**< Pointer to the next element of the list.*/
-};
-typedef struct clan_matrix_list		clan_matrix_list_t;
-typedef struct clan_matrix_list *	clan_matrix_list_p;
-
-
-/*+****************************************************************************
- *                          Structure display function                        *
- ******************************************************************************/
-void          clan_matrix_print_structure(FILE *, clan_matrix_p, int);
-void          clan_matrix_print(FILE *, clan_matrix_p);
-void          clan_matrix_print_dot_scop(FILE *, clan_matrix_p, int,
-                                         int, char **, int, char **,
-					 int, char **);
-
-void          clan_matrix_list_print_structure(FILE *, clan_matrix_list_p, int);
-void          clan_matrix_list_print(FILE *, clan_matrix_list_p);
-void          clan_matrix_list_print_dot_scop(FILE *, clan_matrix_list_p, int,
-					      int, char **, int, char **,
-					      int, char **);
-
-
-/******************************************************************************
- *                               Reading function                             *
- ******************************************************************************/
-clan_matrix_p		clan_matrix_read(FILE *);
-clan_matrix_list_p	clan_matrix_list_read(FILE *);
-clan_matrix_p		clan_matrix_read_arrays(FILE *, char ***, int *);
-
-
-/*+****************************************************************************
- *                    Memory allocation/deallocation function                 *
- ******************************************************************************/
-clan_matrix_p		clan_matrix_malloc(unsigned, unsigned);
-void			clan_matrix_free(clan_matrix_p);
-
-clan_matrix_list_p	clan_matrix_list_malloc();
-void			clan_matrix_list_free(clan_matrix_list_p);
-
 /*+****************************************************************************
  *                            Processing functions                            *
  ******************************************************************************/
-clan_matrix_p clan_matrix_ncopy(clan_matrix_p, int);
-clan_matrix_p clan_matrix_copy(clan_matrix_p);
-void          clan_matrix_replace_vector(clan_matrix_p, clan_vector_p, int);
-void          clan_matrix_insert_vector(clan_matrix_p, clan_vector_p, int);
-void	      clan_matrix_add_vector(clan_matrix_p, clan_vector_p, int);
-void	      clan_matrix_sub_vector(clan_matrix_p, clan_vector_p, int);
-clan_matrix_p clan_matrix_from_vector(clan_vector_p);
-void          clan_matrix_replace_matrix(clan_matrix_p, clan_matrix_p, int);
-void          clan_matrix_insert_matrix(clan_matrix_p, clan_matrix_p, int);
-clan_matrix_p clan_matrix_concat(clan_matrix_p, clan_matrix_p);
-void          clan_matrix_tag_array(clan_matrix_p, int);
-clan_matrix_p clan_matrix_scheduling(int *, int);
-void          clan_matrix_compact(clan_matrix_p, int, int);
+void			clan_matrix_tag_array(scoplib_matrix_p, int);
+scoplib_matrix_p	clan_matrix_scheduling(int *, int);
+void			clan_matrix_compact(scoplib_matrix_p, int, int);
 
 # if defined(__cplusplus)
   }

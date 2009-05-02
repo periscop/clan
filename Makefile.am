@@ -42,7 +42,7 @@
 
 
 #############################################################################
-SUBDIRS 		= doc source include tests
+SUBDIRS 		= @BUILD_SCOPLIB@ doc source include tests
 
 
 #############################################################################
@@ -59,7 +59,6 @@ AUX_DIST                =			\
 	$(ac_aux_dir)/missing			\
 	$(ac_aux_dir)/depcomp
 
-
 MAINTAINERCLEANFILES 	=			\
 	Makefile.in				\
 	aclocal.m4				\
@@ -74,4 +73,8 @@ dist-hook:
 	for file in $(AUX_DIST); do \
 	  cp $$file $(distdir)/$$file; \
 	done
+
+maintainer-clean-hook:
+	(cd $(abs_top_srcdir)/scoplib && rm -rf scoplib-0.1.0)
+
 #############################################################################

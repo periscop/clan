@@ -40,8 +40,14 @@
 # define CLAN_VECTOR_H
 
 # include <stdio.h>
-# include <clan/macros.h>
+# include <scoplib/scop.h>
+# include <scoplib/vector.h>
 # include <clan/symbol.h>
+
+
+# define CLAN_MAX_DEPTH        50 /* Max loop depth (max iterator number) */
+# define CLAN_MAX_PARAMETERS   50 /* Max parameter number */
+# define CLAN_MAX_CONSTRAINTS  50 /* Max contraint number for a domain */
 
 
 # if defined(__cplusplus)
@@ -50,45 +56,11 @@ extern "C"
 # endif
 
 
-/**
- * The clan_vector_t structure stores a vector information in the PolyLib
- * format (the first entry has a specific meaning). When a vector
- * describes a linear constraint, a 0 means it is an equality == 0, a 1 means
- * an inequality >= 0. When the vector describes an array access, a number
- * different than 0 is the array identifier.
- */
-struct clan_vector
-{
-  unsigned Size;  /**< The number of vector entries */
-  clan_int_t * p; /**< An array of values */
-};
-typedef struct clan_vector   clan_vector_t;
-typedef struct clan_vector * clan_vector_p;
-
-
-/*+****************************************************************************
- *                          Structure display function                        *
- ******************************************************************************/
-void          clan_vector_print_structure(FILE *, clan_vector_p, int);
-void          clan_vector_print(FILE *, clan_vector_p);
-
-
-/*+****************************************************************************
- *                    Memory allocation/deallocation function                 *
- ******************************************************************************/
-clan_vector_p clan_vector_malloc(unsigned);
-void          clan_vector_free(clan_vector_p);
-
-
 /*+****************************************************************************
  *                            Processing functions                            *
  ******************************************************************************/
-clan_vector_p clan_vector_term(clan_symbol_p, int, char *);
-clan_vector_p clan_vector_add_scalar(clan_vector_p, int);
-clan_vector_p clan_vector_add(clan_vector_p, clan_vector_p);
-clan_vector_p clan_vector_sub(clan_vector_p, clan_vector_p);
-void          clan_vector_tag_inequality(clan_vector_p);
-void          clan_vector_tag_equality(clan_vector_p);
+scoplib_vector_p clan_vector_term(clan_symbol_p, int, char *);
+
 
 # if defined(__cplusplus)
   }

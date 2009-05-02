@@ -126,10 +126,10 @@ clan_symbol_print_structure(FILE * file, clan_symbol_p symbol, int level)
     fprintf(file,"|\t") ;
     fprintf(file,"Type: ") ;
     switch (symbol->type)
-    { case CLAN_TYPE_ITERATOR : fprintf(file,"Iterator\n");  break;
-      case CLAN_TYPE_PARAMETER: fprintf(file,"Parameter\n"); break;
-      case CLAN_TYPE_ARRAY    : fprintf(file,"Array\n");     break;
-      case CLAN_TYPE_FUNCTION : fprintf(file,"Function\n");  break;
+    { case SCOPLIB_TYPE_ITERATOR : fprintf(file,"Iterator\n");  break;
+      case SCOPLIB_TYPE_PARAMETER: fprintf(file,"Parameter\n"); break;
+      case SCOPLIB_TYPE_ARRAY    : fprintf(file,"Array\n");     break;
+      case SCOPLIB_TYPE_FUNCTION : fprintf(file,"Function\n");  break;
       default : fprintf(file,"Unknown\n") ;
     }
 
@@ -293,24 +293,24 @@ clan_symbol_add(clan_symbol_p * location, char * identifier, int type, int rank)
   /* Else, we allocate and fill a new clan_symbol_t node. */
   symbol = clan_symbol_malloc();
 
-  symbol->identifier = (char *)malloc(CLAN_MAX_STRING * sizeof(char));
+  symbol->identifier = (char *)malloc(SCOPLIB_MAX_STRING * sizeof(char));
   strcpy(symbol->identifier,identifier);
 
   /* If the type was unknown (iterator or parameter) we know now that it is
    * a parameter, it would have been already in the table otherwise.
    */
-  if (type == CLAN_TYPE_UNKNOWN)
-    type = CLAN_TYPE_PARAMETER;
+  if (type == SCOPLIB_TYPE_UNKNOWN)
+    type = SCOPLIB_TYPE_PARAMETER;
   symbol->type = type;
 
   switch (symbol->type)
   {
-    case CLAN_TYPE_ITERATOR : symbol->rank = rank;
+    case SCOPLIB_TYPE_ITERATOR : symbol->rank = rank;
                               symbol_nb_iterators++;
 			      break;
-    case CLAN_TYPE_PARAMETER: symbol->rank = ++symbol_nb_parameters; break;
-    case CLAN_TYPE_ARRAY    : symbol->rank = ++symbol_nb_arrays;     break;
-    case CLAN_TYPE_FUNCTION : symbol->rank = ++symbol_nb_functions;  break;
+    case SCOPLIB_TYPE_PARAMETER: symbol->rank = ++symbol_nb_parameters; break;
+    case SCOPLIB_TYPE_ARRAY    : symbol->rank = ++symbol_nb_arrays;     break;
+    case SCOPLIB_TYPE_FUNCTION : symbol->rank = ++symbol_nb_functions;  break;
   }
 
   /* We put the new symbol at the beginning of the table (easier ;-) !). */
@@ -372,7 +372,7 @@ clan_symbol_get_type(clan_symbol_p symbol, char * identifier)
 /**
  * clan_symbol_iterators function:
  * this function builds the array of original iterator names for the
- * clan_statement_t structures thanks to the parser current state of
+ * scoplib_statement_t structures thanks to the parser current state of
  * parser_depth (depth) and parser_iterators (symbols). "symbols"
  * is an array of references to symbol table entries, one for each
  * loop enclosing the statement.

@@ -42,6 +42,7 @@
 # include <stdio.h>
 # include <scoplib/scop.h>
 # include <scoplib/statement.h>
+# include <clan/matrix.h>
 
 # if defined(__cplusplus)
 extern "C"

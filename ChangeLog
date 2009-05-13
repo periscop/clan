@@ -1,3 +1,7 @@
+2009-05-13  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+
+	* include/clan/statement.h: Add missing include.
+
 2009-05-02  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
 	This patch updates Clan to use the ScopLib. All "generic"
 	functions on scop_t, statement_t, matrix_t and vector_t have been

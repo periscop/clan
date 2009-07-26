@@ -63,13 +63,14 @@ clan_options_print(FILE * foo, clan_options_p options)
   fprintf(foo,"Options:\n");
 
   if (options->name != NULL)
-    fprintf(foo,"name        = %s,\n",options->name);
+    fprintf(foo,"name            = %s,\n",options->name);
   else
-    fprintf(foo,"name        = NULL,\n");
+    fprintf(foo,"name            = NULL,\n");
 
-  fprintf(foo,"castle      = %3d,\n",options->castle);
-  fprintf(foo,"structure   = %3d.\n",options->structure);
-  fprintf(foo,"inputscop   = %3d.\n",options->inputscop);
+  fprintf(foo,"castle          = %3d,\n",options->castle);
+  fprintf(foo,"structure       = %3d.\n",options->structure);
+  fprintf(foo,"inputscop       = %3d.\n",options->inputscop);
+  fprintf(foo,"bounded_context = %3d.\n",options->bounded_context);
 }
 
 
@@ -117,6 +118,7 @@ clan_options_help()
   "                        (default setting: stdout).\n"
   "  -inputscop            Read a .scop as the input.\n"
   "  -arraystag            Dump the arrays table in the <arrays> tag.\n"
+  "  -boundedctxt          Bound all global parameters to be >= -1.\n"
   "  -v, --version         Display the release information (and more).\n"
   "  -h, --help            Display this information.\n\n");
   printf(
@@ -228,6 +230,7 @@ clan_options_malloc(void)
   options->inputscop = 0;    /* Default input is a source file, not a .scop.*/
   options->arraystag = 0;    /* Don't dump the array list in the
 				<arrays> tag. */
+  options->bounded_context = 0;/* Don't bound the global parameters. */
   return options;
 }
 
@@ -278,6 +281,9 @@ clan_options_read(int argv, char ** argc, FILE ** input, FILE ** output)
       else
       if (strcmp(argc[i],"-arraystag") == 0)
         options->arraystag = 1;
+      else
+      if (strcmp(argc[i],"-boundedctxt") == 0)
+        options->bounded_context = 1;
       else
       if ((strcmp(argc[i],"--help") == 0) || (strcmp(argc[i],"-h") == 0))
       {

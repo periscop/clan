@@ -63,6 +63,7 @@ struct clan_options
 		    source file (default). */
   int arraystag; /**< 1 to dump the table of array names between the
 		    <arrays></arrays> tags, 0 otherwise (default). */
+  int bounded_context; /**< 1 to force global parameters >= -1 (default 0) */
 };
 typedef struct clan_options   clan_options_t;
 typedef struct clan_options * clan_options_p;

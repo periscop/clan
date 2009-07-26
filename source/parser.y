@@ -74,6 +74,8 @@
 					      dimension */
    int                 parser_fake_arrays = 0; /**< Current count of fake
 					       array ids */
+   /* Ugly global variable to keep/read Clan options during parsing. */
+   clan_options_p	parser_options = NULL;
 
 %}
 
@@ -141,7 +143,20 @@ program:
                                                    SCOPLIB_TYPE_ARRAY,
                                                    &nb_arrays);
         parser_scop->nb_arrays = nb_arrays;
-        parser_scop->context = scoplib_matrix_malloc(0,nb_parameters+2);
+	if (parser_options->bounded_context)
+	  {
+	    parser_scop->context = scoplib_matrix_malloc(nb_parameters,
+							 nb_parameters+2);
+	    int i;
+	    for (i = 0; i < nb_parameters; ++i)
+	      {
+		SCOPVAL_set_si(parser_scop->context->p[i][0], 1);
+		SCOPVAL_set_si(parser_scop->context->p[i][i+1], 1);
+		SCOPVAL_set_si(parser_scop->context->p[i][nb_parameters +1], 1);
+	      }
+	  }
+	else
+	  parser_scop->context = scoplib_matrix_malloc(0,nb_parameters+2);
       }
   |
   ;
@@ -946,7 +961,7 @@ yyerror(char *s)
  * - 02/05/2008: First version.
  */
 void
-clan_parser_initialize_state()
+clan_parser_initialize_state(clan_options_p options)
 {
   int i, nb_rows, nb_columns, depth;
 
@@ -966,6 +981,7 @@ clan_parser_initialize_state()
     parser_consperdim[i] = 0;
   }
   parser_iterators = (clan_symbol_p *)malloc(depth * sizeof(clan_symbol_p));
+  parser_options = options;
 }
 
 
@@ -1001,7 +1017,7 @@ clan_parse(FILE * input, clan_options_p options)
 {
   yyin = input;
 
-  clan_parser_initialize_state();
+  clan_parser_initialize_state(options);
 
   yyparse();
 

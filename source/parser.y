@@ -944,7 +944,7 @@ array_index:
 
 /*
  * Rules to (1) eliminate the parenthesis around an identifier, and
- * (2) support the structures / methods using the . or the ->
+ * (2) support the &ID reference operator
  * operator.
  *
  * return <symbol>
@@ -965,31 +965,7 @@ id:
        $$ = $2;
      }
 /*
- * Rule 3: id -> ID.ID
- */
-  | ID syPOINT ID
-     {
-       char* concatid =
-	 (char*) malloc (sizeof(char) * (strlen($1) + strlen($3) + 2));
-       strcpy (concatid, $1);
-       strcat (concatid, ".");
-       strcat (concatid, $3);
-       $$ = concatid;
-     }
-/*
- * Rule 4: id -> ID.ID
- */
-  | ID syARROW ID
-     {
-       char* concatid =
-	 (char*) malloc (sizeof(char) * (strlen($1) + strlen($3) + 3));
-       strcpy (concatid, $1);
-       strcat (concatid, "->");
-       strcat (concatid, $3);
-       $$ = concatid;
-     }
-/*
- * Rule 5: id -> & ID
+ * Rule 3: id -> & ID
  */
   | opAND ID
      {

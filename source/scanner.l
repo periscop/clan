@@ -86,6 +86,8 @@
 "min"                  { return clan_scanner(MIN,  yytext,"min");  }
 "max"                  { return clan_scanner(MAX,  yytext,"max");  }
 
+[_A-Za-z]"."[A-Za-z0-9_]* |
+[_A-Za-z]"->"[A-Za-z0-9_]* |
 [_A-Za-z][A-Za-z0-9_]* {
                          char * word;
                          word = (char *)malloc((strlen(yytext)+1)*sizeof(char));

@@ -860,6 +860,19 @@ variable:
 
 
 /*
+ * Dummy rule for basic arithmetic expression. Used in variable_list.
+ */
+arithmetic_expression:
+     NUMBER
+   | arithmetic_expression opMINUS arithmetic_expression
+   | arithmetic_expression opPLUS arithmetic_expression
+   | arithmetic_expression opMULTIPLY arithmetic_expression
+   | arithmetic_expression opDIVIDE arithmetic_expression
+   | syRPARENTHESIS arithmetic_expression syLPARENTHESIS
+   ;
+
+
+/*
  * Rules to describe a list of variables, separated by a comma.
  * return: <setex>
  */
@@ -877,6 +890,20 @@ variable_list:
   | variable_list syCOMMA variable
       {
 	$$ = scoplib_matrix_concat($1,$3);
+      }
+/*
+ * Rule 3: variable_list -> variable_list , arithmetic_expression
+ */
+  | variable_list syCOMMA arithmetic_expression
+      {
+	$$ = $1;
+      }
+/*
+ * Rule 3: variable_list -> arithmetic_expression, variable_list
+ */
+  | arithmetic_expression
+      {
+	$$ = NULL;
       }
 /*
  * Rule 3: variable_list ->
@@ -960,6 +987,13 @@ id:
        strcat (concatid, "->");
        strcat (concatid, $3);
        $$ = concatid;
+     }
+/*
+ * Rule 5: id -> & ID
+ */
+  | opAND ID
+     {
+       $$ = $2;
      }
   ;
 

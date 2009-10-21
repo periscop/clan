@@ -90,6 +90,7 @@ UNITARY_TEST_FILES             	=			\
 	$(top_srcdir)/tests/unitary/noloop2.c		\
 	$(top_srcdir)/tests/unitary/ternary.c		\
 	$(top_srcdir)/tests/unitary/functioncall.c	\
+	$(top_srcdir)/tests/unitary/functioncall2.c	\
 	$(top_srcdir)/tests/unitary/redefiter.c		\
 	$(top_srcdir)/tests/unitary/comments.c		\
 	$(top_srcdir)/tests/unitary/underscore.c	\

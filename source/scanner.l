@@ -108,6 +108,7 @@
 ","                    { return clan_scanner(syCOMMA,          yytext,",");  }
 ";"                    { return clan_scanner(sySEMICOLON,      yytext,";");  }
 "."                    { return clan_scanner(syPOINT,          yytext,".");  }
+"->"                   { return clan_scanner(syARROW,          yytext,"->"); }
 ":"                    { return clan_scanner(opCOLON,          yytext,":");  }
 "!"                    { return clan_scanner(opNOT,            yytext,"!");  }
 "?"                    { return clan_scanner(opQMARK,          yytext,"?");  }

@@ -94,7 +94,7 @@
 %token <value>  INTEGER
 
 %token syRPARENTHESIS syLPARENTHESIS syRBRACKET syLBRACKET syRBRACE syLBRACE
-%token sySEMICOLON syCOMMA syPOINT
+%token sySEMICOLON syCOMMA syPOINT syARROW
 
 %token opEQUAL opLEQ opGEQ opLOWER opGREATER opPLUS opMINUS
 %token opINCREMENTATION opDECREMENTATION opNOT
@@ -814,7 +814,7 @@ variable:
         rank = clan_symbol_get_rank(parser_symbol, s);
         matrix = scoplib_matrix_malloc(1,CLAN_MAX_DEPTH + CLAN_MAX_PARAMETERS + 2);
         clan_matrix_tag_array(matrix, rank);
-	if (fake_array) 
+	if (fake_array)
 	  SCOPVAL_set_si(matrix->p[0][clan_symbol_get_rank(parser_symbol, $1)],
 			 1);
         $$ = matrix;
@@ -916,7 +916,9 @@ array_index:
 
 
 /*
- * Rules to eliminate the parenthesis around an identifier.
+ * Rules to (1) eliminate the parenthesis around an identifier, and
+ * (2) support the structures / methods using the . or the ->
+ * operator.
  *
  * return <symbol>
  */
@@ -935,7 +937,32 @@ id:
      {
        $$ = $2;
      }
+/*
+ * Rule 3: id -> ID.ID
+ */
+  | ID syPOINT ID
+     {
+       char* concatid =
+	 (char*) malloc (sizeof(char) * (strlen($1) + strlen($3) + 2));
+       strcpy (concatid, $1);
+       strcat (concatid, ".");
+       strcat (concatid, $3);
+       $$ = concatid;
+     }
+/*
+ * Rule 4: id -> ID.ID
+ */
+  | ID syARROW ID
+     {
+       char* concatid =
+	 (char*) malloc (sizeof(char) * (strlen($1) + strlen($3) + 3));
+       strcpy (concatid, $1);
+       strcat (concatid, "->");
+       strcat (concatid, $3);
+       $$ = concatid;
+     }
   ;
+
 
 NUMBER:
     INTEGER

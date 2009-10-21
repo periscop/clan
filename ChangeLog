@@ -1,3 +1,17 @@
+2009-10-20  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+	This patch improves the grammar by supporting fields and methods
+	syntax, such as a.b, a->b as fields, and a.b() or a->b() as method
+	calls. Getter/Setter syntax such as a->b() = 42 is not supported.
+
+	* source/parser.y,
+	* source/scanner.l: Modify the lexer and parser to support fields
+	and objects-like syntax (id.id and id->id).
+	* tests/unitary/object.c,
+	* tests/unitary/object.c.scop,
+	* tests/unitary/field.c,
+	* tests/unitary/field.c.scop: New. Associated unitary test files.
+	* tests/Makefile.am: Update accordingly.
+
 2009-07-26  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
 	This patch provides the option -boundedctxt, which produces a
 	context where all parameters have their lower bound set to -1.

@@ -96,7 +96,9 @@ UNITARY_TEST_FILES             	=			\
 	$(top_srcdir)/tests/unitary/parenthesis.c	\
 	$(top_srcdir)/tests/unitary/intaddit.c		\
 	$(top_srcdir)/tests/unitary/assigniter.c	\
-	$(top_srcdir)/tests/unitary/increment.c
+	$(top_srcdir)/tests/unitary/increment.c		\
+	$(top_srcdir)/tests/unitary/field.c		\
+	$(top_srcdir)/tests/unitary/object.c
 
 
 TEST_FILES_REF    =		 $(TEST_FILES:.c=.c.scop)

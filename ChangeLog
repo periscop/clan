@@ -77,9 +77,10 @@
 2009-03-21  Uday K Bondhugula
 	Fixes for gmp compilation
 
-	* trunk/configure.in (def of LINEAR_VALUE_IS_MP under --enable-mp-version)
-	* trunk/include/clan/macros.h (include gmp.h)
-	* trunk/source/matrix.c (missing var decls for gmp code)
+	* trunk/configure.in: def of LINEAR_VALUE_IS_MP under
+	--enable-mp-version.
+	* trunk/include/clan/macros.h: include gmp.h.
+	* trunk/source/matrix.c: missing var decls for gmp code.
 
 2009-02-10  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
 	This patch adds the support of iterators as RHS of assignments,
@@ -208,7 +209,7 @@
 
 2008-10-07  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
 	This patch fixes a bug in the parser. Assignments such as 'a = -b'
-	where incorrectly handled.
+	were incorrectly handled.
 
 	* source/parser.y: Fix the parser grammar.
 
@@ -471,6 +472,7 @@
 	* include/clan/symbol.h: Fix incorrect includes.
 
 2008-07-11  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+
 	* tests/unitary/checker.sh: Delete.
 
 	* tests/checker.sh: Merge the tester in a single script.

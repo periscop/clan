@@ -455,7 +455,6 @@ affine_expression:
       }
   | CEILD syRPARENTHESIS affine_expression syCOMMA term syLPARENTHESIS
       {
-	int i;
 	SCOPVAL_assign($3->p[0], $5->p[$5->Size - 1]);
 	$$ = $3;
       }

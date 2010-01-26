@@ -1,3 +1,8 @@
+2010-01-26  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+
+	* source/parser.y: Reinitialize the symbol global variables at the
+	start of the parsing process.
+
 2009-10-20  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
 	This patch adds the support of basic arithmetic
 	expressions (numbers operations only) in function arguments, such

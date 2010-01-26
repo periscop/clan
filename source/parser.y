@@ -1018,9 +1018,22 @@ clan_parser_initialize_state(clan_options_p options)
     parser_consperdim[i] = 0;
   }
   parser_iterators = (clan_symbol_p *)malloc(depth * sizeof(clan_symbol_p));
+
+  parser_depth = 0;
+  parser_nb_cons = 0;
+  parser_fake_arrays = 0;
+  /* Reset also the Symbol global variables. */
+  extern int symbol_nb_iterators;
+  symbol_nb_iterators = 0;
+  extern int symbol_nb_parameters;
+  symbol_nb_parameters = 0;
+  extern int symbol_nb_arrays;
+  symbol_nb_arrays = 0;
+  extern int symbol_nb_functions;
+  symbol_nb_functions = 0;
+
   parser_options = options;
 }
-
 
 /**
  * clan_parser_free_state function:
@@ -1038,7 +1051,6 @@ clan_parser_free_state()
   free(parser_consperdim);
   free(parser_iterators);
 }
-
 
 /**
  * clan_parse function:

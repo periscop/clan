@@ -80,11 +80,13 @@
                        }
 "#pragma"[ ]+"scop"    { scanner_parsing = CLAN_TRUE;  /* Start parsing */ }
 "#pragma"[ ]+"endscop" { scanner_parsing = CLAN_FALSE; /* Stop  parsing */ }
-"if"                   { return clan_scanner(IF,   yytext,"IF");   }
-"else"                 { return clan_scanner(ELSE, yytext,"ELSE"); }
-"for"                  { return clan_scanner(FOR,  yytext,"FOR");  }
-"min"                  { return clan_scanner(MIN,  yytext,"min");  }
-"max"                  { return clan_scanner(MAX,  yytext,"max");  }
+"if"                   { return clan_scanner(IF,       yytext,"IF");   }
+"else"                 { return clan_scanner(ELSE,     yytext,"ELSE"); }
+"for"                  { return clan_scanner(FOR,      yytext,"FOR");  }
+"min"                  { return clan_scanner(MIN,      yytext,"min");  }
+"max"                  { return clan_scanner(MAX,      yytext,"max");  }
+"ceild"                { return clan_scanner(CEILD,  yytext,"ceild");  }
+"floord"               { return clan_scanner(FLOORD, yytext,"floord");  }
 
 [_A-Za-z]"."[A-Za-z0-9_]* |
 [_A-Za-z]"->"[A-Za-z0-9_]* |

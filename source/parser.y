@@ -40,6 +40,7 @@
    #include <stdio.h>
    #include <stdlib.h>
    #include <string.h>
+   #include <assert.h>
    #include <clan/macros.h>
    #include <clan/vector.h>
    #include <clan/matrix.h>
@@ -88,7 +89,7 @@
 
 %token IGNORE
 %token IF ELSE FOR
-%token MIN MAX
+%token MIN MAX CEILD FLOORD
 %token REAL
 %token <symbol> ID
 %token <value>  INTEGER
@@ -452,6 +453,17 @@ affine_expression:
       {
         $$ = $2;
       }
+  | CEILD syRPARENTHESIS affine_expression syCOMMA term syLPARENTHESIS
+      {
+	int i;
+	SCOPVAL_assign($3->p[0], $5->p[$5->Size - 1]);
+	$$ = $3;
+      }
+  | FLOORD syRPARENTHESIS affine_expression syCOMMA term syLPARENTHESIS
+      {
+	SCOPVAL_assign($3->p[0], $5->p[$5->Size - 1]);
+	$$ = $3;
+      }
   ;
 
 
@@ -537,8 +549,29 @@ condition:
 	scoplib_vector_p tmp = scoplib_vector_add_scalar($1,1);
 	scoplib_vector_tag_inequality(tmp);
 	for (i = 0; i < $3->NbRows; ++i)
-	  scoplib_matrix_sub_vector($3, tmp, i);
+	  {
+	    /* We have parsed a ceild/floord at an earlier stage. */
+	    if (SCOPVAL_notzero_p($3->p[i][0]) && !SCOPVAL_one_p($3->p[i][0]))
+	      {
+		scoplib_int_t val; SCOPVAL_init(val);
+		SCOPVAL_assign(val, $3->p[i][0]);
+		SCOPVAL_set_si($3->p[i][0], 0);
+		scoplib_vector_p tmp2 = scoplib_vector_add_scalar($1,0);
+		int j;
+		for (j = 1; j < $1->Size; ++j)
+		  SCOPVAL_multo(tmp2->p[j], $1->p[j], val);
+		scoplib_vector_p tmp3 = scoplib_vector_add_scalar(tmp2,1);
+		scoplib_vector_tag_inequality(tmp3);
+		scoplib_matrix_sub_vector($3, tmp3, i);
+		scoplib_vector_free(tmp2);
+		scoplib_vector_free(tmp3);
+		SCOPVAL_clear(val);
+	      }
+	    else
+	      scoplib_matrix_sub_vector($3, tmp, i);
+	  }
 	scoplib_vector_free($1);
+	scoplib_vector_free(tmp);
 	$$ = $3;
       }
 /*
@@ -554,9 +587,28 @@ condition:
 	  {
 	    for (j = 1; j < $3->NbColumns; ++j)
 	      SCOPVAL_oppose($3->p[i][j],$3->p[i][j]);
-	    scoplib_matrix_add_vector($3,tmp,i);
+	    /* We have parsed a ceild/floord at an earlier stage. */
+	    if (SCOPVAL_notzero_p($3->p[i][0]) && !SCOPVAL_one_p($3->p[i][0]))
+	      {
+		scoplib_int_t val; SCOPVAL_init(val);
+		SCOPVAL_assign(val, $3->p[i][0]);
+		SCOPVAL_set_si($3->p[i][0], 0);
+		scoplib_vector_p tmp2 = scoplib_vector_add_scalar($1,0);
+		int j;
+		for (j = 1; j < $1->Size; ++j)
+		  SCOPVAL_multo(tmp2->p[j], $1->p[j], val);
+		scoplib_vector_p tmp3 = scoplib_vector_add_scalar(tmp2,-1);
+		scoplib_vector_tag_inequality(tmp3);
+		scoplib_matrix_add_vector($3, tmp3, i);
+		scoplib_vector_free(tmp2);
+		scoplib_vector_free(tmp3);
+		SCOPVAL_clear(val);
+	      }
+	    else
+	      scoplib_matrix_add_vector($3,tmp,i);
 	  }
 	scoplib_vector_free($1);
+	scoplib_vector_free(tmp);
 	$$ = $3;
       }
 /*
@@ -569,8 +621,27 @@ condition:
 	scoplib_vector_p tmp = scoplib_vector_add_scalar($1,0);
 	scoplib_vector_tag_inequality(tmp);
 	for (i = 0; i < $3->NbRows; ++i)
-	  scoplib_matrix_sub_vector($3,tmp,i);
+	  {
+	    /* We have parsed a ceild/floord at an earlier stage. */
+	    if (SCOPVAL_notzero_p($3->p[i][0]) && !SCOPVAL_one_p($3->p[i][0]))
+	      {
+		scoplib_int_t val; SCOPVAL_init(val);
+		SCOPVAL_assign(val, $3->p[i][0]);
+		SCOPVAL_set_si($3->p[i][0], 0);
+		scoplib_vector_p tmp2 = scoplib_vector_add_scalar($1,0);
+		int j;
+		for (j = 1; j < $1->Size; ++j)
+		  SCOPVAL_multo(tmp2->p[j], $1->p[j], val);
+		scoplib_vector_tag_inequality(tmp2);
+		scoplib_matrix_sub_vector($3, tmp2, i);
+		scoplib_vector_free(tmp2);
+		SCOPVAL_clear(val);
+	      }
+	    else
+	      scoplib_matrix_sub_vector($3,tmp,i);
+	  }
 	scoplib_vector_free($1);
+	scoplib_vector_free(tmp);
 	$$ = $3;
       }
 /*
@@ -586,9 +657,26 @@ condition:
 	  {
 	    for (j = 1; j < $3->NbColumns; ++j)
 	      SCOPVAL_oppose($3->p[i][j],$3->p[i][j]);
-	    scoplib_matrix_add_vector($3,tmp,i);
+	    /* We have parsed a ceild/floord at an earlier stage. */
+	    if (SCOPVAL_notzero_p($3->p[i][0]) && !SCOPVAL_one_p($3->p[i][0]))
+	      {
+		scoplib_int_t val; SCOPVAL_init(val);
+		SCOPVAL_assign(val, $3->p[i][0]);
+		SCOPVAL_set_si($3->p[i][0], 0);
+		scoplib_vector_p tmp2 = scoplib_vector_add_scalar($1,0);
+		int j;
+		for (j = 1; j < $1->Size; ++j)
+		  SCOPVAL_multo(tmp2->p[j], $1->p[j], val);
+		scoplib_vector_tag_inequality(tmp2);
+		scoplib_matrix_add_vector($3, tmp2, i);
+		scoplib_vector_free(tmp2);
+		SCOPVAL_clear(val);
+	      }
+	    else
+	      scoplib_matrix_add_vector($3,tmp,i);
 	  }
 	scoplib_vector_free($1);
+	scoplib_vector_free(tmp);
 	$$ = $3;
       }
 /*
@@ -597,6 +685,10 @@ condition:
   | affine_expression opEQUAL affine_expression
       {
         /* a==b translates to a-b==0 */
+	/* Warning: cases like ceild(M,32) == ceild(N,32) are not handled.
+	   Assert if we encounter such a case. */
+	assert ((SCOPVAL_zero_p($1->p[0]) || SCOPVAL_one_p($1->p[0]))
+		&& (SCOPVAL_zero_p($3->p[0]) || SCOPVAL_one_p($3->p[0])));
 	scoplib_vector_p res = scoplib_vector_sub($1,$3);
 	scoplib_vector_tag_equality(res);
 	$$ = scoplib_matrix_from_vector(res);

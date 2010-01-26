@@ -1,5 +1,12 @@
 2010-01-26  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
 
+	* source/scanner.l,
+	* source/parser.y: Extend to support re-entrance of tiled
+	code. Now the ceild and floord are supported (with special
+	token). Only an integer term as the dividor is supported.
+
+2010-01-26  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+
 	* source/parser.y: Reinitialize the symbol global variables at the
 	start of the parsing process.
 

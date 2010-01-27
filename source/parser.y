@@ -810,27 +810,10 @@ binary_operator:
   ;
 
 /*
- * Shortcut for a list of type identifiers (used during a type cast).
- *
- */
-id_list:
-    ID
-  | id_list ID
-  ;
-
-/*
  * Rules for an expression.
  * return: <setex>
  */
 expression:
-/*
- * Rule 0: expression -> ( type cast ) expression
- */
-   syRPARENTHESIS id_list syLPARENTHESIS expression %prec MAXPRIORITY
-     {
-       $$ = $4;
-     }
-  |
 /*
  * Rule 1: expression -> number
  */

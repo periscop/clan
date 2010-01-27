@@ -1,4 +1,12 @@
 2010-01-26  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+	This patch adds an experimental support of C type cast. For
+	instance c = (double) (0);
+	The casted value must be in parenthesis also, syntax as:
+	c = (double) 0; are not supported.
+
+	* source/parser.y: Support basic type cast in expressions.
+
+2010-01-26  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
 
 	* source/scanner.l,
 	* source/parser.y: Extend to support re-entrance of tiled

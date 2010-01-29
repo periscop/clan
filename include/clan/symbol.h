@@ -82,6 +82,7 @@ void          clan_symbol_free(clan_symbol_p);
  ******************************************************************************/
 clan_symbol_p clan_symbol_lookup(clan_symbol_p, char *);
 clan_symbol_p clan_symbol_add(clan_symbol_p *, char *, int, int);
+void          clan_symbol_remove(clan_symbol_p*, clan_symbol_p);
 int           clan_symbol_get_rank(clan_symbol_p, char *);
 int           clan_symbol_get_type(clan_symbol_p, char *);
 char **       clan_symbol_iterators(clan_symbol_p *, int);

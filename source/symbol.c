@@ -320,6 +320,31 @@ clan_symbol_add(clan_symbol_p * location, char * identifier, int type, int rank)
   return symbol;
 }
 
+/**
+ * clan_symbol_remove function:
+ * Deletes a symbol from the list.
+ *
+ */
+void
+clan_symbol_remove(clan_symbol_p* location, clan_symbol_p symbol)
+{
+  clan_symbol_p s = *location;
+  if (s == NULL || symbol == NULL)
+    return;
+  if (s == symbol)
+    *location = symbol->next;
+  else
+    {
+      while (s && s->next != symbol)
+	s = s->next;
+      if (s)
+	{
+	  s->next = symbol->next;
+	  free(symbol);
+	}
+    }
+}
+
 
 /**
  * clan_symbol_get_rank function:

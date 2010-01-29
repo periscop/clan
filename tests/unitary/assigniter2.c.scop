@@ -69,8 +69,9 @@ N
 # Read access informations
 0 5
 # Write access informations
-1 5
-   1    1    0    0    0    ## A[i]
+2 5
+   1    1    0    0    0    ## A[i][j]
+   0    0    1    0    0    ##
 
 # ----------------------------------------------  1.4 Body
 # Statement body is provided
@@ -78,7 +79,7 @@ N
 # Original iterator names
 i j 
 # Statement body
-A[i]=i*j;
+A[i][j]=(i*j)/N;
 
 
 # =============================================== Options

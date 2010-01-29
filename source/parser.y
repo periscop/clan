@@ -51,6 +51,8 @@
 
    int yylex(void);
    void yyerror(char *);
+   int clan_parse_error = 0; /**< Set to 1 during parsing if
+				encountered an error */
    void clan_parser_log(char *);
    scoplib_scop_p clan_parse(FILE *, clan_options_p);
 
@@ -73,10 +75,9 @@
    int                 parser_nb_cons = 0; /**< Current number of constraints */
    int *               parser_consperdim;  /**< Constraint nb for each
 					      dimension */
-   int                 parser_fake_arrays = 0; /**< Current count of fake
-					       array ids */
    /* Ugly global variable to keep/read Clan options during parsing. */
    clan_options_p	parser_options = NULL;
+
 
 %}
 
@@ -210,10 +211,10 @@ instruction:
 	   either from the same type. */
 	if (symbol->type != SCOPLIB_TYPE_ITERATOR)
 	  {
-	    fprintf (stderr, "[Clan] Error: the input file is not a SCoP\n"
-		     "\t> A loop iterator was previously used as a parameter"
-		     "\n");
-	    exit(1);
+	    yyerror("[Clan] Error: the input file is not a SCoP\n"
+		    "\t> A loop iterator was previously used as a parameter"
+		    "\n");
+	    return 0;
 	  }
 	/* Update the rank, in case a symbol with the same name was
 	   already existing. */
@@ -262,6 +263,7 @@ instruction:
         parser_scheduling[parser_depth]++;
         parser_nb_cons -= parser_consperdim[parser_depth];
         parser_consperdim[parser_depth] = 0;
+	clan_symbol_remove(&parser_symbol, parser_iterators[parser_depth]);
       }
 /*
  * Rule 2: instruction -> if (condition) bloc
@@ -371,8 +373,8 @@ incrementation:
      {
        if ($5 != 1)
 	 {
-	   fprintf (stderr, "[Clan] Error: loop increment is not 1\n");
-	   exit (1);
+	   yyerror("[Clan] Error: loop increment is not 1\n");
+	   return 0;
 	 }
        free ($1);
        free ($3);
@@ -381,8 +383,8 @@ incrementation:
      {
        if ($3 != 1)
 	 {
-	   fprintf (stderr, "[Clan] Error: loop increment is not 1\n");
-	   exit (1);
+	   yyerror("[Clan] Error: loop increment is not 1\n");
+	   return 0;
 	 }
        free ($1);
      }
@@ -750,6 +752,11 @@ assignment:
  */
     variable opASSIGNMENT expression sySEMICOLON
       {
+	if ($1 == NULL)
+	  {
+	    yyerror ("[Clan] Error: changing value of iterator/parameter");
+	    return 0;
+	  }
         $$[0] = $3;
         $$[1] = $1;
       }
@@ -758,6 +765,11 @@ assignment:
  */
   | variable reduction_operator expression sySEMICOLON
       {
+	if ($1 == NULL)
+	  {
+	    yyerror ("[Clan] Error: changing value of iterator/parameter");
+	    return 0;
+	  }
         $$[0] = scoplib_matrix_concat($1,$3);
         scoplib_matrix_free($3);
         $$[1] = $1;
@@ -766,18 +778,28 @@ assignment:
  * Rule 3: assignment -> var un_op;
  */
   | variable unary_operator sySEMICOLON
-    {
-       $$[0] = $1;
-       $$[1] = scoplib_matrix_copy($1);
-    }
+      {
+	if ($1 == NULL)
+	  {
+	    yyerror ("[Clan] Error: changing value of iterator/parameter");
+	    return 0;
+	  }
+        $$[0] = $1;
+        $$[1] = scoplib_matrix_copy($1);
+      }
 /*
  * Rule 4: assignment -> un_op var;
  */
   | unary_operator variable sySEMICOLON
-    {
+      {
+	if ($2 == NULL)
+	  {
+	    yyerror ("[Clan] Error: changing value of iterator/parameter");
+	    return 0;
+	  }
        $$[0] = $2;
        $$[1] = scoplib_matrix_copy($2);
-    }
+      }
 /*
  * Rule 5: assignment -> var;
  */
@@ -832,8 +854,7 @@ expression:
  * Rule 3: expression -> variable
  */
   | variable
-  {
-    //    printf ("I see a variable\n");
+      {
         $$ = $1;
       }
 /*
@@ -892,25 +913,20 @@ variable:
         scoplib_matrix_p matrix;
 	char* s = (char*) $1;
 	clan_symbol_p symbol = clan_symbol_lookup(parser_symbol, s);
-	int fake_array = 0;
-	// Special code to treat iterators as RHS. We emulate a fake
-	// array, with a distinct array name per access of the
-	// iterator as RHS.
-	if (symbol && symbol->type == SCOPLIB_TYPE_ITERATOR)
+	// If the variable is an iterator or a parameter, discard it
+	// from the read/write clause.
+	if ((symbol && symbol->type == SCOPLIB_TYPE_ITERATOR) ||
+	     (symbol && symbol->type == SCOPLIB_TYPE_PARAMETER))
+	  $$ = NULL;
+	else
 	  {
-	    s = (char*) malloc(sizeof(char) * 12 + strlen(SCOPLIB_FAKE_ARRAY));
-	    sprintf(s, "%s_%d", SCOPLIB_FAKE_ARRAY, parser_fake_arrays++);
-	    symbol = clan_symbol_lookup(parser_symbol, s);
-	    fake_array = 1;
+	    clan_symbol_add(&parser_symbol, s, SCOPLIB_TYPE_ARRAY,parser_depth);
+	    rank = clan_symbol_get_rank(parser_symbol, s);
+	    matrix = scoplib_matrix_malloc
+	      (1, CLAN_MAX_DEPTH + CLAN_MAX_PARAMETERS + 2);
+	    clan_matrix_tag_array(matrix, rank);
+	    $$ = matrix;
 	  }
-        clan_symbol_add(&parser_symbol, s, SCOPLIB_TYPE_ARRAY, parser_depth);
-        rank = clan_symbol_get_rank(parser_symbol, s);
-        matrix = scoplib_matrix_malloc(1,CLAN_MAX_DEPTH + CLAN_MAX_PARAMETERS + 2);
-        clan_matrix_tag_array(matrix, rank);
-	if (fake_array)
-	  SCOPVAL_set_si(matrix->p[0][clan_symbol_get_rank(parser_symbol, $1)],
-			 1);
-        $$ = matrix;
         free($1);
       }
 /*
@@ -1079,6 +1095,7 @@ void
 yyerror(char *s)
 {
   fprintf(stderr, "%s\n", s);
+  clan_parse_error = 1;
 }
 
 
@@ -1114,7 +1131,6 @@ clan_parser_initialize_state(clan_options_p options)
 
   parser_depth = 0;
   parser_nb_cons = 0;
-  parser_fake_arrays = 0;
   /* Reset also the Symbol global variables. */
   extern int symbol_nb_iterators;
   symbol_nb_iterators = 0;
@@ -1164,8 +1180,11 @@ clan_parse(FILE * input, clan_options_p options)
   yyparse();
 
   clan_parser_free_state();
-  clan_scop_compact(parser_scop);
   fclose(yyin);
+  if (! clan_parse_error)
+    clan_scop_compact(parser_scop);
+  else
+    parser_scop = NULL;
 
   return parser_scop;
 }

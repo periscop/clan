@@ -1,3 +1,18 @@
+2010-01-29  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
+	This patch fixes a bug when parsing iterators and parameters as
+	read variables in the RHS of an expression. The fake_array trick
+	has been made useless, parsing is clean now.
+
+	* source/parser.y: Fix the grammar.
+
+	* include/clan/symbol.h,
+	* source/symbol.c: Add function clan_symbol_remove.
+
+	* tests/unitary/assigniter.c.scop: Fix the old test.
+	* tests/unitary/assigniter2.c.scop,
+	* tests/unitary/assigniter2.c: Add a new regression test.
+	* tests/Makefile.am: Update accordingly.
+
 2010-01-27  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
 
 	* source/parser.y: Revert previous patch to support type cast. It

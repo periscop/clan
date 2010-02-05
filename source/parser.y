@@ -75,6 +75,9 @@
    int                 parser_nb_cons = 0; /**< Current number of constraints */
    int *               parser_consperdim;  /**< Constraint nb for each
 					      dimension */
+   int*		       parser_variables_localvars;/**< List of variables
+						     in #pragma
+						     local-vars */
    /* Ugly global variable to keep/read Clan options during parsing. */
    clan_options_p	parser_options = NULL;
 
@@ -89,7 +92,7 @@
        }
 
 %token IGNORE
-%token IF ELSE FOR
+%token IF ELSE FOR PRAGMALOCALVARS
 %token MIN MAX CEILD FLOORD
 %token REAL
 %token <symbol> ID
@@ -351,6 +354,30 @@ instruction:
 	  }
         parser_scheduling[parser_depth]++;
       }
+/*
+ * Rule 4: instruction -> #pragma local-vars <vars>
+ * NOTE: THIS RULE IS REPONSIBLE FOR 10 shift/reduce conflicts.
+ * It is ok, though, the parsing will be correct.
+ */
+  | PRAGMALOCALVARS variable_list
+      {
+	int i, j;
+	scoplib_matrix_p m = $2;
+	for (i = 0; i <  m->NbRows; ++i)
+	  {
+	    int id = SCOPVAL_get_si(m->p[i][0]);
+	    for (j = 0; parser_variables_localvars[j] != -1 &&
+		   parser_variables_localvars[j] != id; ++j)
+	      ;
+	    if (j == CLAN_MAX_LOCAL_VARIABLES)
+	      {
+		yyerror("[Clan] Error: maximum number of local variables reached\n");
+		return 0;
+	      }
+	    if (parser_variables_localvars[j] == -1)
+	      parser_variables_localvars[j] = id;
+	  }
+      }
   ;
 
 
@@ -528,6 +555,15 @@ term:
         clan_symbol_add(&parser_symbol,$4,SCOPLIB_TYPE_UNKNOWN,parser_depth);
         $$ = clan_vector_term(parser_symbol,-($2),$4);
         free($4);
+      }
+/*
+ * Rule 8: term -> - id
+ */
+  | opMINUS id
+      {
+        clan_symbol_add(&parser_symbol,$2,SCOPLIB_TYPE_UNKNOWN,parser_depth);
+        $$ = clan_vector_term(parser_symbol,-1,$2);
+        free($2);
       }
   ;
 
@@ -1128,7 +1164,8 @@ clan_parser_initialize_state(clan_options_p options)
     parser_consperdim[i] = 0;
   }
   parser_iterators = (clan_symbol_p *)malloc(depth * sizeof(clan_symbol_p));
-
+  parser_variables_localvars =
+    (int*)malloc((CLAN_MAX_LOCAL_VARIABLES + 1) * sizeof(int));
   parser_depth = 0;
   parser_nb_cons = 0;
   /* Reset also the Symbol global variables. */
@@ -1140,6 +1177,9 @@ clan_parser_initialize_state(clan_options_p options)
   symbol_nb_arrays = 0;
   extern int symbol_nb_functions;
   symbol_nb_functions = 0;
+
+  for (i = 0; i <= CLAN_MAX_LOCAL_VARIABLES; ++i)
+    parser_variables_localvars[i] = -1;
 
   parser_options = options;
 }
@@ -1159,6 +1199,7 @@ clan_parser_free_state()
   free(parser_scheduling);
   free(parser_consperdim);
   free(parser_iterators);
+  free(parser_variables_localvars);
 }
 
 /**
@@ -1179,12 +1220,16 @@ clan_parse(FILE * input, clan_options_p options)
 
   yyparse();
 
-  clan_parser_free_state();
   fclose(yyin);
   if (! clan_parse_error)
-    clan_scop_compact(parser_scop);
+    {
+      if (parser_variables_localvars[0] != -1)
+	clan_scop_fill_options(parser_scop, parser_variables_localvars);
+      clan_scop_compact(parser_scop);
+    }
   else
     parser_scop = NULL;
+  clan_parser_free_state();
 
   return parser_scop;
 }

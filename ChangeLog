@@ -1,3 +1,25 @@
+2010-02-05  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
+	This patch provides Clan with the ability to parse, inside a SCoP,
+	a construct of the form:
+	#pragma local-vars a,b,c,d
+
+	a,b,c,d are variables which may or may not be encountered in the
+	scop. Their variable id list is dumped in the option tag of the
+	scoplib:
+	<local-vars>
+	1 2 3 4
+	</local-vars>
+
+	This pragma is used by the array compaction pass of PoCC, which
+	requires a list of variables which lives only within the SCoP.
+
+	* include/clan/macros.h,
+	* include/clan/scop.h,
+	* source/parser.y,
+	* source/scanner.l,
+	* source/scop.c: Manage #pragma local-vars. Fix a small bug in the
+	parser for the parsing of affine expressions starting with '-'.
+
 2010-01-29  Louis-Noel Pouchet  <louis-noel.pouchet@inria.fr>
 	This patch fixes a bug when parsing iterators and parameters as
 	read variables in the RHS of an expression. The fake_array trick

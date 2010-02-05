@@ -83,3 +83,54 @@ clan_scop_compact(scoplib_scop_p scop)
 {
   clan_statement_compact(scop->statement,scop->nb_parameters);
 }
+
+
+/**
+ * clan_scop_fill_options:
+ * This function stores the list of variables id in 'varlist' in the
+ * option tag of the scop, enclosed by
+ * <local-vars></local-vars>.
+ *
+ */
+void
+clan_scop_fill_options(scoplib_scop_p scop, int* varlist)
+{
+  /* Build the string of ids. */
+  int i, size;
+  /* varlist is a -1-terminated array. */
+  for (i = 0; varlist[i] != -1; ++i)
+    ;
+  size = i;
+  char* ids = (char*)malloc(((size * 5) + 1) * sizeof(char));
+  ids[0] = '\0';
+  char buffer[16];
+  for (i = 0; i < size; ++i)
+    {
+      if (i == 0)
+	sprintf(buffer, "%d", varlist[i]);
+      else
+	sprintf(buffer, " %d", varlist[i]);
+      strcat(ids, buffer);
+    }
+  size = strlen("<local-vars>\n") + strlen (ids) +
+    strlen ("</local-vars>\n");
+  char* tag = (char*)malloc((size + 1) * sizeof(char));
+  strcpy(tag, "<local-vars>\n");
+  strcat(tag, ids);
+  strcat(tag, "\n");
+  strcat(tag, "</local-vars>\n");
+
+  if (scop->optiontags == NULL)
+    scop->optiontags = tag;
+  else
+    {
+      char* newtag = (char*)malloc((strlen(tag) + strlen(scop->optiontags) + 2)
+				   * sizeof(char));
+      strcpy(newtag, scop->optiontags);
+      strcat(newtag, "\n");
+      strcat(newtag, tag);
+      free(scop->optiontags);
+      scop->optiontags = newtag;
+    }
+  free(ids);
+}

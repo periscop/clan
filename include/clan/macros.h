@@ -38,9 +38,10 @@
 #ifndef CLAN_MACROS_H
 # define CLAN_MACROS_H
 
-# define CLAN_DEBUG             0
-# define CLAN_TRUE              1
-# define CLAN_FALSE             0
+# define CLAN_DEBUG			0
+# define CLAN_TRUE			1
+# define CLAN_FALSE			0
+# define CLAN_MAX_LOCAL_VARIABLES     100
 
 # include <scoplib/scop.h>
 # include <scoplib/macros.h>

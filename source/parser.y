@@ -78,6 +78,9 @@
    int*		       parser_variables_localvars;/**< List of variables
 						     in #pragma
 						     local-vars */
+   int*		       parser_variables_liveout;/**< List of variables
+						     in #pragma
+						     live-out */
    /* Ugly global variable to keep/read Clan options during parsing. */
    clan_options_p	parser_options = NULL;
 
@@ -92,7 +95,7 @@
        }
 
 %token IGNORE
-%token IF ELSE FOR PRAGMALOCALVARS
+%token IF ELSE FOR PRAGMALOCALVARS PRAGMALIVEOUT
 %token MIN MAX CEILD FLOORD
 %token REAL
 %token <symbol> ID
@@ -376,6 +379,30 @@ instruction:
 	      }
 	    if (parser_variables_localvars[j] == -1)
 	      parser_variables_localvars[j] = id;
+	  }
+      }
+/*
+ * Rule 5: instruction -> #pragma live-out <vars>
+ * NOTE: THIS RULE IS REPONSIBLE FOR 10 shift/reduce conflicts.
+ * It is ok, though, the parsing will be correct.
+ */
+  | PRAGMALIVEOUT variable_list
+      {
+	int i, j;
+	scoplib_matrix_p m = $2;
+	for (i = 0; i <  m->NbRows; ++i)
+	  {
+	    int id = SCOPVAL_get_si(m->p[i][0]);
+	    for (j = 0; parser_variables_liveout[j] != -1 &&
+		   parser_variables_liveout[j] != id; ++j)
+	      ;
+	    if (j == CLAN_MAX_LOCAL_VARIABLES)
+	      {
+		yyerror("[Clan] Error: maximum number of live-out variables reached\n");
+		return 0;
+	      }
+	    if (parser_variables_liveout[j] == -1)
+	      parser_variables_liveout[j] = id;
 	  }
       }
   ;
@@ -1166,6 +1193,8 @@ clan_parser_initialize_state(clan_options_p options)
   parser_iterators = (clan_symbol_p *)malloc(depth * sizeof(clan_symbol_p));
   parser_variables_localvars =
     (int*)malloc((CLAN_MAX_LOCAL_VARIABLES + 1) * sizeof(int));
+  parser_variables_liveout =
+    (int*)malloc((CLAN_MAX_LOCAL_VARIABLES + 1) * sizeof(int));
   parser_depth = 0;
   parser_nb_cons = 0;
   /* Reset also the Symbol global variables. */
@@ -1180,6 +1209,8 @@ clan_parser_initialize_state(clan_options_p options)
 
   for (i = 0; i <= CLAN_MAX_LOCAL_VARIABLES; ++i)
     parser_variables_localvars[i] = -1;
+  for (i = 0; i <= CLAN_MAX_LOCAL_VARIABLES; ++i)
+    parser_variables_liveout[i] = -1;
 
   parser_options = options;
 }
@@ -1200,6 +1231,7 @@ clan_parser_free_state()
   free(parser_consperdim);
   free(parser_iterators);
   free(parser_variables_localvars);
+  free(parser_variables_liveout);
 }
 
 /**
@@ -1223,8 +1255,10 @@ clan_parse(FILE * input, clan_options_p options)
   fclose(yyin);
   if (! clan_parse_error)
     {
-      if (parser_variables_localvars[0] != -1)
-	clan_scop_fill_options(parser_scop, parser_variables_localvars);
+      if (parser_variables_localvars[0] != -1 ||
+	  parser_variables_liveout[0] != -1)
+	clan_scop_fill_options(parser_scop, parser_variables_localvars,
+			       parser_variables_liveout);
       clan_scop_compact(parser_scop);
     }
   else

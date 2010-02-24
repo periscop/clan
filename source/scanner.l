@@ -81,6 +81,7 @@
 "#pragma"[ ]+"scop"    { scanner_parsing = CLAN_TRUE;  /* Start parsing */ }
 "#pragma"[ ]+"endscop" { scanner_parsing = CLAN_FALSE; /* Stop  parsing */ }
 "#pragma"[ ]+"local-vars" { return clan_scanner(PRAGMALOCALVARS, yytext,"PRAGMALOCALVARS");   }
+"#pragma"[ ]+"live-out" { return clan_scanner(PRAGMALIVEOUT, yytext,"PRAGMALIVEOUT");   }
 "if"                   { return clan_scanner(IF,       yytext,"IF");   }
 "else"                 { return clan_scanner(ELSE,     yytext,"ELSE"); }
 "for"                  { return clan_scanner(FOR,      yytext,"FOR");  }

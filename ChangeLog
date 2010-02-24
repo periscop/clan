@@ -1,3 +1,21 @@
+2010-02-24  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
+	This patch provides Clan with the ability to pase, inside a SCoP,
+	a construct of the form:
+	#pragma live-out a, b, c
+
+	a, b, c are variables that lives after the scop execution. They
+	are dumped in the option tag of the scoplib:
+	<live-out-vars>
+	1 2 3
+	</live-out-vars>
+
+	This pragma is read by the array contraction pass of PoCC.
+
+	* include/clan/scop.h,
+	* source/parser.y,
+	* source/scanner.l,
+	* source/scop.c: Manage #pragma live-out.
+
 2010-02-05  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
 	This patch provides Clan with the ability to parse, inside a SCoP,
 	a construct of the form:

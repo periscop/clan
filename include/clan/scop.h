@@ -55,7 +55,7 @@ extern "C"
  ******************************************************************************/
 scoplib_scop_p  clan_scop_extract(FILE *, clan_options_p);
 void		clan_scop_compact(scoplib_scop_p);
-void		clan_scop_fill_options(scoplib_scop_p, int*);
+void		clan_scop_fill_options(scoplib_scop_p, int*, int*);
 
 
 # if defined(__cplusplus)

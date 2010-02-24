@@ -93,32 +93,83 @@ clan_scop_compact(scoplib_scop_p scop)
  *
  */
 void
-clan_scop_fill_options(scoplib_scop_p scop, int* varlist)
+clan_scop_fill_options(scoplib_scop_p scop, int* localvars, int* liveoutvars)
 {
   /* Build the string of ids. */
   int i, size;
-  /* varlist is a -1-terminated array. */
-  for (i = 0; varlist[i] != -1; ++i)
-    ;
-  size = i;
-  char* ids = (char*)malloc(((size * 5) + 1) * sizeof(char));
-  ids[0] = '\0';
-  char buffer[16];
-  for (i = 0; i < size; ++i)
+  char* tag = NULL;
+  char* tag1 = NULL;
+  char* tag2 = NULL;
+  if (localvars && localvars[0] != -1)
     {
-      if (i == 0)
-	sprintf(buffer, "%d", varlist[i]);
-      else
-	sprintf(buffer, " %d", varlist[i]);
-      strcat(ids, buffer);
+      /* localvars is a -1-terminated array. */
+      for (i = 0; localvars[i] != -1; ++i)
+	;
+      size = i;
+      char* ids = (char*)malloc(((size * 5) + 1) * sizeof(char));
+      ids[0] = '\0';
+      char buffer[16];
+      for (i = 0; i < size; ++i)
+	{
+	  if (i == 0)
+	    sprintf(buffer, "%d", localvars[i]);
+	  else
+	    sprintf(buffer, " %d", localvars[i]);
+	  strcat(ids, buffer);
+	}
+      size = strlen("<local-vars>\n") + strlen (ids) +
+	strlen ("</local-vars>\n");
+      tag1 = (char*)malloc((size + 1) * sizeof(char));
+      strcpy(tag, "<local-vars>\n");
+      strcat(tag, ids);
+      strcat(tag, "\n");
+      strcat(tag, "</local-vars>\n");
+      free(ids);
     }
-  size = strlen("<local-vars>\n") + strlen (ids) +
-    strlen ("</local-vars>\n");
-  char* tag = (char*)malloc((size + 1) * sizeof(char));
-  strcpy(tag, "<local-vars>\n");
-  strcat(tag, ids);
-  strcat(tag, "\n");
-  strcat(tag, "</local-vars>\n");
+
+  if (liveoutvars && liveoutvars[0] != -1)
+    {
+      /* liveoutvars is a -1-terminated array. */
+      for (i = 0; liveoutvars[i] != -1; ++i)
+	;
+      size = i;
+      char* ids = (char*)malloc(((size * 5) + 1) * sizeof(char));
+      ids[0] = '\0';
+      char buffer[16];
+      for (i = 0; i < size; ++i)
+	{
+	  if (i == 0)
+	    sprintf(buffer, "%d", liveoutvars[i]);
+	  else
+	    sprintf(buffer, " %d", liveoutvars[i]);
+	  strcat(ids, buffer);
+	}
+      size = strlen("<live-out-vars>\n") + strlen (ids) +
+	strlen ("</live-out-vars>\n");
+      tag2 = (char*)malloc((size + 1) * sizeof(char));
+      strcpy(tag, "<live-out-vars>\n");
+      strcat(tag, ids);
+      strcat(tag, "\n");
+      strcat(tag, "</live-out-vars>\n");
+      free(ids);
+    }
+
+  /* Concatenate the tags. */
+  if (tag1 || tag2)
+    {
+      if (tag1 == NULL)
+	tag = tag2;
+      else if (tag2 == NULL)
+	tag = tag1;
+      else
+	{
+	  tag = (char*)malloc((strlen(tag1) + strlen(tag2) + 1));
+	  strcpy(tag, tag1);
+	  strcat(tag, tag2);
+	  free(tag1);
+	  free(tag2);
+	}
+    }
 
   if (scop->optiontags == NULL)
     scop->optiontags = tag;
@@ -132,5 +183,4 @@ clan_scop_fill_options(scoplib_scop_p scop, int* varlist)
       free(scop->optiontags);
       scop->optiontags = newtag;
     }
-  free(ids);
 }

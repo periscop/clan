@@ -120,10 +120,10 @@ clan_scop_fill_options(scoplib_scop_p scop, int* localvars, int* liveoutvars)
       size = strlen("<local-vars>\n") + strlen (ids) +
 	strlen ("</local-vars>\n");
       tag1 = (char*)malloc((size + 1) * sizeof(char));
-      strcpy(tag, "<local-vars>\n");
-      strcat(tag, ids);
-      strcat(tag, "\n");
-      strcat(tag, "</local-vars>\n");
+      strcpy(tag1, "<local-vars>\n");
+      strcat(tag1, ids);
+      strcat(tag1, "\n");
+      strcat(tag1, "</local-vars>\n");
       free(ids);
     }
 
@@ -147,10 +147,10 @@ clan_scop_fill_options(scoplib_scop_p scop, int* localvars, int* liveoutvars)
       size = strlen("<live-out-vars>\n") + strlen (ids) +
 	strlen ("</live-out-vars>\n");
       tag2 = (char*)malloc((size + 1) * sizeof(char));
-      strcpy(tag, "<live-out-vars>\n");
-      strcat(tag, ids);
-      strcat(tag, "\n");
-      strcat(tag, "</live-out-vars>\n");
+      strcpy(tag2, "<live-out-vars>\n");
+      strcat(tag2, ids);
+      strcat(tag2, "\n");
+      strcat(tag2, "</live-out-vars>\n");
       free(ids);
     }
 

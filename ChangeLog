@@ -1,3 +1,10 @@
+2010-03-08  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
+
+	* configure.in: Bump to 0.6.0. Update to latest version of
+	ScopLib.
+	* scoplib/scoplib-0.1.0.tar.gz: Delete.
+	* scoplib/scoplib-0.2.0.tar.gz: New. Latest version of ScopLib.
+
 2010-02-24  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
 	This patch provides Clan with the ability to pase, inside a SCoP,
 	a construct of the form:

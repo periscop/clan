@@ -941,9 +941,8 @@ expression:
  * Rule 6: expression -> ( expression )
  */
   | syRPARENTHESIS expression syLPARENTHESIS
-  {
-    //    printf ("I see the exp parent...\n");
-        $$ = $2;
+      {
+	$$ = $2;
       }
 /*
  * Rule 7: expression -> expression : expression ? expression
@@ -1143,8 +1142,16 @@ id:
      {
        $$ = $2;
      }
+/*
+ * Rule 4: id -> math_func_list
+ */
+  | math_func_list
+     {
+       $$ = NULL;
+     }
   ;
 
+math_func_list: MIN | MAX | CEILD | FLOORD;
 
 NUMBER:
     INTEGER

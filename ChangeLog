@@ -1,3 +1,13 @@
+2010-04-17  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
+
+	* source/parser.y: Fix a bug in the grammar when facing multiple
+	curly brackets in instructions.
+
+	* tests/unitary/nestedcurly.c,
+	* tests/unitary/nestedcurly.c.scop: New. Test file for the new
+	case.
+	* tests/Makefile.am: Update accordingly.
+
 2010-03-29  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
 
 	* source/parser.y: Allow special mathematical functions (min, max,

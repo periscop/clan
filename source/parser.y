@@ -178,6 +178,7 @@ instruction_list:
   | instruction_list instruction
   | IGNORE
   | instruction_list IGNORE
+  | syRBRACE instruction_list syLBRACE
   ;
 
 
@@ -794,6 +795,7 @@ reduction_operator:
   | opCOMPEQUAL
   ;
 
+
 /*
  * Shortcut rules for unary increment/decrement operators (-- and ++)
  *
@@ -870,6 +872,14 @@ assignment:
      {
        $$[0] = $1;
        $$[1] = NULL;
+     }
+/*
+ * Rule 5: assignment -> { assignment };
+ */
+  | syRBRACE assignment syLBRACE
+     {
+       $$[0] = $2[0];
+       $$[1] = $2[1];
      }
   ;
 

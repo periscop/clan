@@ -12,13 +12,13 @@ dnl ******  | "--'     .-"  ***************************************************
 dnl *     |"-"-"-"-"-#-#-##   Clan : the Chunky Loop Analyser (experimental)  *
 dnl ****  |     # ## ######  **************************************************
 dnl *      \       .::::'/                                                    *
-dnl *       \      ::::'/     Copyright (C) 2008 Cedric Bastoul               *
+dnl *       \      ::::'/     Copyright (C) 2008 University Paris-Sud 11      *
 dnl *     :8a|    # # ##                                                      *
 dnl *     ::88a      ###      This is free software; you can redistribute it  *
 dnl *    ::::888a  8a ##::.   and/or modify it under the terms of the GNU     *
 dnl *  ::::::::888a88a[]:::   Lesser General Public License as published by   *
-dnl *::8:::::::::SUNDOGa8a::. the Free Software Foundation, either version 3  *
-dnl *::::::::8::::888:Y8888::                of the License, or (at your      *
+dnl *::8:::::::::SUNDOGa8a::. the Free Software Foundation, either version    *
+dnl *::::::::8::::888:Y8888::                2.1 of the License, or (at your  *
 dnl *::::':::88::::888::Y88a::::::::::::...  option) any later version.       *
 dnl *::'::..    .   .....   ..   ...  .                                       *
 dnl * This software is distributed in the hope that it will be useful, but    *
@@ -32,7 +32,7 @@ dnl * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307    *
 dnl * USA                                                                     *
 dnl *                                                                         *
 dnl * Clan, the Chunky Loop Analyser                                          *
-dnl * Written by Cedric Bastoul, Cedric.Bastoul@inria.fr                      *
+dnl * Written by Cedric Bastoul, Cedric.Bastoul@u-psud.fr                     *
 dnl *                                                                         *
 dnl ***************************************************************************/
 dnl
@@ -41,7 +41,7 @@ dnl Input file for autoconf to build a configuration shellscript.
 
 AC_PREREQ(2.13)
 dnl Fill here the @bug email adress.
-AC_INIT([clan], [0.6.0], [cedric.bastoul@u-psud.fr,pouchet@cse.ohio-state.edu])
+AC_INIT([clan], [0.7.0], [cedric.bastoul@u-psud.fr,pouchet@cse.ohio-state.edu])
 dnl A common file, which serve as a test.
 AC_CONFIG_SRCDIR([include/clan/symbol.h])
 dnl Put as most as possible configuration files to an auxialiry

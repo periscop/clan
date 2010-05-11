@@ -12,12 +12,12 @@
  *     |"-"-"-"-"-#-#-##   Clan : the Chunky Loop Analyzer (experimental)     *
  ****  |     # ## ######  *****************************************************
  *      \       .::::'/                                                       *
- *       \      ::::'/     Copyright (C) 2008 Cedric Bastoul                  *
+ *       \      ::::'/     Copyright (C) 2008 University Paris-Sud 11         *
  *     :8a|    # # ##                                                         *
  *     ::88a      ###      This is free software; you can redistribute it     *
  *    ::::888a  8a ##::.   and/or modify it under the terms of the GNU Lesser *
  *  ::::::::888a88a[]:::   General Public License as published by the Free    *
- *::8:::::::::SUNDOGa8a::. Software Foundation, either version 3 of the       *
+ *::8:::::::::SUNDOGa8a::. Software Foundation, either version 2.1 of the     *
  *::::::::8::::888:Y8888:: License, or (at your option) any later version.    *
  *::::':::88::::888::Y88a::::::::::::...                                      *
  *::'::..    .   .....   ..   ...  .                                          *
@@ -31,7 +31,7 @@
  * 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA                     *
  *                                                                            *
  * Clan, the Chunky Loop Analyzer                                             *
- * Written by Cedric Bastoul, Cedric.Bastoul@inria.fr                         *
+ * Written by Cedric Bastoul, Cedric.Bastoul@u-psud.fr                        *
  *                                                                            *
  ******************************************************************************/
 

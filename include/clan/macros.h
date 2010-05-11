@@ -43,7 +43,7 @@
 # define CLAN_FALSE			0
 # define CLAN_MAX_LOCAL_VARIABLES     100
 
-# include <scoplib/scop.h>
-# include <scoplib/macros.h>
+# include <openscop/scop.h>
+# include <openscop/macros.h>
 
 #endif /* define CLAN_MACROS_H */

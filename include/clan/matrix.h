@@ -41,8 +41,8 @@
 
 # include <stdio.h>
 # include <clan/macros.h>
-# include <scoplib/matrix.h>
-# include <scoplib/vector.h>
+# include <openscop/matrix.h>
+# include <openscop/vector.h>
 # include <clan/vector.h>
 
 
@@ -54,9 +54,9 @@ extern "C"
 /*+****************************************************************************
  *                            Processing functions                            *
  ******************************************************************************/
-void			clan_matrix_tag_array(scoplib_matrix_p, int);
-scoplib_matrix_p	clan_matrix_scheduling(int *, int);
-void			clan_matrix_compact(scoplib_matrix_p, int, int);
+void			clan_matrix_tag_array(openscop_matrix_p, int);
+openscop_matrix_p	clan_matrix_scheduling(int *, int);
+void			clan_matrix_compact(openscop_matrix_p, int, int);
 
 # if defined(__cplusplus)
   }

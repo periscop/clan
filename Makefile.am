@@ -42,7 +42,7 @@
 
 
 #############################################################################
-SUBDIRS 		= @BUILD_SCOPLIB@ doc source include tests
+SUBDIRS 		= @BUILD_OPENSCOP@ doc source include tests
 
 
 #############################################################################
@@ -75,6 +75,6 @@ dist-hook:
 	done
 
 maintainer-clean-hook:
-	(cd $(abs_top_srcdir)/scoplib && rm -rf scoplib-0.1.0)
+	(cd $(abs_top_srcdir)/openscop && rm -rf openscop-0.1.0)
 
 #############################################################################

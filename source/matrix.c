@@ -60,7 +60,7 @@
  * - 02/05/2008: first version.
  */
 void
-clan_matrix_tag_array(scoplib_matrix_p matrix, int array)
+clan_matrix_tag_array(openscop_matrix_p matrix, int array)
 {
   if ((matrix == NULL) || (matrix->NbRows == 0))
   {
@@ -68,7 +68,7 @@ clan_matrix_tag_array(scoplib_matrix_p matrix, int array)
     exit(1);
   }
 
-  SCOPVAL_set_si(matrix->p[0][0],array);
+  SCOPINT_set_si(matrix->p[0][0],array);
 }
 
 
@@ -87,24 +87,24 @@ clan_matrix_tag_array(scoplib_matrix_p matrix, int array)
  **
  * - 01/05/2008: First version.
  */
-scoplib_matrix_p
+openscop_matrix_p
 clan_matrix_scheduling(int * rank, int depth)
 {
   int i, j, nb_rows, nb_columns;
-  scoplib_matrix_p scheduling;
+  openscop_matrix_p scheduling;
 
   nb_rows    = 2 * depth + 1;
   nb_columns = CLAN_MAX_DEPTH + CLAN_MAX_PARAMETERS + 2;
-  scheduling = scoplib_matrix_malloc(nb_rows,nb_columns);
+  scheduling = openscop_matrix_malloc(nb_rows,nb_columns);
 
   j = 0;
   for (i = 0; i < depth; i++)
   {
-    SCOPVAL_set_si(scheduling->p[j][nb_columns-1],rank[i]);
-    SCOPVAL_set_si(scheduling->p[j+1][i+1],1);
+    SCOPINT_set_si(scheduling->p[j][nb_columns-1],rank[i]);
+    SCOPINT_set_si(scheduling->p[j+1][i+1],1);
     j += 2;
   }
-  SCOPVAL_set_si(scheduling->p[nb_rows-1][nb_columns-1],rank[depth]);
+  SCOPINT_set_si(scheduling->p[nb_rows-1][nb_columns-1],rank[depth]);
 
   return scheduling;
 }
@@ -124,35 +124,35 @@ clan_matrix_scheduling(int * rank, int depth)
  * - 24/05/2008: nice bug fixed (p_Init_size was not copied, segfaulting later).
  */
 void
-clan_matrix_compact(scoplib_matrix_p matrix, int nb_iterators, 
+clan_matrix_compact(openscop_matrix_p matrix, int nb_iterators, 
 		    int nb_parameters)
 {
   int i, j, nb_columns;
-  scoplib_matrix_p compacted;
+  openscop_matrix_p compacted;
 
   if (matrix == NULL)
     return;
 
   nb_columns = nb_iterators + nb_parameters + 2;
-  compacted = scoplib_matrix_malloc(matrix->NbRows,nb_columns);
+  compacted = openscop_matrix_malloc(matrix->NbRows,nb_columns);
 
   for (i = 0; i < matrix->NbRows; i++)
   {
     /* We copy the equality/inequality tag and the iterator coefficients */
     for (j = 0; j <= nb_iterators; j++)
-      SCOPVAL_assign(compacted->p[i][j],matrix->p[i][j]);
+      SCOPINT_assign(compacted->p[i][j],matrix->p[i][j]);
 
     /* Then we copy the parameter coefficients */
     for (j = 0; j < nb_parameters; j++)
-      SCOPVAL_assign(compacted->p[i][j + nb_iterators + 1],
+      SCOPINT_assign(compacted->p[i][j + nb_iterators + 1],
 		     matrix->p[i][j + CLAN_MAX_DEPTH + 1]);
 
     /* Lastly the scalar coefficient */
-    SCOPVAL_assign(compacted->p[i][nb_columns - 1],
+    SCOPINT_assign(compacted->p[i][nb_columns - 1],
 		   matrix->p[i][matrix->NbColumns - 1]);
   }
 
-  scoplib_matrix_free_inside(matrix);
+  openscop_matrix_free_inside(matrix);
 
   /* Replace the inside of matrix */
   matrix->NbRows      = compacted->NbRows;

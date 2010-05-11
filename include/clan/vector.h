@@ -40,8 +40,8 @@
 # define CLAN_VECTOR_H
 
 # include <stdio.h>
-# include <scoplib/scop.h>
-# include <scoplib/vector.h>
+# include <openscop/scop.h>
+# include <openscop/vector.h>
 # include <clan/symbol.h>
 
 
@@ -59,7 +59,7 @@ extern "C"
 /*+****************************************************************************
  *                            Processing functions                            *
  ******************************************************************************/
-scoplib_vector_p clan_vector_term(clan_symbol_p, int, char *);
+openscop_vector_p clan_vector_term(clan_symbol_p, int, char *);
 
 
 # if defined(__cplusplus)

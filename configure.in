@@ -41,7 +41,7 @@ dnl Input file for autoconf to build a configuration shellscript.
 
 AC_PREREQ(2.13)
 dnl Fill here the @bug email adress.
-AC_INIT([clan], [0.6.0], [cedric.bastoul@inria.fr,pouchet@cse.ohio-state.edu])
+AC_INIT([clan], [0.6.0], [cedric.bastoul@u-psud.fr,pouchet@cse.ohio-state.edu])
 dnl A common file, which serve as a test.
 AC_CONFIG_SRCDIR([include/clan/symbol.h])
 dnl Put as most as possible configuration files to an auxialiry
@@ -53,6 +53,7 @@ AM_INIT_AUTOMAKE([1.9 tar-ustar no-define foreign dist-bzip2])
 
 dnl default version
 BITS="64"
+OPENSCOP_RELEASE="0.3.0"
 CLAN_INT_T=CLAN_INT_T_IS_LONGLONG
 
 
@@ -87,59 +88,59 @@ dnl /**************************************************************************
 dnl  *                             Option setting                             *
 dnl  **************************************************************************/
 
-AC_ARG_ENABLE(internal-scoplib,
-	AC_HELP_STRING([--enable-internal-scoplib],
+AC_ARG_ENABLE(internal-openscop,
+	AC_HELP_STRING([--enable-internal-openscop],
               	           [Use shipped ScopLib]),
 	[ if test "x$enableval" = xno; then 
-	    shipped_scoplib=no;
+	    shipped_openscop=no;
           else
-	    shipped_scoplib=yes;
+	    shipped_openscop=yes;
           fi
-	], [ shipped_scoplib=uncertain ])
+	], [ shipped_openscop=uncertain ])
 
 
-dnl Offer --with-scoplib.
-AC_ARG_WITH(scoplib,
-	    AC_HELP_STRING([--with-scoplib=DIR],
-              	           [DIR Location of SCOPLIB package]),
-            [if test "x$shipped_scoplib" != xyes; then 
-	        with_scoplib=$withval;
+dnl Offer --with-openscop.
+AC_ARG_WITH(openscop,
+	    AC_HELP_STRING([--with-openscop=DIR],
+              	           [DIR Location of OPENSCOP package]),
+            [if test "x$shipped_openscop" != xyes; then 
+	        with_openscop=$withval;
 	        CPPFLAGS="${CPPFLAGS} -I$withval/include";
 	        LDFLAGS="${LDFLAGS} -L$withval/lib";
-		shipped_scoplib=no;
+		shipped_openscop=no;
 	     fi;
 	    ],
-            [if test "x$shipped_scoplib" = xno; then 
-	    	with_scoplib=yes;
+            [if test "x$shipped_openscop" = xno; then 
+	    	with_openscop=yes;
 	     else
-	     	with_scoplib=check;
+	     	with_openscop=check;
 	     fi;
 	     ])
-dnl Check for scoplib existence.
-AS_IF([test "x$with_scoplib" != xno ],
-      [AC_CHECK_LIB([scoplib], [scoplib_scop_read],
-      [LIBS="-lscoplib $LIBS";
-       AC_DEFINE([HAVE_LIBSCOPLIB], [1], [Define if you have libscoplib])
+dnl Check for openscop existence.
+AS_IF([test "x$with_openscop" != xno ],
+      [AC_CHECK_LIB([openscop], [openscop_scop_read],
+      [LIBS="-lopenscop $LIBS";
+       AC_DEFINE([HAVE_LIBOPENSCOP], [1], [Define if you have libopenscop])
       ],
-      [if test "x$with_scoplib" != xcheck; then
-       AC_MSG_FAILURE([Test for SCOPLIB failed. Use --with-scoplib to specify libscoplib path.]);
+      [if test "x$with_openscop" != xcheck; then
+       AC_MSG_FAILURE([Test for OPENSCOP failed. Use --with-openscop to specify libopenscop path.]);
        fi;
       ])
 ])
 
-AS_IF([test "x$shipped_scoplib" != xno ], 
+AS_IF([test "x$shipped_openscop" != xno ], 
       [abs_top_srcdir=`cd $srcdir; pwd`;
        abs_top_builddir=`pwd`;
-       if ! test -f $abs_top_srcdir/scoplib/scoplib-0.2.0 ; then
-       	  cd $abs_top_srcdir/scoplib && tar xzf scoplib-0.2.0.tar.gz ; cd -;
+       if ! test -f $abs_top_srcdir/openscop/openscop-$OPENSCOP_RELEASE ; then
+       	  cd $abs_top_srcdir/openscop && tar xzf openscop-$OPENSCOP_RELEASE.tar.gz ; cd -;
        fi;
-       AC_CONFIG_SUBDIRS([scoplib/scoplib-0.2.0])
-       BUILD_SCOPLIB="scoplib/scoplib-0.2.0";
-       CPPFLAGS="${CPPFLAGS} -I$abs_top_srcdir/scoplib/scoplib-0.2.0/include -I$abs_top_builddir/scoplib/scoplib-0.2.0/include";
-       LDFLAGS="${LDFLAGS} -L$abs_top_builddir/scoplib/scoplib-0.2.0/source";
-       LIBS="-lscoplib $LIBS";
+       AC_CONFIG_SUBDIRS([openscop/openscop-$OPENSCOP_RELEASE])
+       BUILD_OPENSCOP="openscop/openscop-$OPENSCOP_RELEASE";
+       CPPFLAGS="${CPPFLAGS} -I$abs_top_srcdir/openscop/openscop-$OPENSCOP_RELEASE/include -I$abs_top_builddir/openscop/openscop-$OPENSCOP_RELEASE/include";
+       LDFLAGS="${LDFLAGS} -L$abs_top_builddir/openscop/openscop-$OPENSCOP_RELEASE/source";
+       LIBS="-lopenscop $LIBS";
       ],
-      [BUILD_SCOPLIB=""])
+      [BUILD_OPENSCOP=""])
 
 
 dnl /**************************************************************************
@@ -150,7 +151,7 @@ dnl  **************************************************************************/
 dnl Substitutions to do.
 AC_SUBST(ac_aux_dir)
 AC_SUBST(abs_top_srcdir)
-AC_SUBST(BUILD_SCOPLIB)
+AC_SUBST(BUILD_OPENSCOP)
 
 dnl Configure Makefiles.
 AC_CONFIG_FILES([

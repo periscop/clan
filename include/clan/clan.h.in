@@ -47,7 +47,7 @@
 # define CLAN_RELEASE "@PACKAGE_VERSION@"
 # define CLAN_VERSION "@BITS@"
 
-# include <scoplib/macros.h>
+# include <openscop/macros.h>
 # include <clan/matrix.h>
 # include <clan/options.h>
 # include <clan/scop.h>

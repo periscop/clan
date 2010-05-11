@@ -44,7 +44,7 @@
 
 int main(int argc, char * argv[])
 {
-  scoplib_scop_p scop;
+  openscop_scop_p scop;
   clan_options_p options;
   FILE * input;
   FILE * output;
@@ -55,26 +55,26 @@ int main(int argc, char * argv[])
   /* Extraction of the polyhedral representation of the SCoP from the input. */
   if (options->inputscop)
     /* Input is a .scop file. */
-    scop = scoplib_scop_read(input);
+    scop = openscop_scop_read(input);
   else
     /* Input is a source code. */
     scop = clan_scop_extract(input,options);
 
   /* Printing of the internal data structure of the SCoP if asked. */
   if (options->structure)
-    scoplib_scop_print(stdout,scop);
+    openscop_scop_print(stdout,scop);
 
   /* Generation of the .scop output file. */
   int sopt = 0;
   if (options->castle)
-    sopt |= SCOPLIB_SCOP_PRINT_CASTLE;
+    sopt |= OPENSCOP_SCOP_PRINT_CASTLE;
   if (options->arraystag)
-    sopt |= SCOPLIB_SCOP_PRINT_ARRAYSTAG;
-  scoplib_scop_print_dot_scop_options(output,scop,sopt);
+    sopt |= OPENSCOP_SCOP_PRINT_ARRAYSTAG;
+  openscop_scop_print_dot_scop_options(output,scop,sopt);
 
   /* Save the planet. */
   clan_options_free(options);
-  scoplib_scop_free(scop);
+  openscop_scop_free(scop);
 
   return 0;
 }

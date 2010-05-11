@@ -58,10 +58,10 @@
  * - 02/05/2008: first version.
  */
 void
-clan_statement_compact(scoplib_statement_p statement, int nb_parameters)
+clan_statement_compact(openscop_statement_p statement, int nb_parameters)
 {
   int nb_iterators;
-  scoplib_matrix_list_p tmp;
+  openscop_matrix_list_p tmp;
 
   while (statement != NULL)
   {

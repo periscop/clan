@@ -40,8 +40,8 @@
 # define CLAN_STATEMENT_H
 
 # include <stdio.h>
-# include <scoplib/scop.h>
-# include <scoplib/statement.h>
+# include <openscop/scop.h>
+# include <openscop/statement.h>
 # include <clan/matrix.h>
 
 # if defined(__cplusplus)
@@ -53,7 +53,7 @@ extern "C"
 /*+****************************************************************************
  *                            Processing functions                            *
  ******************************************************************************/
-void             clan_statement_compact(scoplib_statement_p, int);
+void             clan_statement_compact(openscop_statement_p, int);
 
 
 # if defined(__cplusplus)

@@ -49,20 +49,20 @@
  *                            Processing functions                            *
  ******************************************************************************/
 
-scoplib_scop_p
+openscop_scop_p
 clan_parse(FILE *, clan_options_p);
 
 /**
  * clan_scop_extract function:
  * this function is a wrapper clan_parse function that parses a file to
- * extract a SCoP and returns, if successful, a pointer to the scoplib_scop_t
+ * extract a SCoP and returns, if successful, a pointer to the openscop_scop_t
  * structure.
  * \param input   The file to parse (already open).
  * \param options Options for file parsing.
  **
  * - 24/05/2008: First version.
  */
-scoplib_scop_p
+openscop_scop_p
 clan_scop_extract(FILE * input, clan_options_p options)
 {
   return clan_parse(input,options);
@@ -79,7 +79,7 @@ clan_scop_extract(FILE * input, clan_options_p options)
  * - 02/05/2008: first version.
  */
 void
-clan_scop_compact(scoplib_scop_p scop)
+clan_scop_compact(openscop_scop_p scop)
 {
   clan_statement_compact(scop->statement,scop->nb_parameters);
 }
@@ -93,7 +93,7 @@ clan_scop_compact(scoplib_scop_p scop)
  *
  */
 void
-clan_scop_fill_options(scoplib_scop_p scop, int* localvars, int* liveoutvars)
+clan_scop_fill_options(openscop_scop_p scop, int* localvars, int* liveoutvars)
 {
   /* Build the string of ids. */
   int i, size;

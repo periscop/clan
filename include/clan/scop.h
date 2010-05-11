@@ -41,7 +41,7 @@
 
 # include <unistd.h>
 
-# include <scoplib/scop.h>
+# include <openscop/scop.h>
 # include <clan/options.h>
 
 # if defined(__cplusplus)
@@ -53,9 +53,9 @@ extern "C"
 /*+****************************************************************************
  *                            Processing functions                            *
  ******************************************************************************/
-scoplib_scop_p  clan_scop_extract(FILE *, clan_options_p);
-void		clan_scop_compact(scoplib_scop_p);
-void		clan_scop_fill_options(scoplib_scop_p, int*, int*);
+openscop_scop_p  clan_scop_extract(FILE *, clan_options_p);
+void		clan_scop_compact(openscop_scop_p);
+void		clan_scop_fill_options(openscop_scop_p, int*, int*);
 
 
 # if defined(__cplusplus)

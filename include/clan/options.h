@@ -40,8 +40,8 @@
 # define CLAN_OPTIONS_H
 
 # include <stdio.h>
-# include <scoplib/scop.h>
-# include <scoplib/macros.h>
+# include <openscop/scop.h>
+# include <openscop/macros.h>
 
 
 # if defined(__cplusplus)

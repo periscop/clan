@@ -59,25 +59,25 @@
  **
  * - 01/05/2008: first version.
  */
-scoplib_vector_p
+openscop_vector_p
 clan_vector_term(clan_symbol_p symbol, int coefficient, char * identifier)
 {
   int rank, size;
-  scoplib_vector_p vector;
+  openscop_vector_p vector;
 
   size = CLAN_MAX_DEPTH + CLAN_MAX_PARAMETERS + 2 ;
-  vector = scoplib_vector_malloc(size);
+  vector = openscop_vector_malloc(size);
 
   if (identifier == NULL)
-    SCOPVAL_set_si(vector->p[size - 1],coefficient);
+    SCOPINT_set_si(vector->p[size - 1],coefficient);
   else
   {
     rank = clan_symbol_get_rank(symbol,identifier);
 
-    if (clan_symbol_get_type(symbol,identifier) == SCOPLIB_TYPE_ITERATOR)
-      SCOPVAL_set_si(vector->p[rank],coefficient);
+    if (clan_symbol_get_type(symbol,identifier) == OPENSCOP_TYPE_ITERATOR)
+      SCOPINT_set_si(vector->p[rank],coefficient);
     else
-      SCOPVAL_set_si(vector->p[CLAN_MAX_DEPTH + rank],coefficient);
+      SCOPINT_set_si(vector->p[CLAN_MAX_DEPTH + rank],coefficient);
   }
   return vector;
 }

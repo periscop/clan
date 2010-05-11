@@ -61,20 +61,14 @@ void
 clan_statement_compact(openscop_statement_p statement, int nb_parameters)
 {
   int nb_iterators;
-  openscop_matrix_list_p tmp;
 
   while (statement != NULL)
   {
     nb_iterators = statement->nb_iterators;
-    tmp = statement->domain;
-    while (tmp)
-      {
-	clan_matrix_compact(tmp->elt,nb_iterators,nb_parameters);
-	tmp = tmp->next;
-      }
-    clan_matrix_compact(statement->schedule,nb_iterators,nb_parameters);
-    clan_matrix_compact(statement->read,nb_iterators,nb_parameters);
-    clan_matrix_compact(statement->write,nb_iterators,nb_parameters);
+    clan_matrix_compact(statement->domain, nb_iterators, nb_parameters);
+    clan_matrix_compact(statement->schedule, nb_iterators, nb_parameters);
+    clan_matrix_compact(statement->read, nb_iterators, nb_parameters);
+    clan_matrix_compact(statement->write, nb_iterators, nb_parameters);
     statement = statement->next;
   }
 }

@@ -64,21 +64,21 @@
     */
    openscop_scop_p      parser_scop;        /**< SCoP in construction */
    openscop_statement_p parser_statement;   /**< Statement in construction */
-   clan_symbol_p       parser_symbol;      /**< Top of the symbol table */
-   int                 parser_recording;   /**< Boolean: do we record or not? */
-   char *              parser_record;      /**< What we record
-					      (statement body) */
-   int                 parser_depth = 0;   /**< Current loop depth */
-   int *               parser_scheduling;  /**< Current statement scheduling */
-   clan_symbol_p *     parser_iterators;   /**< Current iterator list */
+   clan_symbol_p        parser_symbol;      /**< Top of the symbol table */
+   int                  parser_recording;   /**< Boolean: do we record or not? */
+   char *               parser_record;      /**< What we record
+                                                 (statement body) */
+   int                  parser_depth = 0;   /**< Current loop depth */
+   int *                parser_scheduling;  /**< Current statement scheduling */
+   clan_symbol_p *      parser_iterators;   /**< Current iterator list */
    openscop_matrix_p    parser_domain;      /**< Current iteration domain */
-   int                 parser_nb_cons = 0; /**< Current number of constraints */
-   int *               parser_consperdim;  /**< Constraint nb for each
+   int                  parser_nb_cons = 0; /**< Current number of constraints */
+   int *                parser_consperdim;  /**< Constraint nb for each
 					      dimension */
-   int*		       parser_variables_localvars;/**< List of variables
+   int*		        parser_variables_localvars;/**< List of variables
 						     in #pragma
 						     local-vars */
-   int*		       parser_variables_liveout;/**< List of variables
+   int*		        parser_variables_liveout;/**< List of variables
 						     in #pragma
 						     live-out */
    /* Ugly global variable to keep/read Clan options during parsing. */
@@ -87,8 +87,8 @@
 
 %}
 
-%union { int value;                     /**< An integer value for integers */
-         char * symbol;                 /**< A string for identifiers */
+%union { int value;                      /**< An integer value for integers */
+         char * symbol;                  /**< A string for identifiers */
          openscop_vector_p affex;        /**< An affine expression */
          openscop_matrix_p setex;        /**< A set of affine expressions */
          openscop_matrix_p rw[2];        /**< Read and write array accesses */
@@ -329,9 +329,8 @@ instruction:
 	    openscop_vector_free(constraint);
 	  }
 	/* Construct the statement structure from the parser state */
-	parser_statement->domain = openscop_matrix_list_malloc();
-	parser_statement->domain->elt = openscop_matrix_ncopy(parser_domain,
-							  parser_nb_cons);
+	parser_statement->domain = openscop_matrix_ncopy(parser_domain,
+							 parser_nb_cons);
         parser_statement->schedule = clan_matrix_scheduling(parser_scheduling,
                                                             parser_depth);
         parser_statement->read = $2[0];

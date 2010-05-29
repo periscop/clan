@@ -99,7 +99,7 @@
 			 yylval.symbol = word;
 			 return clan_scanner(ID,yytext,"ID");
                        }
-[0-9]+"."[0-9]*        { return clan_scanner(REAL,yytext,"REAL"); }
+[0-9]+"."[0-9]*[d,f]*        { return clan_scanner(REAL,yytext,"REAL"); }
 [0-9]+                 {
 		         yylval.value = atoi(yytext) ;
                          return clan_scanner(INTEGER,yytext,"INTEGER");

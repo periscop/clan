@@ -1,3 +1,12 @@
+2010-05-29  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
+	This patch provides support for literal floats, eg. 0.6f, 4.5d.
+
+	* source/scanner.l: Extend the scanner to parse literal float
+	numbers.
+	* tests/unitary/float.c,
+	* tests/unitary/float.c.scop: New test file.
+	* tests/Makefile.am: Update accordingly.
+
 2010-04-17  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
 
 	* source/parser.y: Fix a bug in the grammar when facing multiple

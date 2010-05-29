@@ -67,41 +67,42 @@ TEST_FILES             	=			\
 	$(top_srcdir)/tests/matmul.c		\
 	$(top_srcdir)/tests/swim.c
 
-UNITARY_TEST_FILES             	=					\
-	$(top_srcdir)/tests/unitary/classicloop.c			\
-	$(top_srcdir)/tests/unitary/simpleloop.c			\
-	$(top_srcdir)/tests/unitary/basicnest.c				\
-	$(top_srcdir)/tests/unitary/empty.c				\
-	$(top_srcdir)/tests/unitary/simplecond.c			\
-	$(top_srcdir)/tests/unitary/twoconds.c				\
-	$(top_srcdir)/tests/unitary/twocondincond.c			\
-	$(top_srcdir)/tests/unitary/complexcond.c			\
-	$(top_srcdir)/tests/unitary/multiparenthcond.c			\
-	$(top_srcdir)/tests/unitary/maxloopsimple.c			\
-	$(top_srcdir)/tests/unitary/maxloopcomplex.c			\
-	$(top_srcdir)/tests/unitary/minloopsimple.c			\
-	$(top_srcdir)/tests/unitary/minloopcomplex.c			\
-	$(top_srcdir)/tests/unitary/minmax.c				\
-	$(top_srcdir)/tests/unitary/negassign.c				\
-	$(top_srcdir)/tests/unitary/binop.c				\
-	$(top_srcdir)/tests/unitary/complexop.c				\
-	$(top_srcdir)/tests/unitary/complexprog.c			\
-	$(top_srcdir)/tests/unitary/noloop.c				\
-	$(top_srcdir)/tests/unitary/noloop2.c				\
-	$(top_srcdir)/tests/unitary/ternary.c				\
-	$(top_srcdir)/tests/unitary/functioncall.c			\
-	$(top_srcdir)/tests/unitary/functioncall2.c			\
-	$(top_srcdir)/tests/unitary/redefiter.c				\
-	$(top_srcdir)/tests/unitary/comments.c				\
-	$(top_srcdir)/tests/unitary/underscore.c			\
-	$(top_srcdir)/tests/unitary/parenthesis.c			\
-	$(top_srcdir)/tests/unitary/intaddit.c				\
-	$(top_srcdir)/tests/unitary/assigniter.c			\
-	$(top_srcdir)/tests/unitary/assigniter2.c			\
-	$(top_srcdir)/tests/unitary/increment.c				\
-	$(top_srcdir)/tests/unitary/field.c				\
-	$(top_srcdir)/tests/unitary/object.c				\
-	$(top_srcdir)/tests/unitary/nestedcurly.c
+UNITARY_TEST_FILES             	=			\
+	$(top_srcdir)/tests/unitary/classicloop.c	\
+	$(top_srcdir)/tests/unitary/simpleloop.c	\
+	$(top_srcdir)/tests/unitary/basicnest.c		\
+	$(top_srcdir)/tests/unitary/empty.c		\
+	$(top_srcdir)/tests/unitary/simplecond.c	\
+	$(top_srcdir)/tests/unitary/twoconds.c		\
+	$(top_srcdir)/tests/unitary/twocondincond.c	\
+	$(top_srcdir)/tests/unitary/complexcond.c	\
+	$(top_srcdir)/tests/unitary/multiparenthcond.c	\
+	$(top_srcdir)/tests/unitary/maxloopsimple.c	\
+	$(top_srcdir)/tests/unitary/maxloopcomplex.c	\
+	$(top_srcdir)/tests/unitary/minloopsimple.c	\
+	$(top_srcdir)/tests/unitary/minloopcomplex.c	\
+	$(top_srcdir)/tests/unitary/minmax.c		\
+	$(top_srcdir)/tests/unitary/negassign.c		\
+	$(top_srcdir)/tests/unitary/binop.c		\
+	$(top_srcdir)/tests/unitary/complexop.c		\
+	$(top_srcdir)/tests/unitary/complexprog.c	\
+	$(top_srcdir)/tests/unitary/noloop.c		\
+	$(top_srcdir)/tests/unitary/noloop2.c		\
+	$(top_srcdir)/tests/unitary/ternary.c		\
+	$(top_srcdir)/tests/unitary/functioncall.c	\
+	$(top_srcdir)/tests/unitary/functioncall2.c	\
+	$(top_srcdir)/tests/unitary/redefiter.c		\
+	$(top_srcdir)/tests/unitary/comments.c		\
+	$(top_srcdir)/tests/unitary/underscore.c	\
+	$(top_srcdir)/tests/unitary/parenthesis.c	\
+	$(top_srcdir)/tests/unitary/intaddit.c		\
+	$(top_srcdir)/tests/unitary/assigniter.c	\
+	$(top_srcdir)/tests/unitary/assigniter2.c	\
+	$(top_srcdir)/tests/unitary/increment.c		\
+	$(top_srcdir)/tests/unitary/field.c		\
+	$(top_srcdir)/tests/unitary/object.c		\
+	$(top_srcdir)/tests/unitary/nestedcurly.c	\
+	$(top_srcdir)/tests/unitary/float.c
 
 
 TEST_FILES_REF    =		 $(TEST_FILES:.c=.c.scop)

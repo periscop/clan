@@ -1,3 +1,8 @@
+2010-06-01  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
+
+	* source/parser.y: Extend the grammar to support 'var * INTEGER'
+	expressions and not only 'INTEGER * var' ones.
+
 2010-05-29  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
 	This patch provides support for literal floats, eg. 0.6f, 4.5d.
 

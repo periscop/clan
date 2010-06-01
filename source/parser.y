@@ -562,6 +562,15 @@ term:
         free($3);
       }
 /*
+ * Rule 4': term -> id * INT
+ */
+  | id opMULTIPLY INTEGER
+      {
+        clan_symbol_add(&parser_symbol,$1,SCOPLIB_TYPE_UNKNOWN,parser_depth);
+        $$ = clan_vector_term(parser_symbol,$3,$1);
+        free($1);
+      }
+/*
  * Rule 5: term -> INT * INT
  */
   | INTEGER opMULTIPLY INTEGER
@@ -583,6 +592,15 @@ term:
         clan_symbol_add(&parser_symbol,$4,SCOPLIB_TYPE_UNKNOWN,parser_depth);
         $$ = clan_vector_term(parser_symbol,-($2),$4);
         free($4);
+      }
+/*
+ * Rule 7': term -> - id * INT
+ */
+  | opMINUS id opMULTIPLY INTEGER
+      {
+        clan_symbol_add(&parser_symbol,$2,SCOPLIB_TYPE_UNKNOWN,parser_depth);
+        $$ = clan_vector_term(parser_symbol,-($4),$2);
+        free($2);
       }
 /*
  * Rule 8: term -> - id

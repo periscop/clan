@@ -12,12 +12,12 @@
  *     |"-"-"-"-"-#-#-##   Clan : the Chunky Loop Analyzer (experimental)     *
  ****  |     # ## ######  *****************************************************
  *      \       .::::'/                                                       *
- *       \      ::::'/     Copyright (C) 2008 Cedric Bastoul                  *
+ *       \      ::::'/     Copyright (C) 2008 University Paris-Sud 11         *
  *     :8a|    # # ##                                                         *
  *     ::88a      ###      This is free software; you can redistribute it     *
  *    ::::888a  8a ##::.   and/or modify it under the terms of the GNU Lesser *
  *  ::::::::888a88a[]:::   General Public License as published by the Free    *
- *::8:::::::::SUNDOGa8a::. Software Foundation, either version 3 of the       *
+ *::8:::::::::SUNDOGa8a::. Software Foundation, either version 2.1 of the     *
  *::::::::8::::888:Y8888:: License, or (at your option) any later version.    *
  *::::':::88::::888::Y88a::::::::::::...                                      *
  *::'::..    .   .....   ..   ...  .                                          *
@@ -31,7 +31,7 @@
  * 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA                     *
  *                                                                            *
  * Clan, the Chunky Loop Analyzer                                             *
- * Written by Cedric Bastoul, Cedric.Bastoul@inria.fr                         *
+ * Written by Cedric Bastoul, Cedric.Bastoul@u-psud.fr                        *
  *                                                                            *
  ******************************************************************************/
 
@@ -59,25 +59,25 @@
  **
  * - 01/05/2008: first version.
  */
-scoplib_vector_p
+openscop_vector_p
 clan_vector_term(clan_symbol_p symbol, int coefficient, char * identifier)
 {
   int rank, size;
-  scoplib_vector_p vector;
+  openscop_vector_p vector;
 
   size = CLAN_MAX_DEPTH + CLAN_MAX_PARAMETERS + 2 ;
-  vector = scoplib_vector_malloc(size);
+  vector = openscop_vector_malloc(size);
 
   if (identifier == NULL)
-    SCOPVAL_set_si(vector->p[size - 1],coefficient);
+    SCOPINT_set_si(vector->p[size - 1],coefficient);
   else
   {
     rank = clan_symbol_get_rank(symbol,identifier);
 
-    if (clan_symbol_get_type(symbol,identifier) == SCOPLIB_TYPE_ITERATOR)
-      SCOPVAL_set_si(vector->p[rank],coefficient);
+    if (clan_symbol_get_type(symbol,identifier) == OPENSCOP_TYPE_ITERATOR)
+      SCOPINT_set_si(vector->p[rank],coefficient);
     else
-      SCOPVAL_set_si(vector->p[CLAN_MAX_DEPTH + rank],coefficient);
+      SCOPINT_set_si(vector->p[CLAN_MAX_DEPTH + rank],coefficient);
   }
   return vector;
 }

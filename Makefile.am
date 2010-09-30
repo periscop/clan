@@ -12,14 +12,14 @@
 # *     |"-"-"-"-"-#-#-##   Clan : the Chunky Loop Analyser (experimental)    *
 # ****  |     # ## ######  ****************************************************
 # *      \       .::::'/                                                      *
-# *       \      ::::'/     Copyright (C) 2008 Cedric Bastoul                 *
+# *       \      ::::'/     Copyright (C) 2008 University Paris-Sud 11        *
 # *     :8a|    # # ##                                                        *
 # *     ::88a      ###      This is free software; you can redistribute it    *
 # *    ::::888a  8a ##::.   and/or modify it under the terms of the GNU       *
 # *  ::::::::888a88a[]:::   Lesser General Public License as published by     *
-# *::8:::::::::SUNDOGa8a::. the Free Software Foundation, either version 3 of *
-# *::::::::8::::888:Y8888::                the License, or (at your option)   *
-# *::::':::88::::888::Y88a::::::::::::...  any later version.                 *
+# *::8:::::::::SUNDOGa8a::. the Free Software Foundation, either version 2.1  *
+# *::::::::8::::888:Y8888::                of the License, or (at your        *
+# *::::':::88::::888::Y88a::::::::::::...  option) any later version.         *
 # *::'::..    .   .....   ..   ...  .                                         *
 # * This software is distributed in the hope that it will be useful, but      *
 # * WITHOUT ANY WARRANTY; without even the implied warranty of                *
@@ -31,7 +31,7 @@
 # * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA  *
 # *                                                                           *
 # * Clan, the Chunky Loop Analyser                                            *
-# * Written by Cedric Bastoul, Cedric.Bastoul@inria.fr                        *
+# * Written by Cedric Bastoul, Cedric.Bastoul@u-psud.fr                       *
 # *                                                                           *
 # *****************************************************************************/
 #
@@ -42,7 +42,7 @@
 
 
 #############################################################################
-SUBDIRS 		= @BUILD_SCOPLIB@ doc source include tests
+SUBDIRS 		= @BUILD_OPENSCOP@ doc source include tests
 
 
 #############################################################################
@@ -75,6 +75,6 @@ dist-hook:
 	done
 
 maintainer-clean-hook:
-	(cd $(abs_top_srcdir)/scoplib && rm -rf scoplib-0.1.0)
+	(cd $(abs_top_srcdir)/openscop && rm -rf openscop-0.1.0)
 
 #############################################################################

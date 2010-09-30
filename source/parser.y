@@ -12,12 +12,12 @@
  *     |"-"-"-"-"-#-#-##   Clan : the Chunky Loop Analyzer (experimental)     *
  ****  |     # ## ######  *****************************************************
  *      \       .::::'/                                                       *
- *       \      ::::'/     Copyright (C) 2008 Cedric Bastoul                  *
+ *       \      ::::'/     Copyright (C) 2008 University Paris-Sud 11         *
  *     :8a|    # # ##                                                         *
  *     ::88a      ###      This is free software; you can redistribute it     *
  *    ::::888a  8a ##::.   and/or modify it under the terms of the GNU Lesser *
  *  ::::::::888a88a[]:::   General Public License as published by the Free    *
- *::8:::::::::SUNDOGa8a::. Software Foundation, either version 3 of the       *
+ *::8:::::::::SUNDOGa8a::. Software Foundation, either version 2.1 of the     *
  *::::::::8::::888:Y8888:: License, or (at your option) any later version.    *
  *::::':::88::::888::Y88a::::::::::::...                                      *
  *::'::..    .   .....   ..   ...  .                                          *
@@ -31,7 +31,7 @@
  * 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA                     *
  *                                                                            *
  * Clan, the Chunky Loop Analyzer                                             *
- * Written by Cedric Bastoul, Cedric.Bastoul@inria.fr                         *
+ * Written by Cedric Bastoul, Cedric.Bastoul@u-psud.fr                        *
  *                                                                            *
  ******************************************************************************/
 
@@ -54,7 +54,7 @@
    int clan_parse_error = 0; /**< Set to 1 during parsing if
 				encountered an error */
    void clan_parser_log(char *);
-   scoplib_scop_p clan_parse(FILE *, clan_options_p);
+   openscop_scop_p clan_parse(FILE *, clan_options_p);
 
    extern FILE * yyin;                  /**< File to be read by Lex */
    extern char scanner_latest_text[];   /**< Latest text read by Lex */
@@ -62,23 +62,23 @@
    /* This is the "parser state", a collection of variables that vary
     * during the parsing and thanks to we can extract all SCoP informations.
     */
-   scoplib_scop_p      parser_scop;        /**< SCoP in construction */
-   scoplib_statement_p parser_statement;   /**< Statement in construction */
-   clan_symbol_p       parser_symbol;      /**< Top of the symbol table */
-   int                 parser_recording;   /**< Boolean: do we record or not? */
-   char *              parser_record;      /**< What we record
-					      (statement body) */
-   int                 parser_depth = 0;   /**< Current loop depth */
-   int *               parser_scheduling;  /**< Current statement scheduling */
-   clan_symbol_p *     parser_iterators;   /**< Current iterator list */
-   scoplib_matrix_p    parser_domain;      /**< Current iteration domain */
-   int                 parser_nb_cons = 0; /**< Current number of constraints */
-   int *               parser_consperdim;  /**< Constraint nb for each
+   openscop_scop_p      parser_scop;        /**< SCoP in construction */
+   openscop_statement_p parser_statement;   /**< Statement in construction */
+   clan_symbol_p        parser_symbol;      /**< Top of the symbol table */
+   int                  parser_recording;   /**< Boolean: do we record or not? */
+   char *               parser_record;      /**< What we record
+                                                 (statement body) */
+   int                  parser_depth = 0;   /**< Current loop depth */
+   int *                parser_scheduling;  /**< Current statement scheduling */
+   clan_symbol_p *      parser_iterators;   /**< Current iterator list */
+   openscop_matrix_p    parser_domain;      /**< Current iteration domain */
+   int                  parser_nb_cons = 0; /**< Current number of constraints */
+   int *                parser_consperdim;  /**< Constraint nb for each
 					      dimension */
-   int*		       parser_variables_localvars;/**< List of variables
+   int*		        parser_variables_localvars;/**< List of variables
 						     in #pragma
 						     local-vars */
-   int*		       parser_variables_liveout;/**< List of variables
+   int*		        parser_variables_liveout;/**< List of variables
 						     in #pragma
 						     live-out */
    /* Ugly global variable to keep/read Clan options during parsing. */
@@ -87,11 +87,11 @@
 
 %}
 
-%union { int value;                     /**< An integer value for integers */
-         char * symbol;                 /**< A string for identifiers */
-         scoplib_vector_p affex;        /**< An affine expression */
-         scoplib_matrix_p setex;        /**< A set of affine expressions */
-         scoplib_matrix_p rw[2];        /**< Read and write array accesses */
+%union { int value;                      /**< An integer value for integers */
+         char * symbol;                  /**< A string for identifiers */
+         openscop_vector_p affex;        /**< An affine expression */
+         openscop_matrix_p setex;        /**< A set of affine expressions */
+         openscop_matrix_p rw[2];        /**< Read and write array accesses */
        }
 
 %token IGNORE
@@ -144,27 +144,27 @@ program:
 	int nb_parameters, nb_arrays;
 
         parser_scop->parameters = clan_symbol_id_array(parser_symbol,
-                                                       SCOPLIB_TYPE_PARAMETER,
+                                                       OPENSCOP_TYPE_PARAMETER,
                                                        &nb_parameters);
         parser_scop->nb_parameters = nb_parameters;
         parser_scop->arrays = clan_symbol_id_array(parser_symbol,
-                                                   SCOPLIB_TYPE_ARRAY,
+                                                   OPENSCOP_TYPE_ARRAY,
                                                    &nb_arrays);
         parser_scop->nb_arrays = nb_arrays;
 	if (parser_options->bounded_context)
 	  {
-	    parser_scop->context = scoplib_matrix_malloc(nb_parameters,
+	    parser_scop->context = openscop_matrix_malloc(nb_parameters,
 							 nb_parameters+2);
 	    int i;
 	    for (i = 0; i < nb_parameters; ++i)
 	      {
-		SCOPVAL_set_si(parser_scop->context->p[i][0], 1);
-		SCOPVAL_set_si(parser_scop->context->p[i][i+1], 1);
-		SCOPVAL_set_si(parser_scop->context->p[i][nb_parameters +1], 1);
+		SCOPINT_set_si(parser_scop->context->p[i][0], 1);
+		SCOPINT_set_si(parser_scop->context->p[i][i+1], 1);
+		SCOPINT_set_si(parser_scop->context->p[i][nb_parameters +1], 1);
 	      }
 	  }
 	else
-	  parser_scop->context = scoplib_matrix_malloc(0,nb_parameters+2);
+	  parser_scop->context = openscop_matrix_malloc(0,nb_parameters+2);
       }
   |
   ;
@@ -213,10 +213,10 @@ instruction:
       {
         clan_symbol_p symbol;
         symbol = clan_symbol_add(&parser_symbol,$3,
-                                 SCOPLIB_TYPE_ITERATOR,parser_depth+1);
+                                 OPENSCOP_TYPE_ITERATOR,parser_depth+1);
 	/* Ensure that the returned symbol was either a new one,
 	   either from the same type. */
-	if (symbol->type != SCOPLIB_TYPE_ITERATOR)
+	if (symbol->type != OPENSCOP_TYPE_ITERATOR)
 	  {
 	    yyerror("[Clan] Error: the input file is not a SCoP\n"
 		    "\t> A loop iterator was previously used as a parameter"
@@ -233,27 +233,27 @@ instruction:
     opASSIGNMENT
     max_affine_expression
       {
-        scoplib_vector_p parser_i_term = clan_vector_term(parser_symbol,1,$3);
-	scoplib_vector_tag_inequality(parser_i_term);
+        openscop_vector_p parser_i_term = clan_vector_term(parser_symbol,1,$3);
+	openscop_vector_tag_inequality(parser_i_term);
 	int i, j;
 	for (i = 0; i < $6->NbRows; ++i)
 	  {
 	    for (j = 1; j < $6->NbColumns; ++j)
-	      SCOPVAL_oppose($6->p[i][j],$6->p[i][j]);
-	    scoplib_matrix_add_vector($6,parser_i_term,i);
+	      SCOPINT_oppose($6->p[i][j],$6->p[i][j]);
+	    openscop_matrix_add_vector($6,parser_i_term,i);
 	  }
-	scoplib_matrix_insert_matrix(parser_domain,$6,parser_nb_cons);
+	openscop_matrix_insert_matrix(parser_domain,$6,parser_nb_cons);
 
         parser_nb_cons += $6->NbRows;
         parser_consperdim[parser_depth] += $6->NbRows;
-	scoplib_vector_free(parser_i_term);
+	openscop_vector_free(parser_i_term);
         free($3);
-	scoplib_matrix_free($6);
+	openscop_matrix_free($6);
       }
     sySEMICOLON
     condition
       {
-	scoplib_matrix_insert_matrix(parser_domain,$9,parser_nb_cons);
+	openscop_matrix_insert_matrix(parser_domain,$9,parser_nb_cons);
         parser_nb_cons += $9->NbRows;
         parser_consperdim[parser_depth] += $9->NbRows;
       }
@@ -279,7 +279,7 @@ instruction:
   |  IF syRPARENTHESIS condition syLPARENTHESIS
       {
 	/* Insert the condition constraint in the current parser domain. */
-	scoplib_matrix_insert_matrix(parser_domain,$3,parser_nb_cons);
+	openscop_matrix_insert_matrix(parser_domain,$3,parser_nb_cons);
         parser_nb_cons += $3->NbRows;
       }
     bloc
@@ -289,15 +289,15 @@ instruction:
 	int i, j;
 	for (i = parser_nb_cons; i < parser_domain->NbRows - 1; ++i)
 	  for (j = 0; j < parser_domain->NbColumns; ++j)
-	    SCOPVAL_assign(parser_domain->p[i][j],parser_domain->p[i+1][j]);
+	    SCOPINT_assign(parser_domain->p[i][j],parser_domain->p[i+1][j]);
       }
 /*
  * Rule 3: instruction -> assignment
  *
  */
   |   {
-        parser_statement = scoplib_statement_malloc();
-        parser_record = (char *)malloc(SCOPLIB_MAX_STRING * sizeof(char));
+        parser_statement = openscop_statement_malloc();
+        parser_record = (char *)malloc(OPENSCOP_MAX_STRING * sizeof(char));
         parser_recording = CLAN_TRUE;
         /* Yacc needs Lex to read the next token to ensure we are starting
          * an assignment. So we keep track of the latest text Lex read
@@ -318,20 +318,19 @@ instruction:
 	      free(fakeiter);
 	    else
 	      symbol = clan_symbol_add(&parser_symbol,fakeiter,
-				       SCOPLIB_TYPE_ITERATOR,parser_depth+1);
+				       OPENSCOP_TYPE_ITERATOR,parser_depth+1);
 	    parser_iterators[parser_depth] = symbol;
-	    scoplib_vector_p constraint =
-	      scoplib_vector_malloc(parser_domain->NbColumns);
-	    SCOPVAL_set_si(constraint->p[1],1);
+	    openscop_vector_p constraint =
+	      openscop_vector_malloc(parser_domain->NbColumns);
+	    SCOPINT_set_si(constraint->p[1],1);
 	    parser_depth++;
-	    scoplib_matrix_replace_vector(parser_domain,constraint,parser_nb_cons);
+	    openscop_matrix_replace_vector(parser_domain,constraint,parser_nb_cons);
 	    parser_nb_cons++;
-	    scoplib_vector_free(constraint);
+	    openscop_vector_free(constraint);
 	  }
 	/* Construct the statement structure from the parser state */
-	parser_statement->domain = scoplib_matrix_list_malloc();
-	parser_statement->domain->elt = scoplib_matrix_ncopy(parser_domain,
-							  parser_nb_cons);
+	parser_statement->domain = openscop_matrix_ncopy(parser_domain,
+							 parser_nb_cons);
         parser_statement->schedule = clan_matrix_scheduling(parser_scheduling,
                                                             parser_depth);
         parser_statement->read = $2[0];
@@ -342,12 +341,12 @@ instruction:
                                                             parser_depth);
 	if (parser_statement->write == NULL)
 	  parser_statement->write =
-	    scoplib_matrix_malloc(0, parser_domain->NbColumns);
+	    openscop_matrix_malloc(0, parser_domain->NbColumns);
 	if (parser_statement->read == NULL)
 	  parser_statement->read =
-	    scoplib_matrix_malloc(0, parser_domain->NbColumns);
+	    openscop_matrix_malloc(0, parser_domain->NbColumns);
         parser_recording = CLAN_FALSE;
-        scoplib_statement_add(&(parser_scop->statement),parser_statement);
+        openscop_statement_add(&(parser_scop->statement),parser_statement);
 	/* We were parsing a statement without iterator. Restore the
 	   original state */
 	if (old_parser_depth == 0)
@@ -366,10 +365,10 @@ instruction:
   | PRAGMALOCALVARS variable_list
       {
 	int i, j;
-	scoplib_matrix_p m = $2;
+	openscop_matrix_p m = $2;
 	for (i = 0; i <  m->NbRows; ++i)
 	  {
-	    int id = SCOPVAL_get_si(m->p[i][0]);
+	    int id = SCOPINT_get_si(m->p[i][0]);
 	    for (j = 0; parser_variables_localvars[j] != -1 &&
 		   parser_variables_localvars[j] != id; ++j)
 	      ;
@@ -390,10 +389,10 @@ instruction:
   | PRAGMALIVEOUT variable_list
       {
 	int i, j;
-	scoplib_matrix_p m = $2;
+	openscop_matrix_p m = $2;
 	for (i = 0; i <  m->NbRows; ++i)
 	  {
-	    int id = SCOPVAL_get_si(m->p[i][0]);
+	    int id = SCOPINT_get_si(m->p[i][0]);
 	    for (j = 0; parser_variables_liveout[j] != -1 &&
 		   parser_variables_liveout[j] != id; ++j)
 	      ;
@@ -454,13 +453,13 @@ incrementation:
 min_affine_expression:
     affine_expression
       {
-	$$ = scoplib_matrix_from_vector($1);
-        scoplib_vector_free($1);
+	$$ = openscop_matrix_from_vector($1);
+        openscop_vector_free($1);
       }
   | MIN syRPARENTHESIS min_affine_expression syCOMMA min_affine_expression
     syLPARENTHESIS
      {
-       $$ = scoplib_matrix_concat($3, $5);
+       $$ = openscop_matrix_concat($3, $5);
      }
   ;
 
@@ -473,13 +472,13 @@ min_affine_expression:
 max_affine_expression:
     affine_expression
       {
-	$$ = scoplib_matrix_from_vector($1);
-        scoplib_vector_free($1);
+	$$ = openscop_matrix_from_vector($1);
+        openscop_vector_free($1);
       }
   | MAX syRPARENTHESIS max_affine_expression syCOMMA max_affine_expression
     syLPARENTHESIS
      {
-       $$ = scoplib_matrix_concat($3, $5);
+       $$ = openscop_matrix_concat($3, $5);
      }
   ;
 
@@ -496,15 +495,15 @@ affine_expression:
       }
   | affine_expression opPLUS affine_expression
       {
-        $$ = scoplib_vector_add($1,$3);
-        scoplib_vector_free($1);
-        scoplib_vector_free($3);
+        $$ = openscop_vector_add($1,$3);
+        openscop_vector_free($1);
+        openscop_vector_free($3);
       }
   | affine_expression opMINUS affine_expression
       {
-        $$ = scoplib_vector_sub($1,$3);
-	scoplib_vector_free($1);
-        scoplib_vector_free($3);
+        $$ = openscop_vector_sub($1,$3);
+	openscop_vector_free($1);
+        openscop_vector_free($3);
       }
   | syRPARENTHESIS affine_expression syLPARENTHESIS
       {
@@ -512,12 +511,12 @@ affine_expression:
       }
   | CEILD syRPARENTHESIS affine_expression syCOMMA term syLPARENTHESIS
       {
-	SCOPVAL_assign($3->p[0], $5->p[$5->Size - 1]);
+	SCOPINT_assign($3->p[0], $5->p[$5->Size - 1]);
 	$$ = $3;
       }
   | FLOORD syRPARENTHESIS affine_expression syCOMMA term syLPARENTHESIS
       {
-	SCOPVAL_assign($3->p[0], $5->p[$5->Size - 1]);
+	SCOPINT_assign($3->p[0], $5->p[$5->Size - 1]);
 	$$ = $3;
       }
   ;
@@ -541,7 +540,7 @@ term:
  */
   | id
       {
-        clan_symbol_add(&parser_symbol,$1,SCOPLIB_TYPE_UNKNOWN,parser_depth);
+        clan_symbol_add(&parser_symbol,$1,OPENSCOP_TYPE_UNKNOWN,parser_depth);
         $$ = clan_vector_term(parser_symbol,1,$1);
         free($1);
       }
@@ -557,7 +556,7 @@ term:
  */
   | INTEGER opMULTIPLY id
       {
-        clan_symbol_add(&parser_symbol,$3,SCOPLIB_TYPE_UNKNOWN,parser_depth);
+        clan_symbol_add(&parser_symbol,$3,OPENSCOP_TYPE_UNKNOWN,parser_depth);
         $$ = clan_vector_term(parser_symbol,$1,$3);
         free($3);
       }
@@ -589,7 +588,7 @@ term:
  */
   | opMINUS INTEGER opMULTIPLY id
       {
-        clan_symbol_add(&parser_symbol,$4,SCOPLIB_TYPE_UNKNOWN,parser_depth);
+        clan_symbol_add(&parser_symbol,$4,OPENSCOP_TYPE_UNKNOWN,parser_depth);
         $$ = clan_vector_term(parser_symbol,-($2),$4);
         free($4);
       }
@@ -607,7 +606,7 @@ term:
  */
   | opMINUS id
       {
-        clan_symbol_add(&parser_symbol,$2,SCOPLIB_TYPE_UNKNOWN,parser_depth);
+        clan_symbol_add(&parser_symbol,$2,OPENSCOP_TYPE_UNKNOWN,parser_depth);
         $$ = clan_vector_term(parser_symbol,-1,$2);
         free($2);
       }
@@ -629,32 +628,32 @@ condition:
       {
         /* a<b translates to -a+b-1>=0 */
 	int i;
-	scoplib_vector_p tmp = scoplib_vector_add_scalar($1,1);
-	scoplib_vector_tag_inequality(tmp);
+	openscop_vector_p tmp = openscop_vector_add_scalar($1,1);
+	openscop_vector_tag_inequality(tmp);
 	for (i = 0; i < $3->NbRows; ++i)
 	  {
 	    /* We have parsed a ceild/floord at an earlier stage. */
-	    if (SCOPVAL_notzero_p($3->p[i][0]) && !SCOPVAL_one_p($3->p[i][0]))
+	    if (SCOPINT_notzero_p($3->p[i][0]) && !SCOPINT_one_p($3->p[i][0]))
 	      {
-		scoplib_int_t val; SCOPVAL_init(val);
-		SCOPVAL_assign(val, $3->p[i][0]);
-		SCOPVAL_set_si($3->p[i][0], 0);
-		scoplib_vector_p tmp2 = scoplib_vector_add_scalar($1,0);
+		openscop_int_t val; SCOPINT_init(val);
+		SCOPINT_assign(val, $3->p[i][0]);
+		SCOPINT_set_si($3->p[i][0], 0);
+		openscop_vector_p tmp2 = openscop_vector_add_scalar($1,0);
 		int j;
 		for (j = 1; j < $1->Size; ++j)
-		  SCOPVAL_multo(tmp2->p[j], $1->p[j], val);
-		scoplib_vector_p tmp3 = scoplib_vector_add_scalar(tmp2,1);
-		scoplib_vector_tag_inequality(tmp3);
-		scoplib_matrix_sub_vector($3, tmp3, i);
-		scoplib_vector_free(tmp2);
-		scoplib_vector_free(tmp3);
-		SCOPVAL_clear(val);
+		  SCOPINT_multo(tmp2->p[j], $1->p[j], val);
+		openscop_vector_p tmp3 = openscop_vector_add_scalar(tmp2,1);
+		openscop_vector_tag_inequality(tmp3);
+		openscop_matrix_sub_vector($3, tmp3, i);
+		openscop_vector_free(tmp2);
+		openscop_vector_free(tmp3);
+		SCOPINT_clear(val);
 	      }
 	    else
-	      scoplib_matrix_sub_vector($3, tmp, i);
+	      openscop_matrix_sub_vector($3, tmp, i);
 	  }
-	scoplib_vector_free($1);
-	scoplib_vector_free(tmp);
+	openscop_vector_free($1);
+	openscop_vector_free(tmp);
 	$$ = $3;
       }
 /*
@@ -664,34 +663,34 @@ condition:
       {
         /* a>b translates to a-b-1>=0 */
 	int i, j;
-	scoplib_vector_p tmp = scoplib_vector_add_scalar($1,-1);
-	scoplib_vector_tag_inequality(tmp);
+	openscop_vector_p tmp = openscop_vector_add_scalar($1,-1);
+	openscop_vector_tag_inequality(tmp);
 	for (i = 0; i < $3->NbRows; ++i)
 	  {
 	    for (j = 1; j < $3->NbColumns; ++j)
-	      SCOPVAL_oppose($3->p[i][j],$3->p[i][j]);
+	      SCOPINT_oppose($3->p[i][j],$3->p[i][j]);
 	    /* We have parsed a ceild/floord at an earlier stage. */
-	    if (SCOPVAL_notzero_p($3->p[i][0]) && !SCOPVAL_one_p($3->p[i][0]))
+	    if (SCOPINT_notzero_p($3->p[i][0]) && !SCOPINT_one_p($3->p[i][0]))
 	      {
-		scoplib_int_t val; SCOPVAL_init(val);
-		SCOPVAL_assign(val, $3->p[i][0]);
-		SCOPVAL_set_si($3->p[i][0], 0);
-		scoplib_vector_p tmp2 = scoplib_vector_add_scalar($1,0);
+		openscop_int_t val; SCOPINT_init(val);
+		SCOPINT_assign(val, $3->p[i][0]);
+		SCOPINT_set_si($3->p[i][0], 0);
+		openscop_vector_p tmp2 = openscop_vector_add_scalar($1,0);
 		int j;
 		for (j = 1; j < $1->Size; ++j)
-		  SCOPVAL_multo(tmp2->p[j], $1->p[j], val);
-		scoplib_vector_p tmp3 = scoplib_vector_add_scalar(tmp2,-1);
-		scoplib_vector_tag_inequality(tmp3);
-		scoplib_matrix_add_vector($3, tmp3, i);
-		scoplib_vector_free(tmp2);
-		scoplib_vector_free(tmp3);
-		SCOPVAL_clear(val);
+		  SCOPINT_multo(tmp2->p[j], $1->p[j], val);
+		openscop_vector_p tmp3 = openscop_vector_add_scalar(tmp2,-1);
+		openscop_vector_tag_inequality(tmp3);
+		openscop_matrix_add_vector($3, tmp3, i);
+		openscop_vector_free(tmp2);
+		openscop_vector_free(tmp3);
+		SCOPINT_clear(val);
 	      }
 	    else
-	      scoplib_matrix_add_vector($3,tmp,i);
+	      openscop_matrix_add_vector($3,tmp,i);
 	  }
-	scoplib_vector_free($1);
-	scoplib_vector_free(tmp);
+	openscop_vector_free($1);
+	openscop_vector_free(tmp);
 	$$ = $3;
       }
 /*
@@ -701,30 +700,30 @@ condition:
       {
         /* a<=b translates to -a+b>=0 */
 	int i;
-	scoplib_vector_p tmp = scoplib_vector_add_scalar($1,0);
-	scoplib_vector_tag_inequality(tmp);
+	openscop_vector_p tmp = openscop_vector_add_scalar($1,0);
+	openscop_vector_tag_inequality(tmp);
 	for (i = 0; i < $3->NbRows; ++i)
 	  {
 	    /* We have parsed a ceild/floord at an earlier stage. */
-	    if (SCOPVAL_notzero_p($3->p[i][0]) && !SCOPVAL_one_p($3->p[i][0]))
+	    if (SCOPINT_notzero_p($3->p[i][0]) && !SCOPINT_one_p($3->p[i][0]))
 	      {
-		scoplib_int_t val; SCOPVAL_init(val);
-		SCOPVAL_assign(val, $3->p[i][0]);
-		SCOPVAL_set_si($3->p[i][0], 0);
-		scoplib_vector_p tmp2 = scoplib_vector_add_scalar($1,0);
+		openscop_int_t val; SCOPINT_init(val);
+		SCOPINT_assign(val, $3->p[i][0]);
+		SCOPINT_set_si($3->p[i][0], 0);
+		openscop_vector_p tmp2 = openscop_vector_add_scalar($1,0);
 		int j;
 		for (j = 1; j < $1->Size; ++j)
-		  SCOPVAL_multo(tmp2->p[j], $1->p[j], val);
-		scoplib_vector_tag_inequality(tmp2);
-		scoplib_matrix_sub_vector($3, tmp2, i);
-		scoplib_vector_free(tmp2);
-		SCOPVAL_clear(val);
+		  SCOPINT_multo(tmp2->p[j], $1->p[j], val);
+		openscop_vector_tag_inequality(tmp2);
+		openscop_matrix_sub_vector($3, tmp2, i);
+		openscop_vector_free(tmp2);
+		SCOPINT_clear(val);
 	      }
 	    else
-	      scoplib_matrix_sub_vector($3,tmp,i);
+	      openscop_matrix_sub_vector($3,tmp,i);
 	  }
-	scoplib_vector_free($1);
-	scoplib_vector_free(tmp);
+	openscop_vector_free($1);
+	openscop_vector_free(tmp);
 	$$ = $3;
       }
 /*
@@ -734,32 +733,32 @@ condition:
       {
         /* a>=b translates to a-b>=0 */
 	int i, j;
-	scoplib_vector_p tmp = scoplib_vector_add_scalar($1,0);
-	scoplib_vector_tag_inequality(tmp);
+	openscop_vector_p tmp = openscop_vector_add_scalar($1,0);
+	openscop_vector_tag_inequality(tmp);
 	for (i = 0; i < $3->NbRows; ++i)
 	  {
 	    for (j = 1; j < $3->NbColumns; ++j)
-	      SCOPVAL_oppose($3->p[i][j],$3->p[i][j]);
+	      SCOPINT_oppose($3->p[i][j],$3->p[i][j]);
 	    /* We have parsed a ceild/floord at an earlier stage. */
-	    if (SCOPVAL_notzero_p($3->p[i][0]) && !SCOPVAL_one_p($3->p[i][0]))
+	    if (SCOPINT_notzero_p($3->p[i][0]) && !SCOPINT_one_p($3->p[i][0]))
 	      {
-		scoplib_int_t val; SCOPVAL_init(val);
-		SCOPVAL_assign(val, $3->p[i][0]);
-		SCOPVAL_set_si($3->p[i][0], 0);
-		scoplib_vector_p tmp2 = scoplib_vector_add_scalar($1,0);
+		openscop_int_t val; SCOPINT_init(val);
+		SCOPINT_assign(val, $3->p[i][0]);
+		SCOPINT_set_si($3->p[i][0], 0);
+		openscop_vector_p tmp2 = openscop_vector_add_scalar($1,0);
 		int j;
 		for (j = 1; j < $1->Size; ++j)
-		  SCOPVAL_multo(tmp2->p[j], $1->p[j], val);
-		scoplib_vector_tag_inequality(tmp2);
-		scoplib_matrix_add_vector($3, tmp2, i);
-		scoplib_vector_free(tmp2);
-		SCOPVAL_clear(val);
+		  SCOPINT_multo(tmp2->p[j], $1->p[j], val);
+		openscop_vector_tag_inequality(tmp2);
+		openscop_matrix_add_vector($3, tmp2, i);
+		openscop_vector_free(tmp2);
+		SCOPINT_clear(val);
 	      }
 	    else
-	      scoplib_matrix_add_vector($3,tmp,i);
+	      openscop_matrix_add_vector($3,tmp,i);
 	  }
-	scoplib_vector_free($1);
-	scoplib_vector_free(tmp);
+	openscop_vector_free($1);
+	openscop_vector_free(tmp);
 	$$ = $3;
       }
 /*
@@ -770,14 +769,14 @@ condition:
         /* a==b translates to a-b==0 */
 	/* Warning: cases like ceild(M,32) == ceild(N,32) are not handled.
 	   Assert if we encounter such a case. */
-	assert ((SCOPVAL_zero_p($1->p[0]) || SCOPVAL_one_p($1->p[0]))
-		&& (SCOPVAL_zero_p($3->p[0]) || SCOPVAL_one_p($3->p[0])));
-	scoplib_vector_p res = scoplib_vector_sub($1,$3);
-	scoplib_vector_tag_equality(res);
-	$$ = scoplib_matrix_from_vector(res);
-	scoplib_vector_free(res);
-        scoplib_vector_free($1);
-	scoplib_vector_free($3);
+	assert ((SCOPINT_zero_p($1->p[0]) || SCOPINT_one_p($1->p[0]))
+		&& (SCOPINT_zero_p($3->p[0]) || SCOPINT_one_p($3->p[0])));
+	openscop_vector_p res = openscop_vector_sub($1,$3);
+	openscop_vector_tag_equality(res);
+	$$ = openscop_matrix_from_vector(res);
+	openscop_vector_free(res);
+        openscop_vector_free($1);
+	openscop_vector_free($3);
       }
 /*
  * Rule 6: condition -> ( condition )
@@ -791,9 +790,9 @@ condition:
  */
   | condition opLAND condition
      {
-       $$ = scoplib_matrix_concat($1,$3);
-       scoplib_matrix_free($1);
-       scoplib_matrix_free($3);
+       $$ = openscop_matrix_concat($1,$3);
+       openscop_matrix_free($1);
+       openscop_matrix_free($3);
      }
   ;
 
@@ -853,8 +852,8 @@ assignment:
 	    yyerror ("[Clan] Error: changing value of iterator/parameter");
 	    return 0;
 	  }
-        $$[0] = scoplib_matrix_concat($1,$3);
-        scoplib_matrix_free($3);
+        $$[0] = openscop_matrix_concat($1,$3);
+        openscop_matrix_free($3);
         $$[1] = $1;
       }
 /*
@@ -868,7 +867,7 @@ assignment:
 	    return 0;
 	  }
         $$[0] = $1;
-        $$[1] = scoplib_matrix_copy($1);
+        $$[1] = openscop_matrix_copy($1);
       }
 /*
  * Rule 4: assignment -> un_op var;
@@ -881,7 +880,7 @@ assignment:
 	    return 0;
 	  }
        $$[0] = $2;
-       $$[1] = scoplib_matrix_copy($2);
+       $$[1] = openscop_matrix_copy($2);
       }
 /*
  * Rule 5: assignment -> var;
@@ -954,9 +953,9 @@ expression:
  */
   | expression binary_operator expression %prec MAXPRIORITY
       {
-        $$ = scoplib_matrix_concat($1,$3);
-	scoplib_matrix_free($1);
-        scoplib_matrix_free($3);
+        $$ = openscop_matrix_concat($1,$3);
+	openscop_matrix_free($1);
+        openscop_matrix_free($3);
       }
 /*
  * Rule 5: expression -> ! expression
@@ -977,12 +976,12 @@ expression:
  */
   | expression opQMARK expression opCOLON expression
       {
-	scoplib_matrix_p tmp = scoplib_matrix_concat($1,$3);
-        $$ = scoplib_matrix_concat(tmp,$5);
-	scoplib_matrix_free(tmp);
-	scoplib_matrix_free($1);
-	scoplib_matrix_free($3);
-	scoplib_matrix_free($5);
+	openscop_matrix_p tmp = openscop_matrix_concat($1,$3);
+        $$ = openscop_matrix_concat(tmp,$5);
+	openscop_matrix_free(tmp);
+	openscop_matrix_free($1);
+	openscop_matrix_free($3);
+	openscop_matrix_free($5);
       }
   ;
 
@@ -1000,19 +999,19 @@ variable:
     id
       {
         int rank;
-        scoplib_matrix_p matrix;
+        openscop_matrix_p matrix;
 	char* s = (char*) $1;
 	clan_symbol_p symbol = clan_symbol_lookup(parser_symbol, s);
 	// If the variable is an iterator or a parameter, discard it
 	// from the read/write clause.
-	if ((symbol && symbol->type == SCOPLIB_TYPE_ITERATOR) ||
-	     (symbol && symbol->type == SCOPLIB_TYPE_PARAMETER))
+	if ((symbol && symbol->type == OPENSCOP_TYPE_ITERATOR) ||
+	     (symbol && symbol->type == OPENSCOP_TYPE_PARAMETER))
 	  $$ = NULL;
 	else
 	  {
-	    clan_symbol_add(&parser_symbol, s, SCOPLIB_TYPE_ARRAY,parser_depth);
+	    clan_symbol_add(&parser_symbol, s, OPENSCOP_TYPE_ARRAY,parser_depth);
 	    rank = clan_symbol_get_rank(parser_symbol, s);
-	    matrix = scoplib_matrix_malloc
+	    matrix = openscop_matrix_malloc
 	      (1, CLAN_MAX_DEPTH + CLAN_MAX_PARAMETERS + 2);
 	    clan_matrix_tag_array(matrix, rank);
 	    $$ = matrix;
@@ -1026,7 +1025,7 @@ variable:
   | id array_index
       {
         int rank;
-        clan_symbol_add(&parser_symbol,$1,SCOPLIB_TYPE_ARRAY,parser_depth);
+        clan_symbol_add(&parser_symbol,$1,OPENSCOP_TYPE_ARRAY,parser_depth);
         rank = clan_symbol_get_rank(parser_symbol,$1);
         clan_matrix_tag_array($2,rank);
         $$ = $2;
@@ -1088,7 +1087,7 @@ variable_list:
  */
   | variable_list syCOMMA variable
       {
-	$$ = scoplib_matrix_concat($1,$3);
+	$$ = openscop_matrix_concat($1,$3);
       }
 /*
  * Rule 3: variable_list -> variable_list , arithmetic_expression
@@ -1125,8 +1124,8 @@ array_index:
  */
     syRBRACKET affine_expression syLBRACKET
       {
-        $$ = scoplib_matrix_from_vector($2);
-        scoplib_vector_free($2);
+        $$ = openscop_matrix_from_vector($2);
+        openscop_vector_free($2);
       }
 /*
  * Rule 2: array_index -> array_index [ <affex> ]
@@ -1134,8 +1133,8 @@ array_index:
   | array_index syRBRACKET affine_expression syLBRACKET
       {
 	if ($1 != NULL)
-	  scoplib_matrix_insert_vector($1,$3,$1->NbRows);
-        scoplib_vector_free($3);
+	  openscop_matrix_insert_vector($1,$3,$1->NbRows);
+        openscop_vector_free($3);
         $$ = $1;
       }
   ;
@@ -1214,8 +1213,8 @@ clan_parser_initialize_state(clan_options_p options)
   nb_columns = CLAN_MAX_DEPTH + CLAN_MAX_PARAMETERS + 2;
   depth      = CLAN_MAX_DEPTH;
 
-  parser_scop   = scoplib_scop_malloc();
-  parser_domain = scoplib_matrix_malloc(nb_rows,nb_columns);
+  parser_scop   = openscop_scop_malloc();
+  parser_domain = openscop_matrix_malloc(nb_rows,nb_columns);
   parser_symbol = NULL;
 
   parser_scheduling = (int *)malloc(depth * sizeof(int));
@@ -1260,7 +1259,7 @@ clan_parser_initialize_state(clan_options_p options)
 void
 clan_parser_free_state()
 {
-  scoplib_matrix_free(parser_domain);
+  openscop_matrix_free(parser_domain);
   clan_symbol_free(parser_symbol);
   free(parser_scheduling);
   free(parser_consperdim);
@@ -1272,13 +1271,13 @@ clan_parser_free_state()
 /**
  * clan_parse function:
  * this function parses a file to extract a SCoP and returns, if successful,
- * a pointer to the scoplib_scop_t structure.
+ * a pointer to the openscop_scop_t structure.
  * \param input   The file to parse (already open).
  * \param options Options for file parsing.
  **
  * - 01/05/2008: First version.
  */
-scoplib_scop_p
+openscop_scop_p
 clan_parse(FILE * input, clan_options_p options)
 {
   yyin = input;

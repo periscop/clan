@@ -12,12 +12,12 @@
  *     |"-"-"-"-"-#-#-##   Clan : the Chunky Loop Analyzer (experimental)     *
  ****  |     # ## ######  *****************************************************
  *      \       .::::'/                                                       *
- *       \      ::::'/     Copyright (C) 2008 Cedric Bastoul                  *
+ *       \      ::::'/     Copyright (C) 2008 University Paris-Sud 11         *
  *     :8a|    # # ##                                                         *
  *     ::88a      ###      This is free software; you can redistribute it     *
  *    ::::888a  8a ##::.   and/or modify it under the terms of the GNU Lesser *
  *  ::::::::888a88a[]:::   General Public License as published by the Free    *
- *::8:::::::::SUNDOGa8a::. Software Foundation, either version 3 of the       *
+ *::8:::::::::SUNDOGa8a::. Software Foundation, either version 2.1 of the     *
  *::::::::8::::888:Y8888:: License, or (at your option) any later version.    *
  *::::':::88::::888::Y88a::::::::::::...                                      *
  *::'::..    .   .....   ..   ...  .                                          *
@@ -31,7 +31,7 @@
  * 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA                     *
  *                                                                            *
  * Clan, the Chunky Loop Analyzer                                             *
- * Written by Cedric Bastoul, Cedric.Bastoul@inria.fr                         *
+ * Written by Cedric Bastoul, Cedric.Bastoul@u-psud.fr                        *
  *                                                                            *
  ******************************************************************************/
 
@@ -41,7 +41,7 @@
 
 # include <unistd.h>
 
-# include <scoplib/scop.h>
+# include <openscop/scop.h>
 # include <clan/options.h>
 
 # if defined(__cplusplus)
@@ -53,9 +53,9 @@ extern "C"
 /*+****************************************************************************
  *                            Processing functions                            *
  ******************************************************************************/
-scoplib_scop_p  clan_scop_extract(FILE *, clan_options_p);
-void		clan_scop_compact(scoplib_scop_p);
-void		clan_scop_fill_options(scoplib_scop_p, int*, int*);
+openscop_scop_p  clan_scop_extract(FILE *, clan_options_p);
+void		clan_scop_compact(openscop_scop_p);
+void		clan_scop_fill_options(openscop_scop_p, int*, int*);
 
 
 # if defined(__cplusplus)

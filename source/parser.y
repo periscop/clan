@@ -565,7 +565,7 @@ term:
  */
   | id opMULTIPLY INTEGER
       {
-        clan_symbol_add(&parser_symbol,$1,SCOPLIB_TYPE_UNKNOWN,parser_depth);
+        clan_symbol_add(&parser_symbol,$1,OPENSCOP_TYPE_UNKNOWN,parser_depth);
         $$ = clan_vector_term(parser_symbol,$3,$1);
         free($1);
       }
@@ -597,7 +597,7 @@ term:
  */
   | opMINUS id opMULTIPLY INTEGER
       {
-        clan_symbol_add(&parser_symbol,$2,SCOPLIB_TYPE_UNKNOWN,parser_depth);
+        clan_symbol_add(&parser_symbol,$2,OPENSCOP_TYPE_UNKNOWN,parser_depth);
         $$ = clan_vector_term(parser_symbol,-($4),$2);
         free($2);
       }

@@ -39,9 +39,8 @@
 #ifndef CLAN_SCOP_H
 # define CLAN_SCOP_H
 
-# include <unistd.h>
-
-# include <openscop/scop.h>
+# include <stdio.h>
+# include <osl/scop.h>
 # include <clan/options.h>
 
 # if defined(__cplusplus)
@@ -53,9 +52,11 @@ extern "C"
 /*+****************************************************************************
  *                            Processing functions                            *
  ******************************************************************************/
-openscop_scop_p  clan_scop_extract(FILE *, clan_options_p);
-void		clan_scop_compact(openscop_scop_p);
-void		clan_scop_fill_options(openscop_scop_p, int*, int*);
+osl_scop_p clan_scop_extract(FILE *, clan_options_p);
+void       clan_scop_compact(osl_scop_p);
+void       clan_scop_print(FILE *, osl_scop_p);
+void       clan_scop_generate_scatnames(osl_scop_p);
+void       clan_scop_fill_options(osl_scop_p, int*, int*);
 
 
 # if defined(__cplusplus)

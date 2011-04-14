@@ -38,23 +38,24 @@ dnl ***************************************************************************/
 dnl
 dnl Input file for autoconf to build a configuration shellscript.
 
+m4_define([version_major], [0])
+m4_define([version_minor], [7])
+m4_define([version_revision], [0])
 
-AC_PREREQ(2.13)
+AC_PREREQ(2.53)
 dnl Fill here the @bug email adress.
-AC_INIT([clan], [0.7.0], [cedric.bastoul@u-psud.fr,pouchet@cse.ohio-state.edu])
+AC_INIT([clan], [version_major.version_minor.version_revision],
+        [cedric.bastoul@u-psud.fr,pouchet@cse.ohio-state.edu])
 dnl A common file, which serve as a test.
 AC_CONFIG_SRCDIR([include/clan/symbol.h])
 dnl Put as most as possible configuration files to an auxialiry
 dnl directory.
-AC_CONFIG_AUX_DIR([autoconf])
-dnl Initialize automake. Here, a special tar version that enables
-dnl (very) long filenames.
-AM_INIT_AUTOMAKE([1.9 tar-ustar no-define foreign dist-bzip2])
+AC_CONFIG_AUX_DIR(autoconf)
+AC_CONFIG_MACRO_DIR([m4])
 
-dnl default version
-BITS="64"
-OPENSCOP_RELEASE="0.3.0"
-CLAN_INT_T=CLAN_INT_T_IS_LONGLONG
+dnl Initialize automake.
+AM_INIT_AUTOMAKE([foreign])
+m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 
 
 dnl /**************************************************************************
@@ -67,10 +68,15 @@ AC_PROG_CC
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_CHECK_PROG(CD, cd)
+AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 AC_PROG_LEX
 AC_PROG_YACC
 AC_CHECK_PROGS(DOXYGEN,doxygen,doxygen)
+  
+AX_CC_MAXOPT
+AC_SUBST(CFLAGS_WARN)
+AX_CFLAGS_WARN_ALL(CFLAGS_WARN)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -88,59 +94,33 @@ dnl /**************************************************************************
 dnl  *                             Option setting                             *
 dnl  **************************************************************************/
 
-AC_ARG_ENABLE(internal-openscop,
-	AC_HELP_STRING([--enable-internal-openscop],
-              	           [Use shipped ScopLib]),
-	[ if test "x$enableval" = xno; then 
-	    shipped_openscop=no;
-          else
-	    shipped_openscop=yes;
-          fi
-	], [ shipped_openscop=uncertain ])
+dnl /**************************************************************************
+dnl  *                   Where is the OpenScop Library?                       *
+dnl  **************************************************************************/
 
+AX_SUBMODULE(osl,system|build|bundled,bundled)
 
-dnl Offer --with-openscop.
-AC_ARG_WITH(openscop,
-	    AC_HELP_STRING([--with-openscop=DIR],
-              	           [DIR Location of OPENSCOP package]),
-            [if test "x$shipped_openscop" != xyes; then 
-	        with_openscop=$withval;
-	        CPPFLAGS="${CPPFLAGS} -I$withval/include";
-	        LDFLAGS="${LDFLAGS} -L$withval/lib";
-		shipped_openscop=no;
-	     fi;
-	    ],
-            [if test "x$shipped_openscop" = xno; then 
-	    	with_openscop=yes;
-	     else
-	     	with_openscop=check;
-	     fi;
-	     ])
-dnl Check for openscop existence.
-AS_IF([test "x$with_openscop" != xno ],
-      [AC_CHECK_LIB([openscop], [openscop_scop_read],
-      [LIBS="-lopenscop $LIBS";
-       AC_DEFINE([HAVE_LIBOPENSCOP], [1], [Define if you have libopenscop])
-      ],
-      [if test "x$with_openscop" != xcheck; then
-       AC_MSG_FAILURE([Test for OPENSCOP failed. Use --with-openscop to specify libopenscop path.]);
-       fi;
-      ])
-])
-
-AS_IF([test "x$shipped_openscop" != xno ], 
-      [abs_top_srcdir=`cd $srcdir; pwd`;
-       abs_top_builddir=`pwd`;
-       if ! test -f $abs_top_srcdir/openscop/openscop-$OPENSCOP_RELEASE ; then
-       	  cd $abs_top_srcdir/openscop && tar xzf openscop-$OPENSCOP_RELEASE.tar.gz ; cd -;
-       fi;
-       AC_CONFIG_SUBDIRS([openscop/openscop-$OPENSCOP_RELEASE])
-       BUILD_OPENSCOP="openscop/openscop-$OPENSCOP_RELEASE";
-       CPPFLAGS="${CPPFLAGS} -I$abs_top_srcdir/openscop/openscop-$OPENSCOP_RELEASE/include -I$abs_top_builddir/openscop/openscop-$OPENSCOP_RELEASE/include";
-       LDFLAGS="${LDFLAGS} -L$abs_top_builddir/openscop/openscop-$OPENSCOP_RELEASE/source";
-       LIBS="-lopenscop $LIBS";
-      ],
-      [BUILD_OPENSCOP=""])
+AC_SUBST(OSL_CPPFLAGS)
+AC_SUBST(OSL_LDFLAGS)
+AC_SUBST(OSL_LIBS)
+case "$with_osl" in
+bundled)
+	OSL_CPPFLAGS="-I$srcdir/osl/include -Iosl/include"
+	;;
+build)
+	OSL_CPPFLAGS="-I$osl_srcdir/include -I$with_osl_builddir/include"
+	OSL_LIBS="$with_osl_builddir/libosl.la"
+	;;
+system)
+	if test "x$with_osl_prefix" != "x"; then
+		OSL_CPPFLAGS="-I$with_osl_prefix/include"
+	fi
+	if test "x$with_osl_exec_prefix" != "x"; then
+		OSL_LDFLAGS="-L$with_osl_exec_prefix/lib"
+	fi
+	OSL_LIBS="-losl"
+esac
+AM_CONDITIONAL(BUNDLED_OSL, test $with_osl = bundled)
 
 
 dnl /**************************************************************************
@@ -151,22 +131,26 @@ dnl  **************************************************************************/
 dnl Substitutions to do.
 AC_SUBST(ac_aux_dir)
 AC_SUBST(abs_top_srcdir)
-AC_SUBST(BUILD_OPENSCOP)
+
+AC_SUBST(VERSION_MAJOR)
+AC_SUBST(VERSION_MINOR)
+AC_SUBST(VERSION_REVISION)
 
 dnl Configure Makefiles.
 AC_CONFIG_FILES([
 	Makefile
 	doc/Makefile
 	doc/Doxyfile
-	include/Makefile
-	include/clan/clan.h
-	source/Makefile
+	include/clan/macros.h
 	tests/Makefile
 	],
 	[test -z "$CONFIG_HEADERS" || echo timestamp > source/stamp-h.in])
 
-AC_OUTPUT
+if test $with_osl = bundled; then
+	AC_CONFIG_SUBDIRS(osl)
+fi
 
+AC_OUTPUT
 
 echo "             /*-----------------------------------------------*"
 echo "              *           Clan configuration is OK            *"

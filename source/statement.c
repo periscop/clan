@@ -36,11 +36,15 @@
  ******************************************************************************/
 
 
-# include <stdlib.h>
-# include <stdio.h>
-# include <string.h>
-# include <ctype.h>
-# include <clan/statement.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#include <osl/statement.h>
+#include <clan/relation.h>
+#include <clan/relation_list.h>
+#include <clan/statement.h>
 
 
 /*+****************************************************************************
@@ -50,25 +54,24 @@
 /**
  * clan_statement_compact function:
  * This function scans the statement list to put the right number of columns
- * to every matrix (during construction we used CLAN_MAX_DEPTH and
- * CLAN_MAX_PARAMETERS to define matrix and vector sizes).
+ * to every relation (during construction we used CLAN_MAX_DEPTH and
+ * CLAN_MAX_PARAMETERS to define relation and vector sizes).
  * \param statement     The first statement to scan to compact matrices.
  * \param nb_parameters The true number of parameters in the SCoP.
  **
  * - 02/05/2008: first version.
  */
 void
-clan_statement_compact(openscop_statement_p statement, int nb_parameters)
+clan_statement_compact(osl_statement_p statement, int nb_parameters)
 {
   int nb_iterators;
 
   while (statement != NULL)
   {
-    nb_iterators = statement->nb_iterators;
-    clan_matrix_compact(statement->domain, nb_iterators, nb_parameters);
-    clan_matrix_compact(statement->schedule, nb_iterators, nb_parameters);
-    clan_matrix_compact(statement->read, nb_iterators, nb_parameters);
-    clan_matrix_compact(statement->write, nb_iterators, nb_parameters);
+    nb_iterators = osl_statement_get_nb_iterators(statement);
+    clan_relation_compact(statement->domain,      nb_iterators, nb_parameters);
+    clan_relation_compact(statement->scattering,  nb_iterators, nb_parameters);
+    clan_relation_list_compact(statement->access, nb_iterators, nb_parameters);
     statement = statement->next;
   }
 }

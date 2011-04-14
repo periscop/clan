@@ -36,11 +36,15 @@
  ******************************************************************************/
 
 
-# include <stdlib.h>
-# include <stdio.h>
-# include <ctype.h>
-# include <string.h>
-# include <clan/symbol.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+
+#include <osl/strings.h>
+#include <osl/generic.h>
+#include <clan/macros.h>
+#include <clan/symbol.h>
 
 
 /*+****************************************************************************
@@ -126,10 +130,10 @@ clan_symbol_print_structure(FILE * file, clan_symbol_p symbol, int level)
     fprintf(file,"|\t") ;
     fprintf(file,"Type: ") ;
     switch (symbol->type)
-    { case OPENSCOP_TYPE_ITERATOR : fprintf(file,"Iterator\n");  break;
-      case OPENSCOP_TYPE_PARAMETER: fprintf(file,"Parameter\n"); break;
-      case OPENSCOP_TYPE_ARRAY    : fprintf(file,"Array\n");     break;
-      case OPENSCOP_TYPE_FUNCTION : fprintf(file,"Function\n");  break;
+    { case CLAN_TYPE_ITERATOR : fprintf(file,"Iterator\n");  break;
+      case CLAN_TYPE_PARAMETER: fprintf(file,"Parameter\n"); break;
+      case CLAN_TYPE_ARRAY    : fprintf(file,"Array\n");     break;
+      case CLAN_TYPE_FUNCTION : fprintf(file,"Function\n");  break;
       default : fprintf(file,"Unknown\n") ;
     }
 
@@ -293,24 +297,23 @@ clan_symbol_add(clan_symbol_p * location, char * identifier, int type, int rank)
   /* Else, we allocate and fill a new clan_symbol_t node. */
   symbol = clan_symbol_malloc();
 
-  symbol->identifier = (char *)malloc(OPENSCOP_MAX_STRING * sizeof(char));
-  strcpy(symbol->identifier,identifier);
+  symbol->identifier = strdup(identifier);
 
   /* If the type was unknown (iterator or parameter) we know now that it is
    * a parameter, it would have been already in the table otherwise.
    */
-  if (type == OPENSCOP_TYPE_UNKNOWN)
-    type = OPENSCOP_TYPE_PARAMETER;
+  if (type == CLAN_TYPE_UNKNOWN)
+    type = CLAN_TYPE_PARAMETER;
   symbol->type = type;
 
   switch (symbol->type)
   {
-    case OPENSCOP_TYPE_ITERATOR : symbol->rank = rank;
-                              symbol_nb_iterators++;
-			      break;
-    case OPENSCOP_TYPE_PARAMETER: symbol->rank = ++symbol_nb_parameters; break;
-    case OPENSCOP_TYPE_ARRAY    : symbol->rank = ++symbol_nb_arrays;     break;
-    case OPENSCOP_TYPE_FUNCTION : symbol->rank = ++symbol_nb_functions;  break;
+    case CLAN_TYPE_ITERATOR : symbol->rank = rank;
+                                  symbol_nb_iterators++;
+			          break;
+    case CLAN_TYPE_PARAMETER: symbol->rank = ++symbol_nb_parameters; break;
+    case CLAN_TYPE_ARRAY    : symbol->rank = ++symbol_nb_arrays;     break;
+    case CLAN_TYPE_FUNCTION : symbol->rank = ++symbol_nb_functions;  break;
   }
 
   /* We put the new symbol at the beginning of the table (easier ;-) !). */
@@ -318,31 +321,6 @@ clan_symbol_add(clan_symbol_p * location, char * identifier, int type, int rank)
   *location = symbol;
 
   return symbol;
-}
-
-/**
- * clan_symbol_remove function:
- * Deletes a symbol from the list.
- *
- */
-void
-clan_symbol_remove(clan_symbol_p* location, clan_symbol_p symbol)
-{
-  clan_symbol_p s = *location;
-  if (s == NULL || symbol == NULL)
-    return;
-  if (s == symbol)
-    *location = symbol->next;
-  else
-    {
-      while (s && s->next != symbol)
-	s = s->next;
-      if (s)
-	{
-	  s->next = symbol->next;
-	  free(symbol);
-	}
-    }
 }
 
 
@@ -395,89 +373,135 @@ clan_symbol_get_type(clan_symbol_p symbol, char * identifier)
 
 
 /**
- * clan_symbol_iterators function:
- * this function builds the array of original iterator names for the
- * openscop_statement_t structures thanks to the parser current state of
- * parser_depth (depth) and parser_iterators (symbols). "symbols"
- * is an array of references to symbol table entries, one for each
- * loop enclosing the statement.
- * \param symbols Array of iterator symbols for the statement.
- * \param depth   The depth of the statement.
- **
- * - 01/05/2008: First version.
+ * clan_symbol_array_to_strings function:
+ * this functions builds (and returns a pointer to) an osl_strings_t
+ * structure containing the symbol strings contained in an array of
+ * symbols of length nb. The symbol string order is the same as the one
+ * in the symbol array.
+ * \param[in] sarray The symbol array.
+ * \param[in] size   The size of the symbol array.
+ * \return An osl_strings_t containing all the symbol strings.
  */
-char **
-clan_symbol_iterators(clan_symbol_p * symbols, int depth)
-{
+ 
+osl_strings_p clan_symbol_array_to_strings(clan_symbol_p *sarray, int size) {
   int i, length;
-  char ** iterators;
+  char **identifiers = NULL;
+  osl_strings_p strings;
 
-  iterators = (char **)malloc(depth * sizeof (char *));
+  // Allocate, initialize and NULL-terminate the array of strings.
+  CLAN_malloc(identifiers, char **, (size + 1) * sizeof(char *));
+  for (i = 0; i <= size; i++)
+    identifiers[i] = NULL;
 
-  for (i = 0; i < depth; i++)
-  {
-    length = strlen((symbols[i])->identifier) + 1;
-    iterators[i] = (char *)malloc(length * sizeof(char));
-    strcpy(iterators[i],(symbols[i])->identifier);
+  // Fill the array of strings.
+  for (i = 0; i < size; i++) {
+    length = strlen((sarray[i])->identifier) + 1;
+    CLAN_malloc(identifiers[i], char *, length * sizeof(char));
+    strcpy(identifiers[i], (sarray[i])->identifier);
   }
 
-  return iterators;
+  // Build the osl_strings_t container.
+  strings = osl_strings_malloc();
+  strings->string = identifiers;
+
+  return strings;
 }
 
 
 /**
- * clan_symbol_id_array function:
- * this function builds an array of identifier names of a given type
- * thanks to the informations stored in the symbol
- * table and returns it. The identifiers are sort according to their rank.
- * It also returns the array size to the parameter "size".
- * \param symbol The first element of the symbol table.
- * \param type   The type of interesting elements.
- * \param size   The returned array size (this is a _result_).
- **
- * - 02/05/2008: First version.
- * - 03/05/2008: More generic, no more dedicated to parameters only.
+ * clan_symbol_nb_of_type function:
+ * this function returns the number of symbols of a given type in the
+ * symbol table.
+ * \param[in] symbol The top of the symbol table.
+ * \param[in] type   The type of the elements.
+ * \return The number of symbols of the provoded type in the symbol table.
  */
-char **
-clan_symbol_id_array(clan_symbol_p symbol, int type, int * size)
-{
-  int i, length, nb_identifiers = 0;
-  char ** identifiers;
-  clan_symbol_p start;
-
-  /* A first scan of the table to find the number of identifiers of "type". */
-  start = symbol;
-  while (symbol != NULL)
-  {
+int clan_symbol_nb_of_type(clan_symbol_p symbol, int type) {
+  int nb = 0;
+  
+  while (symbol != NULL) {
     if (symbol->type == type)
-      nb_identifiers++;
+      nb++;
     symbol = symbol->next;
   }
 
-  identifiers = (char **)malloc(nb_identifiers * sizeof(char *));
+  return nb;
+}
 
-  /* We scan the table a second time to fill the identifier array
-   * Not optimal to act this way but overkills are worse!
-   */
+
+/**
+ * clan_symbol_to_generic function:
+ * this function builds (and returns a pointer to) an osl_generic_t
+ * structure containing the symbol strings of a given type in the
+ * symbol table. The osl_generic_t is a shell for an osl_strings_t
+ * which actually stores the symbol strings. The symbol strings are sorted
+ * according to their rank. If there is no corresponding symbol in the
+ * table, it returns NULL.
+ * \param[in] symbol The top of the symbol table.
+ * \param[in] type   The type of the elements.
+ * \return An osl_generic_t with the symbol strings of the given type.
+ */
+osl_generic_p clan_symbol_to_generic(clan_symbol_p symbol, int type) {
+  int i, length, nb_identifiers = 0;
+  char **identifiers = NULL;
+  osl_strings_p strings;
+  osl_generic_p generic;
+
+  nb_identifiers = clan_symbol_nb_of_type(symbol, type);
+  if (nb_identifiers == 0)
+    return NULL;
+
+  // Allocate, initialize and NULL-terminate the array.
+  CLAN_malloc(identifiers, char **, (nb_identifiers + 1) * sizeof(char *));
+  for (i = 0; i <= nb_identifiers; i++)
+    identifiers[i] = NULL;
+
+  // We scan the table a second time to fill the identifier array
+  // Not optimal to act this way but overkills are worse!
   i = 0;
-  symbol = start;
-  while (symbol != NULL)
-  {
-    if (symbol->type == type)
-    {
+  while (symbol != NULL) {
+    if (symbol->type == type) {
       length = strlen(symbol->identifier) + 1;
-      identifiers[symbol->rank - 1] = (char *)malloc(length * sizeof(char));
-      strcpy(identifiers[symbol->rank - 1],symbol->identifier);
+      CLAN_malloc(identifiers[symbol->rank - 1], char *, length * sizeof(char));
+      strcpy(identifiers[symbol->rank - 1], symbol->identifier);
       i++;
     }
     symbol = symbol->next;
   }
 
-  if (size != NULL)
-   *size = nb_identifiers;
+  // A basic check that there is no hole in the rank list.
+  for (i = 0; i < nb_identifiers; i++)
+    if (identifiers[i] == NULL)
+      CLAN_error("hole in the string list");
 
-  return identifiers;
+  // Build the osl_strings_t container.
+  strings = osl_strings_malloc();
+  strings->string = identifiers;
+
+  // Build the generic shell for the strings.
+  generic = osl_generic_malloc();
+  generic->interface = osl_strings_interface();
+  generic->data = strings;
+
+  return generic;
 }
 
 
+/**
+* clan_symbol_clone_one function:
+* this function clones one symbol, i.e., it returns the clone of the symbol
+* provided as an argument only, with a next field set to NULL.
+* \param symbol The symbol to clone.
+* \return The clone of the symbol (and this symbol only).
+*/
+clan_symbol_p clan_symbol_clone_one(clan_symbol_p symbol) {
+  clan_symbol_p clone = clan_symbol_malloc();
+
+  if (symbol->identifier != NULL)
+    clone->identifier = strdup(symbol->identifier);
+  clone->type = symbol->type;
+  clone->rank = symbol->rank;
+
+  return clone;
+}
 

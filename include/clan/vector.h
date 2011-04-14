@@ -39,16 +39,8 @@
 #ifndef CLAN_VECTOR_H
 # define CLAN_VECTOR_H
 
-# include <stdio.h>
-# include <openscop/scop.h>
-# include <openscop/vector.h>
+# include <osl/vector.h>
 # include <clan/symbol.h>
-
-
-# define CLAN_MAX_DEPTH        50 /* Max loop depth (max iterator number) */
-# define CLAN_MAX_PARAMETERS   50 /* Max parameter number */
-# define CLAN_MAX_CONSTRAINTS  50 /* Max contraint number for a domain */
-
 
 # if defined(__cplusplus)
 extern "C"
@@ -59,7 +51,7 @@ extern "C"
 /*+****************************************************************************
  *                            Processing functions                            *
  ******************************************************************************/
-openscop_vector_p clan_vector_term(clan_symbol_p, int, char *);
+osl_vector_p clan_vector_term(clan_symbol_p, int, char *);
 
 
 # if defined(__cplusplus)

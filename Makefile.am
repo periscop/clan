@@ -39,42 +39,78 @@
 # Makefile.am is not a makefile, you must run the 'autogen.sh' THEN the
 # configure shellscript to generate the Makefile thanks to this file.
 
+#############################################################################
 
+if BUNDLED_OSL
+    MAYBE_OSL = osl
+    OSL_LA = $(top_builddir)/osl/source/libosl.la
+endif
+
+SUBDIRS         = $(MAYBE_OSL) doc tests
+DIST_SUBDIRS    = $(MAYBE_OSL) doc tests
+ACLOCAL_AMFLAGS = -I m4
 
 #############################################################################
-SUBDIRS 		= @BUILD_OPENSCOP@ doc source include tests
 
+bin_PROGRAMS    = clan
+lib_LTLIBRARIES = libclan.la
 
 #############################################################################
-ACLOCAL_AMFLAGS		= -I autoconf
 
-m4datadir		= $(datadir)/aclocal
+pkginclude_HEADERS =                    \
+	include/clan/clan.h             \
+	include/clan/options.h          \
+	include/clan/statement.h        \
+	include/clan/vector.h           \
+	include/clan/relation.h	        \
+	include/clan/relation_list.h    \
+	include/clan/macros.h           \
+	include/clan/scop.h             \
+	include/clan/symbol.h
 
+DEFAULT_INCLUDES = -I.
+INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include
+AM_CFLAGS = $(CFLAGS_WARN)
+YFLAGS = -y -d
 
-AUX_DIST                =			\
-	$(ac_aux_dir)/config.guess		\
-	$(ac_aux_dir)/config.sub		\
-	$(ac_aux_dir)/install-sh		\
-	$(ac_aux_dir)/ltmain.sh			\
-	$(ac_aux_dir)/missing			\
-	$(ac_aux_dir)/depcomp
+#############################################################################
 
-MAINTAINERCLEANFILES 	=			\
-	Makefile.in				\
-	aclocal.m4				\
-	configure				\
-	source/stamp-h.in			\
+libclan_la_LIBADD   = @OSL_LIBS@ $(OSL_LA)
+libclan_la_CPPFLAGS = @OSL_CPPFLAGS@ -g
+libclan_la_LDFLAGS  = @OSL_LDFLAGS@
+libclan_la_SOURCES  =                   \
+	source/parser.y                 \
+	source/scanner.l                \
+	source/options.c                \
+	source/symbol.c                 \
+	source/scop.c                   \
+	source/statement.c              \
+	source/relation.c               \
+	source/relation_list.c          \
+	source/vector.c
+
+#############################################################################
+
+LDADD             = libclan.la
+clan_CPPFLAGS     = @OSL_CPPFLAGS@ -g
+clan_DEPENDENCIES = libclan.la
+clan_SOURCES      = source/clan.c
+
+#############################################################################
+
+MAINTAINERCLEANFILES =                  \
+	Makefile.in                     \
+	aclocal.m4                      \
+	configure                       \
+	source/stamp-h.in               \
 	$(AUX_DIST)
 
-
 #############################################################################
+
 dist-hook:
 	(cd $(distdir) && mkdir -p $(ac_aux_dir))
 	for file in $(AUX_DIST); do \
 	  cp $$file $(distdir)/$$file; \
 	done
-
-maintainer-clean-hook:
-	(cd $(abs_top_srcdir)/openscop && rm -rf openscop-0.1.0)
 
 #############################################################################

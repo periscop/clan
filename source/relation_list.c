@@ -2,9 +2,9 @@
    /*+------- <| --------------------------------------------------------**
     **         A                     Clan                                **
     **---     /.\   -----------------------------------------------------**
-    **   <|  [""M#                 macros.h                              **
+    **   <|  [""M#              relation_list.c                          **
     **-   A   | #   -----------------------------------------------------**
-    **   /.\ [""M#         First version: 30/04/2008                     **
+    **   /.\ [""M#         First version: 16/04/2011                     **
     **- [""M# | #  U"U#U  -----------------------------------------------**
          | #  | #  \ .:/
          | #  | #___| #
@@ -35,15 +35,39 @@
  *                                                                            *
  ******************************************************************************/
 
-#ifndef CLAN_MACROS_H
-# define CLAN_MACROS_H
 
-# define CLAN_DEBUG			0
-# define CLAN_TRUE			1
-# define CLAN_FALSE			0
-# define CLAN_MAX_LOCAL_VARIABLES     100
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
 
-# include <openscop/scop.h>
-# include <openscop/macros.h>
+#include <osl/relation_list.h>
+#include <clan/relation.h>
+#include <clan/relation_list.h>
 
-#endif /* define CLAN_MACROS_H */
+
+/*+****************************************************************************
+ *                            Processing functions                            *
+ ******************************************************************************/
+
+
+/**
+ * clan_relation_lit_compact function:
+ * This function compacts a relation list such that each relation inside
+ * uses the right number of columns (during construction we used
+ * CLAN_MAX_DEPTH and CLAN_MAX_PARAMETERS to define relation and vector sizes).
+ * It modifies directly the relation list provided as parameter.
+ * \param list          The relation list to compact.
+ * \param nb_iterators  The true number of iterators for this relation.
+ * \param nb_parameters The true number of parameters in the SCoP.
+ */
+void
+clan_relation_list_compact(osl_relation_list_p list, int nb_iterators, 
+		           int nb_parameters)
+{
+  while (list != NULL)
+  {
+     clan_relation_compact(list->elt, nb_iterators, nb_parameters);
+     list = list->next;
+  }
+}

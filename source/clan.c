@@ -38,43 +38,36 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include <clan/scop.h>
-#include <clan/options.h>
-
+#include <clan/clan.h>
 
 int main(int argc, char * argv[])
 {
-  openscop_scop_p scop;
+  osl_scop_p scop;
   clan_options_p options;
   FILE * input;
   FILE * output;
 
   /* Options and input/output file setting. */
-  options = clan_options_read(argc,argv,&input,&output);
+  options = clan_options_read(argc, argv, &input, &output);
 
   /* Extraction of the polyhedral representation of the SCoP from the input. */
   if (options->inputscop)
     /* Input is a .scop file. */
-    scop = openscop_scop_read(input);
+    scop = osl_scop_read(input);
   else
     /* Input is a source code. */
-    scop = clan_scop_extract(input,options);
+    scop = clan_scop_extract(input, options);
 
   /* Printing of the internal data structure of the SCoP if asked. */
   if (options->structure)
-    openscop_scop_print(stdout,scop);
+    osl_scop_dump(stdout, scop);
 
   /* Generation of the .scop output file. */
-  int sopt = 0;
-  if (options->castle)
-    sopt |= OPENSCOP_SCOP_PRINT_CASTLE;
-  if (options->arraystag)
-    sopt |= OPENSCOP_SCOP_PRINT_ARRAYSTAG;
-  openscop_scop_print_dot_scop_options(output,scop,sopt);
+  clan_scop_print(output, scop);
 
   /* Save the planet. */
   clan_options_free(options);
-  openscop_scop_free(scop);
+  osl_scop_free(scop);
 
   return 0;
 }

@@ -36,10 +36,15 @@
  ******************************************************************************/
 
 
-# include <stdlib.h>
-# include <stdio.h>
-# include <ctype.h>
-# include <clan/vector.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <ctype.h>
+
+#include <osl/int.h>
+#include <osl/vector.h>
+#include <clan/macros.h>
+#include <clan/symbol.h>
+#include <clan/vector.h>
 
 
 /*+****************************************************************************
@@ -52,32 +57,32 @@
  * This function generates the vector representation of a term. It allocates
  * a vector with maximal size and put the term value at the right place
  * depending if the term is a constant, an iterator coefficient or a
- * parameter coefficient (see the structure of a PolyLib row if unsure!).
+ * parameter coefficient (see the structure of an OpenScop row if unsure!).
  * \param symbol      The first node of the list of symbols.
  * \param coefficient The constant or coefficient.
  * \param identifier  Identifier of iterator or parameter (NULL for constant).
- **
- * - 01/05/2008: first version.
  */
-openscop_vector_p
+osl_vector_p
 clan_vector_term(clan_symbol_p symbol, int coefficient, char * identifier)
 {
   int rank, size;
-  openscop_vector_p vector;
+  osl_vector_p vector;
 
   size = CLAN_MAX_DEPTH + CLAN_MAX_PARAMETERS + 2 ;
-  vector = openscop_vector_malloc(size);
+  vector = osl_vector_pmalloc(CLAN_PRECISION, size);
 
   if (identifier == NULL)
-    SCOPINT_set_si(vector->p[size - 1],coefficient);
+    osl_int_set_si(CLAN_PRECISION, vector->v, size - 1, coefficient);
   else
   {
     rank = clan_symbol_get_rank(symbol,identifier);
 
-    if (clan_symbol_get_type(symbol,identifier) == OPENSCOP_TYPE_ITERATOR)
-      SCOPINT_set_si(vector->p[rank],coefficient);
+    if (clan_symbol_get_type(symbol,identifier) == CLAN_TYPE_ITERATOR)
+      osl_int_set_si(CLAN_PRECISION,
+                     vector->v, rank, coefficient);
     else
-      SCOPINT_set_si(vector->p[CLAN_MAX_DEPTH + rank],coefficient);
+      osl_int_set_si(CLAN_PRECISION,
+                     vector->v, CLAN_MAX_DEPTH + rank, coefficient);
   }
   return vector;
 }

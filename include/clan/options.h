@@ -40,9 +40,6 @@
 # define CLAN_OPTIONS_H
 
 # include <stdio.h>
-# include <openscop/scop.h>
-# include <openscop/macros.h>
-
 
 # if defined(__cplusplus)
 extern "C"

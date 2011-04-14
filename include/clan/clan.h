@@ -2,7 +2,7 @@
    /*+------- <| --------------------------------------------------------**
     **         A                     Clan                                **
     **---     /.\   -----------------------------------------------------**
-    **   <|  [""M#                 matrix.h                              **
+    **   <|  [""M#                  clan.h                               **
     **-   A   | #   -----------------------------------------------------**
     **   /.\ [""M#         First version: 30/04/2008                     **
     **- [""M# | #  U"U#U  -----------------------------------------------**
@@ -36,29 +36,16 @@
  ******************************************************************************/
 
 
-#ifndef CLAN_MATRIX_H
-# define CLAN_MATRIX_H
+#ifndef CLAN_H
+# define CLAN_H
 
-# include <stdio.h>
 # include <clan/macros.h>
-# include <openscop/matrix.h>
-# include <openscop/vector.h>
+# include <clan/options.h>
+# include <clan/symbol.h>
 # include <clan/vector.h>
+# include <clan/relation.h>
+# include <clan/relation_list.h>
+# include <clan/statement.h>
+# include <clan/scop.h>
 
-
-# if defined(__cplusplus)
-extern "C"
-  {
-# endif
-
-/*+****************************************************************************
- *                            Processing functions                            *
- ******************************************************************************/
-void			clan_matrix_tag_array(openscop_matrix_p, int);
-openscop_matrix_p	clan_matrix_scheduling(int *, int);
-void			clan_matrix_compact(openscop_matrix_p, int, int);
-
-# if defined(__cplusplus)
-  }
-# endif
-#endif /* define CLAN_MATRIX_H */
+#endif /* define CLAN_H */

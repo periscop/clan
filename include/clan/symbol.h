@@ -39,9 +39,8 @@
 #ifndef CLAN_SYMBOL_H
 # define CLAN_SYMBOL_H
 
-# include <stdio.h>
-# include <openscop/scop.h>
-# include <openscop/macros.h>
+# include <osl/strings.h>
+# include <osl/generic.h>
 
 # if defined(__cplusplus)
 extern "C"
@@ -82,12 +81,12 @@ void          clan_symbol_free(clan_symbol_p);
  ******************************************************************************/
 clan_symbol_p clan_symbol_lookup(clan_symbol_p, char *);
 clan_symbol_p clan_symbol_add(clan_symbol_p *, char *, int, int);
-void          clan_symbol_remove(clan_symbol_p*, clan_symbol_p);
 int           clan_symbol_get_rank(clan_symbol_p, char *);
 int           clan_symbol_get_type(clan_symbol_p, char *);
-char **       clan_symbol_iterators(clan_symbol_p *, int);
-char **       clan_symbol_id_array(clan_symbol_p, int, int *);
-
+osl_strings_p clan_symbol_array_to_strings(clan_symbol_p *, int);
+int           clan_symbol_nb_of_type(clan_symbol_p, int);
+osl_generic_p clan_symbol_to_generic(clan_symbol_p, int);
+clan_symbol_p clan_symbol_clone_one(clan_symbol_p);
 
 # if defined(__cplusplus)
   }

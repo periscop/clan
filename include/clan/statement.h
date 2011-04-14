@@ -39,10 +39,7 @@
 #ifndef CLAN_STATEMENT_H
 # define CLAN_STATEMENT_H
 
-# include <stdio.h>
-# include <openscop/scop.h>
-# include <openscop/statement.h>
-# include <clan/matrix.h>
+# include <osl/statement.h>
 
 # if defined(__cplusplus)
 extern "C"
@@ -53,7 +50,7 @@ extern "C"
 /*+****************************************************************************
  *                            Processing functions                            *
  ******************************************************************************/
-void             clan_statement_compact(openscop_statement_p, int);
+void clan_statement_compact(osl_statement_p, int);
 
 
 # if defined(__cplusplus)

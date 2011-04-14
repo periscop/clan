@@ -39,10 +39,13 @@
 %{
    #include <stdlib.h>
    #include <string.h>
-   #include <clan/macros.h>
-   #include <clan/vector.h>
-   #include <clan/matrix.h>
+   
+   #include <osl/vector.h>
+   #include <osl/relation.h>
+   #include <osl/relation_list.h>
    #include <parser.h>
+   #include <clan/macros.h>
+   #include <clan/symbol.h>
 
    void yyerror(char *);
    int  clan_scanner(int, char *, char *);
@@ -53,7 +56,7 @@
 
    int  scanner_parsing = CLAN_FALSE;     /**< Do we parse or not ? */
    int  scanner_comment = 0;              /**< Comment nesting depth */
-   char scanner_latest_text[OPENSCOP_MAX_STRING]; /**< Latest text read */
+   char scanner_latest_text[CLAN_MAX_STRING]; /**< Latest text read */
 %}
 
 %x LINECOMMENT
@@ -93,13 +96,15 @@
 [_A-Za-z]"."[A-Za-z0-9_]* |
 [_A-Za-z]"->"[A-Za-z0-9_]* |
 [_A-Za-z][A-Za-z0-9_]* {
-                         char * word;
-                         word = (char *)malloc((strlen(yytext)+1)*sizeof(char));
-			 strcpy(word,yytext);
-			 yylval.symbol = word;
+                         if (scanner_parsing == CLAN_TRUE) { 
+                           char * word;
+                           word = (char *)malloc((strlen(yytext)+1)*sizeof(char));
+			   strcpy(word,yytext);
+			   yylval.symbol = word;
+                         }
 			 return clan_scanner(ID,yytext,"ID");
                        }
-[0-9]+"."[0-9]*[d,f]*        { return clan_scanner(REAL,yytext,"REAL"); }
+[0-9]+"."[0-9]*[d,f]*  { return clan_scanner(REAL,yytext,"REAL"); }
 [0-9]+                 {
 		         yylval.value = atoi(yytext) ;
                          return clan_scanner(INTEGER,yytext,"INTEGER");
@@ -160,6 +165,17 @@ int yywrap(void)
   return 1;
 }
 
+/**
+ * clan_scanner_free function:
+ * this function frees flex's buffer (it supposes there is only one buffer)
+ * since flex does never free it itself.
+ * WARNING: this is probably *not* portable...
+ */
+void clan_scanner_free() {
+
+  yy_delete_buffer(YY_CURRENT_BUFFER);
+  free(yy_buffer_stack);
+}
 
 /**
  * clan_scanner function:
@@ -176,8 +192,8 @@ int yywrap(void)
 
 int clan_scanner(int token, char * text, char * message)
 {
-  //if (CLAN_DEBUG)
-  //  printf("Lex: %s (%s)\n",message,text);
+  if (CLAN_DEBUG)
+    fprintf(stderr, "[Clan] Info: Lex yytext = %s (%s)\n",message, text);
 
   sprintf(scanner_latest_text,"%s",text);
   if (parser_recording)

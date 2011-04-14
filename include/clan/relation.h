@@ -2,7 +2,7 @@
    /*+------- <| --------------------------------------------------------**
     **         A                     Clan                                **
     **---     /.\   -----------------------------------------------------**
-    **   <|  [""M#                  clan.h                               **
+    **   <|  [""M#                 relation.h                              **
     **-   A   | #   -----------------------------------------------------**
     **   /.\ [""M#         First version: 30/04/2008                     **
     **- [""M# | #  U"U#U  -----------------------------------------------**
@@ -36,23 +36,25 @@
  ******************************************************************************/
 
 
+#ifndef CLAN_relation_H
+# define CLAN_relation_H
+
+# include <osl/relation.h>
+
+# if defined(__cplusplus)
+extern "C"
+  {
+# endif
+
 /*+****************************************************************************
- *  THIS FILE HAS BEEN AUTOMATICALLY GENERATED FROM clan.h.in BY configure    *
+ *                            Processing functions                            *
  ******************************************************************************/
+void           clan_relation_tag_array(osl_relation_p, int);
+osl_relation_p clan_relation_scattering(int *, int);
+void           clan_relation_outputize(osl_relation_p);
+void           clan_relation_compact(osl_relation_p, int, int);
 
-
-#ifndef CLAN_H
-# define CLAN_H
-
-# define CLAN_RELEASE "@PACKAGE_VERSION@"
-# define CLAN_VERSION "@BITS@"
-
-# include <openscop/macros.h>
-# include <clan/matrix.h>
-# include <clan/options.h>
-# include <clan/scop.h>
-# include <clan/statement.h>
-# include <clan/symbol.h>
-# include <clan/vector.h>
-
-#endif /* define CLAN_H */
+# if defined(__cplusplus)
+  }
+# endif
+#endif /* define CLAN_relation_H */

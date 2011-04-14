@@ -1,5 +1,5 @@
-#! /bin/sh
-
-aclocal -I autoconf
-glibtoolize --force --copy
-autoreconf -vfi
+#!/bin/sh
+autoreconf -i
+if test -f osl/autogen.sh; then
+	(cd osl; ./autogen.sh)
+fi

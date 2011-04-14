@@ -36,11 +36,12 @@
  ******************************************************************************/
 
 
-# include <stdlib.h>
-# include <stdio.h>
-# include <string.h>
-# include <clan/options.h>
-# include <clan/clan.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+#include <clan/macros.h>
+#include <clan/options.h>
 
 
 /*+****************************************************************************
@@ -140,8 +141,10 @@ clan_options_help()
 void
 clan_options_version()
 {
-  printf("clan %s %s bits       The Chunky Loop Analyzer\n",
-         CLAN_RELEASE,CLAN_VERSION);
+  printf("clan %s ", CLAN_VERSION);
+  osl_int_dump_precision(stdout, CLAN_PRECISION);
+  printf("       The Chunky Loop Analyzer\n");
+
   printf(
   "-----\n"
   "This is a polyhedral representation extractor for imperative programs using "

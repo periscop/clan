@@ -268,7 +268,7 @@ clan_scop_fill_options(osl_scop_p scop, int* localvars, int* liveoutvars)
 	  strcat(ids, buffer);
 	}
       size = strlen("<live-out-vars>\n") + strlen (ids) +
-	strlen ("</live-out-vars>\n");
+	strlen ("</live-out-vars>\n") + 2;
       tag2 = (char*)malloc((size + 1) * sizeof(char));
       strcpy(tag2, "<live-out-vars>\n");
       strcat(tag2, ids);

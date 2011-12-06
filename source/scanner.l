@@ -54,9 +54,9 @@
    extern char *        parser_record;    /**< What we record */
    extern clan_symbol_p parser_symbol;    /**< Top of the symbol table */
 
-   int  scanner_parsing = CLAN_FALSE;     /**< Do we parse or not ? */
-   int  scanner_comment = 0;              /**< Comment nesting depth */
-   char scanner_latest_text[CLAN_MAX_STRING]; /**< Latest text read */
+   int    scanner_parsing = CLAN_FALSE;   /**< Do we parse or not ? */
+   int    scanner_comment = 0;            /**< Comment nesting depth */
+   char * scanner_latest_text;            /**< Latest text read */
 %}
 
 %x LINECOMMENT
@@ -195,9 +195,13 @@ int clan_scanner(int token, char * text, char * message)
   if (CLAN_DEBUG)
     fprintf(stderr, "[Clan] Info: Lex yytext = %s (%s)\n",message, text);
 
-  sprintf(scanner_latest_text,"%s",text);
-  if (parser_recording)
-    strcat(parser_record,text);
+  free(scanner_latest_text);
+  scanner_latest_text = strdup(text);
+  if (parser_recording) {
+    CLAN_realloc(parser_record, char *,
+                 (strlen(parser_record) + strlen(text) + 1) * sizeof(char));
+    strcat(parser_record, text);
+  }
 
   if (scanner_parsing == CLAN_TRUE)
     return token;

@@ -69,7 +69,7 @@
    osl_scop_p clan_parse(FILE *, clan_options_p);
 
    extern FILE * yyin;                 /**< File to be read by Lex */
-   extern char scanner_latest_text[];  /**< Latest text read by Lex */
+   extern char * scanner_latest_text;  /**< Latest text read by Lex */
 
    /* This is the "parser state", a collection of variables that vary
     * during the parsing and thanks to we can extract all SCoP informations.
@@ -316,13 +316,12 @@ instruction:
  */
   |   {
         parser_statement = osl_statement_malloc();
-        parser_record = (char *)malloc(CLAN_MAX_STRING * sizeof(char));
         parser_recording = CLAN_TRUE;
         /* Yacc needs Lex to read the next token to ensure we are starting
          * an assignment. So we keep track of the latest text Lex read
          * and we start the statement body with it.
          */
-        strcpy(parser_record, scanner_latest_text);
+        CLAN_strdup(parser_record, scanner_latest_text);
       }
     assignment
       {
@@ -1378,6 +1377,8 @@ clan_parser_initialize_state(clan_options_p options)
 
   parser_options = options;
   parser_scop->language = strdup("C");
+  parser_record = NULL;
+  scanner_latest_text = NULL;
 }
 
 /**

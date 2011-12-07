@@ -43,6 +43,7 @@
 
 #include <osl/strings.h>
 #include <osl/generic.h>
+#include <osl/extensions/arrays.h>
 #include <clan/macros.h>
 #include <clan/symbol.h>
 
@@ -430,7 +431,7 @@ int clan_symbol_nb_of_type(clan_symbol_p symbol, int type) {
 
 
 /**
- * clan_symbol_to_generic function:
+ * clan_symbol_to_strings function:
  * this function builds (and returns a pointer to) an osl_generic_t
  * structure containing the symbol strings of a given type in the
  * symbol table. The osl_generic_t is a shell for an osl_strings_t
@@ -441,7 +442,7 @@ int clan_symbol_nb_of_type(clan_symbol_p symbol, int type) {
  * \param[in] type   The type of the elements.
  * \return An osl_generic_t with the symbol strings of the given type.
  */
-osl_generic_p clan_symbol_to_generic(clan_symbol_p symbol, int type) {
+osl_generic_p clan_symbol_to_strings(clan_symbol_p symbol, int type) {
   int i, length, nb_identifiers = 0;
   char **identifiers = NULL;
   osl_strings_p strings;
@@ -478,11 +479,8 @@ osl_generic_p clan_symbol_to_generic(clan_symbol_p symbol, int type) {
   strings = osl_strings_malloc();
   strings->string = identifiers;
 
-  // Build the generic shell for the strings.
-  generic = osl_generic_malloc();
-  generic->interface = osl_strings_interface();
-  generic->data = strings;
-
+  // Embed the strings in a generic shell.
+  generic = osl_generic_shell(strings, osl_strings_interface());
   return generic;
 }
 
@@ -504,4 +502,52 @@ clan_symbol_p clan_symbol_clone_one(clan_symbol_p symbol) {
 
   return clone;
 }
+
+
+/**
+ * clan_symbol_to_arrays function:
+ * this function generates an arrays extension from the symbol table
+ * passed as an argument. It embeds it in an osl_generic_t structure
+ * before returning it.
+ * \param[in] symbol The symbol table.
+ * \return An arrays structure with all the arrays of the symbol table.
+ */
+osl_generic_p clan_symbol_to_arrays(clan_symbol_p symbol) {
+  int i;
+  int nb_arrays = 0;
+  osl_arrays_p arrays = NULL;
+  osl_generic_p generic;
+  clan_symbol_p top = symbol;
+
+  // A first scan to know how many arrays there are.
+  while (symbol != NULL) {
+    if (symbol->type == CLAN_TYPE_ARRAY)
+      nb_arrays++;
+    symbol = symbol->next;
+  }
+
+  // Build the arrays extension.
+  if (nb_arrays > 0) {
+    arrays = osl_arrays_malloc();
+    CLAN_malloc(arrays->id, int *, nb_arrays * sizeof(int));
+    CLAN_malloc(arrays->names, char **, nb_arrays * sizeof(char *));
+    arrays->nb_names = nb_arrays;
+    symbol = top;
+    i = 0;
+    while (symbol != NULL) {
+      if (symbol->type == CLAN_TYPE_ARRAY) {
+        arrays->id[i] = symbol->rank;
+        CLAN_strdup(arrays->names[i], symbol->identifier);
+        i++;
+      }
+      symbol = symbol->next;
+    }
+  }
+
+  // Embed the arrays in a generic shell.
+  generic = osl_generic_shell(arrays, osl_arrays_interface());
+  return generic;
+}
+
+
 

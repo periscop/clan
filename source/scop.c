@@ -47,6 +47,7 @@
 #include <osl/statement.h>
 #include <osl/strings.h>
 #include <osl/extensions/scatnames.h>
+#include <osl/extensions/arrays.h>
 #include <osl/generic.h>
 #include <osl/body.h>
 #include <osl/scop.h>

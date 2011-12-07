@@ -49,6 +49,7 @@
    #include <osl/statement.h>
    #include <osl/strings.h>
    #include <osl/generic.h>
+   #include <osl/extensions/arrays.h>
    #include <osl/scop.h>
    #include <clan/macros.h>
    #include <clan/vector.h>
@@ -155,7 +156,7 @@ program:
 	int nb_parameters = clan_symbol_nb_of_type(parser_symbol,
                                                    CLAN_TYPE_PARAMETER);
 
-        parser_scop->parameters = clan_symbol_to_generic(parser_symbol,
+        parser_scop->parameters = clan_symbol_to_strings(parser_symbol,
                                                          CLAN_TYPE_PARAMETER);
 	if (parser_options->bounded_context)
 	  {
@@ -1412,6 +1413,7 @@ clan_parser_free_state()
 osl_scop_p
 clan_parse(FILE * input, clan_options_p options)
 {
+  osl_generic_p arrays;
   yyin = input;
 
   clan_parser_initialize_state(options);
@@ -1436,6 +1438,8 @@ clan_parse(FILE * input, clan_options_p options)
       // Add extensions.
       parser_scop->registry = osl_interface_get_default_registry();
       clan_scop_generate_scatnames(parser_scop);
+      arrays = clan_symbol_to_arrays(parser_symbol);
+      osl_generic_add(&parser_scop->extension, arrays);
       
       // OpenScop wants an empty context rather than a NULL context.
       if (parser_scop->context == NULL) {

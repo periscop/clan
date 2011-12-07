@@ -41,6 +41,7 @@
 
 # include <osl/strings.h>
 # include <osl/generic.h>
+# include <osl/extensions/arrays.h>
 
 # if defined(__cplusplus)
 extern "C"
@@ -85,8 +86,9 @@ int           clan_symbol_get_rank(clan_symbol_p, char *);
 int           clan_symbol_get_type(clan_symbol_p, char *);
 osl_strings_p clan_symbol_array_to_strings(clan_symbol_p *, int);
 int           clan_symbol_nb_of_type(clan_symbol_p, int);
-osl_generic_p clan_symbol_to_generic(clan_symbol_p, int);
+osl_generic_p clan_symbol_to_strings(clan_symbol_p, int);
 clan_symbol_p clan_symbol_clone_one(clan_symbol_p);
+osl_generic_p clan_symbol_to_arrays(clan_symbol_p);
 
 # if defined(__cplusplus)
   }

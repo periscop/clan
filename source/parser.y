@@ -482,16 +482,27 @@ incrementation:
  *
  */
 min_affine_expression:
+/*
+ * Rule 1: min_affine_expression -> <affex>
+ */
     affine_expression
       {
+        CLAN_debug("Yacc min_affine_expression.1: <affex>");
 	$$ = osl_relation_from_vector($1);
         osl_vector_free($1);
+        CLAN_debug_call(osl_relation_dump(stderr, $$));
       }
+/*
+ * Rule 2: min_affine_expression -> MIN ( min_aff_expr , min_aff_expr )
+ */
   | MIN syRPARENTHESIS min_affine_expression syCOMMA min_affine_expression
     syLPARENTHESIS
-     {
-       $$ = osl_relation_concat_constraints($3, $5);
-     }
+      {
+        CLAN_debug("Yacc min_affine_expression.2: "
+                   "MIN ( min_affine_expression , min_affine_expresssion");
+        $$ = osl_relation_concat_constraints($3, $5);
+        CLAN_debug_call(osl_relation_dump(stderr, $$));
+      }
   ;
 
 
@@ -501,16 +512,27 @@ min_affine_expression:
  *
  */
 max_affine_expression:
+/*
+ * Rule 1: max_affine_expression -> <affex>
+ */
     affine_expression
       {
+        CLAN_debug("Yacc max_affine_expression.1: <affex>");
 	$$ = osl_relation_from_vector($1);
         osl_vector_free($1);
+        CLAN_debug_call(osl_relation_dump(stderr, $$));
       }
+/*
+ * Rule 2: max_affine_expression -> MAX ( max_aff_expr , max_aff_expr )
+ */
   | MAX syRPARENTHESIS max_affine_expression syCOMMA max_affine_expression
     syLPARENTHESIS
-     {
-       $$ = osl_relation_concat_constraints($3, $5);
-     }
+      {
+        CLAN_debug("Yacc max_affine_expression.2: "
+                   "MAX ( max_affine_expression , max_affine_expression");
+        $$ = osl_relation_concat_constraints($3, $5);
+        CLAN_debug_call(osl_relation_dump(stderr, $$));
+      }
   ;
 
 
@@ -520,35 +542,65 @@ max_affine_expression:
  *
  */
 affine_expression:
+/*
+ * Rule 1: affine_expression -> term
+ */
     term
       {
+        CLAN_debug("Yacc affine_expression.1: term");
         $$ = $1;
+        CLAN_debug_call(osl_vector_dump(stderr, $$));
       }
+/*
+ * Rule 2: affine_expression -> <affex> + <affex>
+ */
   | affine_expression opPLUS affine_expression
       {
+        CLAN_debug("Yacc affine_expression.2: <affex> + <affex>");
         $$ = osl_vector_add($1,$3);
         osl_vector_free($1);
         osl_vector_free($3);
+        CLAN_debug_call(osl_vector_dump(stderr, $$));
       }
+/*
+ * Rule 3: affine_expression -> <affex> - <affex>
+ */
   | affine_expression opMINUS affine_expression
       {
+        CLAN_debug("Yacc affine_expression.3: <affex> - <affex>");
         $$ = osl_vector_sub($1,$3);
 	osl_vector_free($1);
         osl_vector_free($3);
+        CLAN_debug_call(osl_vector_dump(stderr, $$));
       }
+/*
+ * Rule 4: affine_expression -> ( <affex> )
+ */
   | syRPARENTHESIS affine_expression syLPARENTHESIS
       {
+        CLAN_debug("Yacc affine_expression.4: ( <affex> )");
         $$ = $2;
+        CLAN_debug_call(osl_vector_dump(stderr, $$));
       }
+/*
+ * Rule 5: affine_expression -> CEILD ( <affex> , term )
+ */
   | CEILD syRPARENTHESIS affine_expression syCOMMA term syLPARENTHESIS
       {
+        CLAN_debug("Yacc affine_expression.5: ceild ( <affex> , term )");
 	osl_int_assign(CLAN_PRECISION, $3->v, 0, $5->v, $5->size - 1);
 	$$ = $3;
+        CLAN_debug_call(osl_vector_dump(stderr, $$));
       }
+/*
+ * Rule 6: affine_expression -> CEILD ( <affex> , term )
+ */
   | FLOORD syRPARENTHESIS affine_expression syCOMMA term syLPARENTHESIS
       {
+        CLAN_debug("Yacc affine_expression.6: floord ( <affex> , term )");
 	osl_int_assign(CLAN_PRECISION, $3->v, 0, $5->v, $5->size - 1);
 	$$ = $3;
+        CLAN_debug_call(osl_vector_dump(stderr, $$));
       }
   ;
 
@@ -564,82 +616,102 @@ term:
  */
     INTEGER
       {
+        CLAN_debug("Yacc term.1: INT");
         $$ = clan_vector_term(parser_symbol, $1, NULL);
+        CLAN_debug_call(osl_vector_dump(stderr, $$));
       }
 /*
  * Rule 2: term -> id
  */
   | id
       {
+        CLAN_debug("Yacc term.2: id");
         clan_symbol_add(&parser_symbol, $1, CLAN_TYPE_UNKNOWN, parser_depth);
         $$ = clan_vector_term(parser_symbol, 1, $1);
         free($1);
+        CLAN_debug_call(osl_vector_dump(stderr, $$));
       }
 /*
  * Rule 3: term -> - INT
  */
   | opMINUS INTEGER
       {
+        CLAN_debug("Yacc term.3: - INT");
         $$ = clan_vector_term(parser_symbol, -($2), NULL);
+        CLAN_debug_call(osl_vector_dump(stderr, $$));
       }
 /*
  * Rule 4: term -> INT * id
  */
   | INTEGER opMULTIPLY id
       {
+        CLAN_debug("Yacc term.4: INT * id");
         clan_symbol_add(&parser_symbol, $3, CLAN_TYPE_UNKNOWN, parser_depth);
         $$ = clan_vector_term(parser_symbol, $1, $3);
         free($3);
+        CLAN_debug_call(osl_vector_dump(stderr, $$));
       }
 /*
  * Rule 4': term -> id * INT
  */
   | id opMULTIPLY INTEGER
       {
+        CLAN_debug("Yacc term.4': id * INT");
         clan_symbol_add(&parser_symbol, $1, CLAN_TYPE_UNKNOWN, parser_depth);
         $$ = clan_vector_term(parser_symbol, $3, $1);
         free($1);
+        CLAN_debug_call(osl_vector_dump(stderr, $$));
       }
 /*
  * Rule 5: term -> INT * INT
  */
   | INTEGER opMULTIPLY INTEGER
       {
+        CLAN_debug("Yacc term.5: INT * INT");
         $$ = clan_vector_term(parser_symbol, ($1) * ($3), NULL);
+        CLAN_debug_call(osl_vector_dump(stderr, $$));
       }
 /*
  * Rule 6: term -> INT / INT
  */
   | INTEGER opDIVIDE INTEGER
       {
+        CLAN_debug("Yacc term.6: INT / INT");
         $$ = clan_vector_term(parser_symbol, ($1) / ($3), NULL);
+        CLAN_debug_call(osl_vector_dump(stderr, $$));
       }
 /*
  * Rule 7: term -> - INT * id
  */
   | opMINUS INTEGER opMULTIPLY id
       {
+        CLAN_debug("Yacc term.7: - INT * id");
         clan_symbol_add(&parser_symbol, $4, CLAN_TYPE_UNKNOWN, parser_depth);
         $$ = clan_vector_term(parser_symbol, -($2), $4);
         free($4);
+        CLAN_debug_call(osl_vector_dump(stderr, $$));
       }
 /*
  * Rule 7': term -> - id * INT
  */
   | opMINUS id opMULTIPLY INTEGER
       {
+        CLAN_debug("Yacc term.7': - id * INT");
         clan_symbol_add(&parser_symbol, $2, CLAN_TYPE_UNKNOWN, parser_depth);
         $$ = clan_vector_term(parser_symbol, -($4), $2);
         free($2);
+        CLAN_debug_call(osl_vector_dump(stderr, $$));
       }
 /*
  * Rule 8: term -> - id
  */
   | opMINUS id
       {
+        CLAN_debug("Yacc term.8: - id");
         clan_symbol_add(&parser_symbol, $2, CLAN_TYPE_UNKNOWN, parser_depth);
         $$ = clan_vector_term(parser_symbol, -1, $2);
         free($2);
+        CLAN_debug_call(osl_vector_dump(stderr, $$));
       }
   ;
 
@@ -659,6 +731,8 @@ condition:
       {
         /* a<b translates to -a+b-1>=0 */
 	int i;
+        
+        CLAN_debug("Yacc condition.1: <affex> < min_affex");
 	osl_vector_p tmp = osl_vector_add_scalar($1, 1);
 	osl_vector_tag_inequality(tmp);
 	for (i = 0; i < $3->nb_rows; ++i)
@@ -687,6 +761,7 @@ condition:
 	osl_vector_free($1);
 	osl_vector_free(tmp);
 	$$ = $3;
+        CLAN_debug_call(osl_relation_dump(stderr, $$));
       }
 /*
  * Rule 2: condition -> <affex> > max_affex
@@ -696,6 +771,8 @@ condition:
         /* a>b translates to a-b-1>=0 */
 	int i, j;
 	osl_vector_p tmp = osl_vector_add_scalar($1, -1);
+        
+        CLAN_debug("Yacc condition.2: <affex> > max_affex");
 	osl_vector_tag_inequality(tmp);
 	for (i = 0; i < $3->nb_rows; ++i)
 	  {
@@ -725,6 +802,7 @@ condition:
         osl_vector_free($1);
         osl_vector_free(tmp);
         $$ = $3;
+        CLAN_debug_call(osl_relation_dump(stderr, $$));
       }
 /*
  * Rule 3: condition -> <affex> <= min_affex
@@ -733,7 +811,10 @@ condition:
       {
         /* a<=b translates to -a+b>=0 */
 	int i;
-	osl_vector_p tmp = osl_vector_add_scalar($1,0);
+	osl_vector_p tmp;
+        
+        CLAN_debug("Yacc condition.3: <affex> <= min_affex");
+	tmp = osl_vector_add_scalar($1,0);
 	osl_vector_tag_inequality(tmp);
 	for (i = 0; i < $3->nb_rows; ++i)
 	  {
@@ -759,6 +840,7 @@ condition:
         osl_vector_free($1);
         osl_vector_free(tmp);
         $$ = $3;
+        CLAN_debug_call(osl_relation_dump(stderr, $$));
       }
 /*
  * Rule 4: condition -> <affex> >= max_affex
@@ -767,7 +849,10 @@ condition:
       {
         /* a>=b translates to a-b>=0 */
 	int i, j;
-	osl_vector_p tmp = osl_vector_add_scalar($1,0);
+	osl_vector_p tmp;
+        
+        CLAN_debug("Yacc condition.4: <affex> >= max_affex");
+	tmp = osl_vector_add_scalar($1,0);
 	osl_vector_tag_inequality(tmp);
 	for (i = 0; i < $3->nb_rows; ++i)
 	  {
@@ -795,12 +880,16 @@ condition:
         osl_vector_free($1);
         osl_vector_free(tmp);
         $$ = $3;
+        CLAN_debug_call(osl_relation_dump(stderr, $$));
       }
 /*
  * Rule 5: condition -> <affex> == <affex>
  */
   | affine_expression opEQUAL affine_expression
       {
+	osl_vector_p res;
+        
+        CLAN_debug("Yacc condition.5: <affex> == <affex>");
         /* a==b translates to a-b==0 */
 	/* Warning: cases like ceild(M,32) == ceild(N,32) are not handled.
 	   Assert if we encounter such a case. */
@@ -808,28 +897,33 @@ condition:
                  osl_int_one(CLAN_PRECISION,  $1->v, 0)) &&
                 (osl_int_zero(CLAN_PRECISION, $3->v, 0) ||
                  osl_int_one(CLAN_PRECISION,  $3->v, 0)));
-	osl_vector_p res = osl_vector_sub($1,$3);
+	res = osl_vector_sub($1,$3);
 	osl_vector_tag_equality(res);
 	$$ = osl_relation_from_vector(res);
 	osl_vector_free(res);
         osl_vector_free($1);
 	osl_vector_free($3);
+        CLAN_debug_call(osl_relation_dump(stderr, $$));
       }
 /*
  * Rule 6: condition -> ( condition )
  */
   | syRPARENTHESIS condition syLPARENTHESIS
       {
+        CLAN_debug("Yacc condition.6: ( condition )");
 	$$ = $2;
+        CLAN_debug_call(osl_relation_dump(stderr, $$));
       }
 /*
  * Rule 7: condition -> condition && condition
  */
   | condition opLAND condition
      {
+       CLAN_debug("Yacc condition.7: condition && condition");
        $$ = osl_relation_concat_constraints($1, $3);
        osl_relation_free($1);
        osl_relation_free($3);
+       CLAN_debug_call(osl_relation_dump(stderr, $$));
      }
   ;
 
@@ -862,6 +956,7 @@ unary_operator:
 
 /*
  * Rule for a function call -> id_function ( expression_list )
+ * return: <list>
  *
  */
 function_call:
@@ -869,6 +964,7 @@ function_call:
     {
       CLAN_debug("Yacc function_call.1: id_function ( expression_list )");
       $$ = $3;
+      CLAN_debug_call(osl_relation_list_dump(stderr, $$));
     }
   ;
 
@@ -895,6 +991,7 @@ assignment:
         $$ = osl_relation_list_node($1);
         osl_relation_list_concat_inplace(&($$), $3);
         osl_relation_free($1);
+        CLAN_debug_call(osl_relation_list_dump(stderr, $$));
       }
 /*
  * Rule 2: assignment -> var red_op expression;
@@ -912,6 +1009,7 @@ assignment:
         $$ = osl_relation_list_node($1);
         osl_relation_list_concat_inplace(&($$), $3);
         osl_relation_free($1);
+        CLAN_debug_call(osl_relation_list_dump(stderr, $$));
       }
 /*
  * Rule 3: assignment -> var un_op;
@@ -929,6 +1027,7 @@ assignment:
         osl_relation_set_type($1, OSL_TYPE_READ);
         osl_relation_list_concat_inplace(&($$), osl_relation_list_node($1));
         osl_relation_free($1);
+        CLAN_debug_call(osl_relation_list_dump(stderr, $$));
       }
 /*
  * Rule 4: assignment -> un_op var;
@@ -946,6 +1045,7 @@ assignment:
         osl_relation_set_type($2, OSL_TYPE_READ);
         osl_relation_list_concat_inplace(&($$), osl_relation_list_node($2));
         osl_relation_free($2);
+        CLAN_debug_call(osl_relation_list_dump(stderr, $$));
       }
 /*
  * Rule 5: assignment -> var;
@@ -956,6 +1056,7 @@ assignment:
         osl_relation_set_type($1, OSL_TYPE_READ);
         $$ = osl_relation_list_node($1);
         osl_relation_free($1);
+        CLAN_debug_call(osl_relation_list_dump(stderr, $$));
       }
 /*
  * Rule 6: assignment -> { assignment }
@@ -964,6 +1065,7 @@ assignment:
       {
         CLAN_debug("Yacc assignment.6: { assignment }");
         $$ = $2;
+        CLAN_debug_call(osl_relation_list_dump(stderr, $$));
       }
 /*
  * Rule 7: assignment -> function_call;
@@ -973,6 +1075,7 @@ assignment:
         CLAN_debug("Yacc assignment.7: function_call");
         osl_relation_list_set_type($1, OSL_TYPE_READ);
         $$ = $1;
+        CLAN_debug_call(osl_relation_list_dump(stderr, $$));
       }
   ;
 
@@ -1010,6 +1113,7 @@ expression:
       {
         CLAN_debug("Yacc expression.1: number");
         $$ = NULL;
+        CLAN_debug_call(osl_relation_list_dump(stderr, $$));
       }
 /*
  * Rule 2: expression -> - number
@@ -1018,6 +1122,7 @@ expression:
       {
         CLAN_debug("Yacc expression.2: - number");
         $$ = NULL;
+        CLAN_debug_call(osl_relation_list_dump(stderr, $$));
       }
 /*
  * Rule 3: expression -> variable
@@ -1027,6 +1132,7 @@ expression:
         CLAN_debug("Yacc expression.3: variable");
         $$ = osl_relation_list_node($1);
         osl_relation_free($1);
+        CLAN_debug_call(osl_relation_list_dump(stderr, $$));
       }
 /*
  * Rule 4: expression -> expression bin_op expression
@@ -1037,6 +1143,7 @@ expression:
         CLAN_debug("Yacc expression.4: expression bin_op expression");
 	$$ = $1;
         osl_relation_list_concat_inplace(&($$), $3);
+        CLAN_debug_call(osl_relation_list_dump(stderr, $$));
       }
 /*
  * Rule 5: expression -> ! expression
@@ -1045,6 +1152,7 @@ expression:
       {
         CLAN_debug("Yacc expression.5: ! expression");
         $$ = $2;
+        CLAN_debug_call(osl_relation_list_dump(stderr, $$));
       }
 /*
  * Rule 6: expression -> ( expression )
@@ -1053,6 +1161,7 @@ expression:
       {
         CLAN_debug("Yacc expression.6: ( expression )");
 	$$ = $2;
+        CLAN_debug_call(osl_relation_list_dump(stderr, $$));
       }
 /*
  * Rule 7: expression -> expression : expression ? expression
@@ -1063,6 +1172,7 @@ expression:
 	$$ = $1;
         osl_relation_list_concat_inplace(&($$), $3);
         osl_relation_list_concat_inplace(&($$), $5);
+        CLAN_debug_call(osl_relation_list_dump(stderr, $$));
       }
 /*
  * Rule 8: expression -> function_call
@@ -1071,6 +1181,7 @@ expression:
       {
         CLAN_debug("Yacc expression.8: function_call");
         $$ = $1;
+        CLAN_debug_call(osl_relation_list_dump(stderr, $$));
       }
   ;
 
@@ -1086,15 +1197,19 @@ expression_list:
  */
     expression
      {
+       CLAN_debug("Yacc expression_list.1: expression");
        $$ = $1;
+       CLAN_debug_call(osl_relation_list_dump(stderr, $$));
      }
 /*
  * Rule 2: expression_list -> expression , expression_list
  */
   | expression_list syCOMMA expression 
      {
-        $$ = $1;
-        osl_relation_list_concat_inplace(&($$),$3);
+       CLAN_debug("Yacc expression_list.2: expression , expression_list");
+       $$ = $1;
+       osl_relation_list_concat_inplace(&($$),$3);
+       CLAN_debug_call(osl_relation_list_dump(stderr, $$));
      }
   |
 /*
@@ -1117,9 +1232,13 @@ variable:
     id
       {
         int rank;
+	char* s;
         osl_relation_p relation;
-	char* s = (char*) $1;
-	clan_symbol_p symbol = clan_symbol_lookup(parser_symbol, s);
+        clan_symbol_p symbol;
+        
+        CLAN_debug("Yacc variable.1: id");
+	s = (char*) $1;
+	symbol = clan_symbol_lookup(parser_symbol, s);
 	// If the variable is an iterator or a parameter, discard it
 	// from the read/write clause.
 	if ((symbol && symbol->type == CLAN_TYPE_ITERATOR) ||
@@ -1139,6 +1258,7 @@ variable:
 	    $$ = relation;
 	  }
         free($1);
+        CLAN_debug_call(osl_relation_dump(stderr, $$));
       }
 /*
  * Rule 2: variable -> id array_index
@@ -1147,6 +1267,8 @@ variable:
   | id array_index
       {
         int rank;
+        
+        CLAN_debug("Yacc variable.2: id array_index");
         clan_symbol_add(&parser_symbol, $1, CLAN_TYPE_ARRAY, parser_depth);
         rank = clan_symbol_get_rank(parser_symbol, $1);
         // The fakeiter makes sure there is at least one dimension.
@@ -1156,20 +1278,25 @@ variable:
         clan_relation_tag_array($2, rank);
         $$ = $2;
         free($1);
+        CLAN_debug_call(osl_relation_dump(stderr, $$));
       }
 /*
  * Rule 3: variable -> - variable
  */
    | opMINUS variable
       {
+        CLAN_debug("Yacc variable.3: - variable");
 	$$ = $2;
+        CLAN_debug_call(osl_relation_dump(stderr, $$));
       }
 /*
  * Rule 4: variable -> + variable
  */
    | opPLUS variable
       {
+        CLAN_debug("Yacc variable.4: + variable");
 	$$ = $2;
+        CLAN_debug_call(osl_relation_dump(stderr, $$));
       }
   ;
 
@@ -1251,6 +1378,7 @@ array_index:
         CLAN_debug("Yacc array_index.1: [ <affex> ]");
         $$ = osl_relation_from_vector($2);
         osl_vector_free($2);
+        CLAN_debug_call(osl_relation_dump(stderr, $$));
       }
 /*
  * Rule 2: array_index -> array_index [ <affex> ]
@@ -1262,6 +1390,7 @@ array_index:
 	  osl_relation_insert_vector($1,$3,$1->nb_rows);
         osl_vector_free($3);
         $$ = $1;
+        CLAN_debug_call(osl_relation_dump(stderr, $$));
       }
   ;
 
@@ -1281,6 +1410,7 @@ id:
      {
        CLAN_debug("Yacc id.1: ID");
        $$ = $1;
+       CLAN_debug_call(printf("$$: %s\n", $$));
      }
 /*
  * Rule 2: id -> ( ID )
@@ -1289,6 +1419,7 @@ id:
      {
        CLAN_debug("Yacc id.2: ( ID )");
        $$ = $2;
+       CLAN_debug_call(printf("$$: %s\n", $$));
      }
 /*
  * Rule 3: id -> & ID
@@ -1297,6 +1428,7 @@ id:
      {
        CLAN_debug("Yacc id.3: & ID");
        $$ = $2;
+       CLAN_debug_call(printf("$$: %s\n", $$));
      }
 /*
  * Rule 4: id -> math_func_list
@@ -1305,6 +1437,7 @@ id:
      {
        CLAN_debug("Yacc id.4: math_func_list");
        $$ = NULL;
+       CLAN_debug_call(printf("$$: NULL\n"));
      }
   ;
 

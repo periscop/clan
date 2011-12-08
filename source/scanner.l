@@ -56,7 +56,7 @@
 
    int    scanner_parsing = CLAN_FALSE;   /**< Do we parse or not ? */
    int    scanner_comment = 0;            /**< Comment nesting depth */
-   char * scanner_latest_text;            /**< Latest text read */
+   char * scanner_latest_text = NULL;     /**< Latest text read */
 %}
 
 %x LINECOMMENT
@@ -167,14 +167,16 @@ int yywrap(void)
 
 /**
  * clan_scanner_free function:
- * this function frees flex's buffer (it supposes there is only one buffer)
- * since flex does never free it itself.
+ * this function frees the memory allocated for the scanner. It frees
+ * flex's buffer (it supposes there is only one buffer) since flex does
+ * never free it itself.
  * WARNING: this is probably *not* portable...
  */
 void clan_scanner_free() {
 
   yy_delete_buffer(YY_CURRENT_BUFFER);
   free(yy_buffer_stack);
+  free(scanner_latest_text);
 }
 
 /**

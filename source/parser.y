@@ -1379,7 +1379,6 @@ clan_parser_initialize_state(clan_options_p options)
   parser_options = options;
   parser_scop->language = strdup("C");
   parser_record = NULL;
-  scanner_latest_text = NULL;
 }
 
 /**

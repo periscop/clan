@@ -542,10 +542,11 @@ osl_generic_p clan_symbol_to_arrays(clan_symbol_p symbol) {
       }
       symbol = symbol->next;
     }
+    
+    // Embed the arrays in a generic shell.
+    generic = osl_generic_shell(arrays, osl_arrays_interface());
   }
 
-  // Embed the arrays in a generic shell.
-  generic = osl_generic_shell(arrays, osl_arrays_interface());
   return generic;
 }
 

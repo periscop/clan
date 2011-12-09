@@ -83,6 +83,12 @@
              fprintf(stderr,"[Clan] Info: "msg" (%s).\n", __func__);       \
          } while (0)
 
+# define CLAN_debug_call(function_call)                                    \
+         do {                                                              \
+           if (CLAN_DEBUG)                                                 \
+             function_call;                                                \
+         } while (0)
+
 # define CLAN_warning(msg)                                                 \
          do {                                                              \
            fprintf(stderr,"[Clan] Warning: "msg" (%s).\n", __func__);      \

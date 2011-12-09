@@ -83,18 +83,17 @@
    int             parser_depth = 0;   /**< Current loop depth */
    int *           parser_scattering;  /**< Current statement scattering */
    clan_symbol_p * parser_iterators;   /**< Current iterator list */
-   osl_relation_p  parser_domain;      /**< Current iteration domain */
-   int             parser_nb_cons = 0; /**< Current number of constraints */
-   int *           parser_consperdim;  /**< Constraint nb for each dimension */
+   osl_relation_list_p parser_stack;   /**< Iteration domain stack */
+
+#if 0   
    int *           parser_variables_localvars; /**< List of variables
                                                     in #pragma local-vars */
    int *           parser_variables_liveout;   /**< List of variables
                                                     in #pragma live-out */
+#endif
 
    /* Ugly global variable to keep/read Clan options during parsing. */
    clan_options_p  parser_options = NULL;
-
-
 %}
 
 %union { int value;                 /**< An integer value for integers */
@@ -259,20 +258,16 @@ instruction:
 	      osl_int_oppose(CLAN_PRECISION, $6->m[i], j, $6->m[i], j);
 	    osl_relation_add_vector($6,parser_i_term,i);
 	  }
-	osl_relation_insert_constraints(parser_domain, $6, parser_nb_cons);
-
-        parser_nb_cons += $6->nb_rows;
-        parser_consperdim[parser_depth] += $6->nb_rows;
-	osl_vector_free(parser_i_term);
+        osl_relation_list_dup(&parser_stack);
+        osl_relation_insert_constraints(parser_stack->elt, $6, -1);
+        osl_vector_free(parser_i_term);
         free($3);
 	osl_relation_free($6);
       }
     sySEMICOLON
     condition
       {
-	osl_relation_insert_constraints(parser_domain, $9, parser_nb_cons);
-        parser_nb_cons += $9->nb_rows;
-        parser_consperdim[parser_depth] += $9->nb_rows;
+	osl_relation_insert_constraints(parser_stack->elt, $9, -1);
         osl_relation_free($9);
       }
     sySEMICOLON
@@ -286,9 +281,8 @@ instruction:
       {
         parser_depth--;
         parser_scattering[parser_depth]++;
-        parser_nb_cons -= parser_consperdim[parser_depth];
-        parser_consperdim[parser_depth] = 0;
 	clan_symbol_free(parser_iterators[parser_depth]);
+        osl_relation_list_drop(&parser_stack);
       }
 /*
  * Rule 2: instruction -> if (condition) bloc
@@ -297,40 +291,35 @@ instruction:
   |  IF syRPARENTHESIS condition syLPARENTHESIS
       {
 	/* Insert the condition constraint in the current parser domain. */
-	osl_relation_insert_constraints(parser_domain, $3, parser_nb_cons);
-        parser_nb_cons += $3->nb_rows;
+        osl_relation_list_dup(&parser_stack);
+	osl_relation_insert_constraints(parser_stack->elt, $3, -1);
       }
     bloc
       {
-        parser_nb_cons -= $3->nb_rows;
-	/* Remove the condition constraint from the current parser domain. */
-	int i, j;
-	for (i = parser_nb_cons; i < parser_domain->nb_rows - 1; ++i)
-	  for (j = 0; j < parser_domain->nb_columns; ++j)
-	    osl_int_assign(CLAN_PRECISION,
-		           parser_domain->m[i], j,
-		           parser_domain->m[i+1], j);
+        osl_relation_list_drop(&parser_stack);
       }
 /*
  * Rule 3: instruction -> assignment
  *
  */
   |   {
-        parser_statement = osl_statement_malloc();
-        parser_recording = CLAN_TRUE;
         /* Yacc needs Lex to read the next token to ensure we are starting
          * an assignment. So we keep track of the latest text Lex read
          * and we start the statement body with it.
          */
         CLAN_strdup(parser_record, scanner_latest_text);
+        parser_recording = CLAN_TRUE;
       }
     assignment
       {
+        parser_statement = osl_statement_malloc();
+        osl_relation_p temp;
         osl_body_p body;
 	/* Deal with statements without surrounding loop by adding a
 	   fake iterator */
-	int old_parser_depth = parser_depth;
-	if (parser_depth == 0)
+        // TODO: What the hell is the problem with no surrounding loops ?!?!
+	int outside_loop = (parser_depth == 0);
+	if (outside_loop)
 	  {
 	    char* fakeiter = strdup(CLAN_FAKEITER);
 	    clan_symbol_p symbol;
@@ -339,19 +328,18 @@ instruction:
 	    free(fakeiter);
 	    parser_iterators[parser_depth] = symbol;
 	    osl_vector_p constraint = osl_vector_pmalloc(CLAN_PRECISION,
-		parser_domain->nb_columns);
+		parser_stack->elt->nb_columns);
 	    osl_int_set_si(CLAN_PRECISION, constraint->v, 1, 1);
 	    parser_depth++;
-	    osl_relation_replace_vector(parser_domain, constraint,
-                                             parser_nb_cons);
-	    parser_nb_cons++;
+            temp = parser_stack->elt;
+	    parser_stack->elt = osl_relation_concat_vector(parser_stack->elt,
+                                                           constraint);
 	    osl_vector_free(constraint);
 	  }
 	
 	/* Build the statement structure from the parser state */
 	/* - 1. Domain */
-	parser_statement->domain = osl_relation_nclone(parser_domain,
-	                                               parser_nb_cons);
+	parser_statement->domain = osl_relation_clone(parser_stack->elt);
         osl_relation_set_type(parser_statement->domain, OSL_TYPE_DOMAIN);
         osl_relation_set_attributes(parser_statement->domain,
             parser_depth, 0, 0, CLAN_MAX_PARAMETERS);
@@ -376,11 +364,11 @@ instruction:
 	
 	/* We were parsing a statement without iterator. Restore the
 	   original state */
-	if (old_parser_depth == 0)
+	if (outside_loop)
 	  {
 	    --parser_depth;
-	    --parser_nb_cons;
-	    parser_consperdim[parser_depth] = 0;
+            osl_relation_free(parser_stack->elt);
+            parser_stack->elt = temp;
 	  }
         parser_scattering[parser_depth]++;
       }
@@ -989,7 +977,7 @@ assignment:
         osl_relation_list_set_type($3, OSL_TYPE_READ);
         osl_relation_set_type($1, OSL_TYPE_WRITE);
         $$ = osl_relation_list_node($1);
-        osl_relation_list_concat_inplace(&($$), $3);
+        osl_relation_list_add(&($$), $3);
         osl_relation_free($1);
         CLAN_debug_call(osl_relation_list_dump(stderr, $$));
       }
@@ -1007,7 +995,7 @@ assignment:
         osl_relation_list_set_type($3, OSL_TYPE_READ);
         osl_relation_set_type($1, OSL_TYPE_WRITE);
         $$ = osl_relation_list_node($1);
-        osl_relation_list_concat_inplace(&($$), $3);
+        osl_relation_list_add(&($$), $3);
         osl_relation_free($1);
         CLAN_debug_call(osl_relation_list_dump(stderr, $$));
       }
@@ -1025,7 +1013,7 @@ assignment:
         osl_relation_set_type($1, OSL_TYPE_WRITE);
         $$ = osl_relation_list_node($1);
         osl_relation_set_type($1, OSL_TYPE_READ);
-        osl_relation_list_concat_inplace(&($$), osl_relation_list_node($1));
+        osl_relation_list_add(&($$), osl_relation_list_node($1));
         osl_relation_free($1);
         CLAN_debug_call(osl_relation_list_dump(stderr, $$));
       }
@@ -1043,7 +1031,7 @@ assignment:
         osl_relation_set_type($2, OSL_TYPE_WRITE);
         $$ = osl_relation_list_node($2);
         osl_relation_set_type($2, OSL_TYPE_READ);
-        osl_relation_list_concat_inplace(&($$), osl_relation_list_node($2));
+        osl_relation_list_add(&($$), osl_relation_list_node($2));
         osl_relation_free($2);
         CLAN_debug_call(osl_relation_list_dump(stderr, $$));
       }
@@ -1142,7 +1130,7 @@ expression:
       {
         CLAN_debug("Yacc expression.4: expression bin_op expression");
 	$$ = $1;
-        osl_relation_list_concat_inplace(&($$), $3);
+        osl_relation_list_add(&($$), $3);
         CLAN_debug_call(osl_relation_list_dump(stderr, $$));
       }
 /*
@@ -1170,8 +1158,8 @@ expression:
       {
         CLAN_debug("Yacc expression.7: expression : expression ? expression");
 	$$ = $1;
-        osl_relation_list_concat_inplace(&($$), $3);
-        osl_relation_list_concat_inplace(&($$), $5);
+        osl_relation_list_add(&($$), $3);
+        osl_relation_list_add(&($$), $5);
         CLAN_debug_call(osl_relation_list_dump(stderr, $$));
       }
 /*
@@ -1208,7 +1196,7 @@ expression_list:
      {
        CLAN_debug("Yacc expression_list.2: expression , expression_list");
        $$ = $1;
-       osl_relation_list_concat_inplace(&($$),$3);
+       osl_relation_list_add(&($$),$3);
        CLAN_debug_call(osl_relation_list_dump(stderr, $$));
      }
   |
@@ -1476,24 +1464,24 @@ clan_parser_initialize_state(clan_options_p options)
   nb_columns = CLAN_MAX_DEPTH + CLAN_MAX_PARAMETERS + 2;
   depth      = CLAN_MAX_DEPTH;
 
-  parser_scop   = osl_scop_malloc();
-  parser_domain = osl_relation_pmalloc(CLAN_PRECISION, nb_rows, nb_columns);
-  parser_symbol = NULL;
+  parser_scop       = osl_scop_malloc();
+  parser_symbol     = NULL;
+  parser_stack      = osl_relation_list_malloc();
+  parser_stack->elt = osl_relation_pmalloc(CLAN_PRECISION, 0, nb_columns);
 
   parser_scattering = (int *)malloc(depth * sizeof(int));
-  parser_consperdim = (int *)malloc(depth * sizeof(int));
   for (i = 0; i < depth; i++)
-  {
     parser_scattering[i] = 0;
-    parser_consperdim[i] = 0;
-  }
   parser_iterators = (clan_symbol_p *)malloc(depth * sizeof(clan_symbol_p));
+
+#if 0
   parser_variables_localvars =
     (int*)malloc((CLAN_MAX_LOCAL_VARIABLES + 1) * sizeof(int));
   parser_variables_liveout =
     (int*)malloc((CLAN_MAX_LOCAL_VARIABLES + 1) * sizeof(int));
+#endif
+
   parser_depth = 0;
-  parser_nb_cons = 0;
   /* Reset also the Symbol global variables. */
   extern int symbol_nb_iterators;
   symbol_nb_iterators = 0;
@@ -1504,10 +1492,12 @@ clan_parser_initialize_state(clan_options_p options)
   extern int symbol_nb_functions;
   symbol_nb_functions = 0;
 
+#if 0
   for (i = 0; i <= CLAN_MAX_LOCAL_VARIABLES; ++i)
     parser_variables_localvars[i] = -1;
   for (i = 0; i <= CLAN_MAX_LOCAL_VARIABLES; ++i)
     parser_variables_liveout[i] = -1;
+#endif
 
   parser_options = options;
   parser_scop->language = strdup("C");
@@ -1524,13 +1514,14 @@ clan_parser_initialize_state(clan_options_p options)
 void
 clan_parser_free_state()
 {
-  osl_relation_free(parser_domain);
   clan_symbol_free(parser_symbol);
   free(parser_scattering);
-  free(parser_consperdim);
   free(parser_iterators);
+  osl_relation_list_drop(&parser_stack);
+#if 0
   free(parser_variables_localvars);
   free(parser_variables_liveout);
+#endif
 }
 
 /**

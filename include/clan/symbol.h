@@ -81,6 +81,7 @@ void          clan_symbol_free(clan_symbol_p);
  *                            Processing functions                            *
  ******************************************************************************/
 clan_symbol_p clan_symbol_lookup(clan_symbol_p, char *);
+clan_symbol_p clan_symbol_lookup_by_type_rank(clan_symbol_p, int, int);
 clan_symbol_p clan_symbol_add(clan_symbol_p *, char *, int, int);
 int           clan_symbol_get_rank(clan_symbol_p, char *);
 int           clan_symbol_get_type(clan_symbol_p, char *);

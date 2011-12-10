@@ -69,13 +69,13 @@ SCATTERING
 READ
 2 6 2 1 0 1
 # e/i| Arr  [1]|  i |  n |  1  
-   0   -1    0    0    0    1    ## Arr == a
+   0   -1    0    0    0    2    ## Arr == a
    0    0   -1    1    0    1    ## [1] == i+1
 
 READ
 2 6 2 1 0 1
 # e/i| Arr  [1]|  i |  n |  1  
-   0   -1    0    0    0    2    ## Arr == b
+   0   -1    0    0    0    3    ## Arr == b
    0    0   -1    0    1    0    ## [1] == n
 
 # ----------------------------------------------  1.4 Body
@@ -97,10 +97,11 @@ b0 i b1
 
 <arrays>
 # Number of arrays
-2
+3
 # Mapping array-identifiers/array-names
-2 b
-1 a
+3 b
+2 a
+1 printf
 </arrays>
 
 </OpenScop>

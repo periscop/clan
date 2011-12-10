@@ -77,12 +77,12 @@ WRITE
 READ
 1 6 1 1 0 2
 # e/i| Arr|  i |  M    N |  1  
-   0   -1    0    0    0    2    ## Arr == b
+   0   -1    0    0    0    3    ## Arr == b
 
 READ
 1 6 1 1 0 2
 # e/i| Arr|  i |  M    N |  1  
-   0   -1    0    0    0    3    ## Arr == c
+   0   -1    0    0    0    4    ## Arr == c
 
 # ----------------------------------------------  1.4 Body
 # Statement body is provided
@@ -121,12 +121,12 @@ SCATTERING
 WRITE
 1 6 1 1 0 2
 # e/i| Arr|  i |  M    N |  1  
-   0   -1    0    0    0    3    ## Arr == c
+   0   -1    0    0    0    4    ## Arr == c
 
 READ
 1 6 1 1 0 2
 # e/i| Arr|  i |  M    N |  1  
-   0   -1    0    0    0    3    ## Arr == c
+   0   -1    0    0    0    4    ## Arr == c
 
 # ----------------------------------------------  2.4 Body
 # Statement body is provided
@@ -146,39 +146,34 @@ c=c+1;
 
 # ----------------------------------------------  3.1 Domain
 DOMAIN
-2 5 1 0 0 2
-# e/i|fak.|  M    N |  1  
-   0    0    1   -1    0    ## M-N == 0
-   0    1    0    0    0    ## fakeiter == 0
+1 4 0 0 0 2
+# e/i|  M    N |  1  
+   0    1   -1    0    ## M-N == 0
 
 # ----------------------------------------------  3.2 Scattering
 SCATTERING
-3 8 3 1 0 2
-# e/i| c1   c2   c3 |fak.|  M    N |  1  
-   0   -1    0    0    0    0    0    1    ## c1 == 1
-   0    0   -1    0    1    0    0    0    ## c2 == fakeiter
-   0    0    0   -1    0    0    0    2    ## c3 == 2
+1 5 1 0 0 2
+# e/i| c1 |  M    N |  1  
+   0   -1    0    0    1    ## c1 == 1
 
 # ----------------------------------------------  3.3 Access
 WRITE
-2 7 2 1 0 2
-# e/i| Arr  [1]|fak.|  M    N |  1  
-   0   -1    0    0    0    0    1    ## Arr == a
-   0    0   -1    0    0    0    0    ## [1] == 0
+2 6 2 0 0 2
+# e/i| Arr  [1]|  M    N |  1  
+   0   -1    0    0    0    1    ## Arr == a
+   0    0   -1    0    0    0    ## [1] == 0
 
 READ
-1 6 1 1 0 2
-# e/i| Arr|fak.|  M    N |  1  
-   0   -1    0    0    0    3    ## Arr == c
+1 5 1 0 0 2
+# e/i| Arr|  M    N |  1  
+   0   -1    0    0    4    ## Arr == c
 
 # ----------------------------------------------  3.4 Body
 # Statement body is provided
 1
 <body>
 # Number of original iterators
-1
-# List of original iterators
-fakeiter
+0
 # Statement body expression
 a[0]=c;
 </body>
@@ -190,10 +185,11 @@ b0 i b1
 
 <arrays>
 # Number of arrays
-3
+4
 # Mapping array-identifiers/array-names
-3 c
-2 b
+4 c
+3 b
+2 pow
 1 a
 </arrays>
 

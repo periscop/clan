@@ -40,8 +40,7 @@
 
 #include <clan/clan.h>
 
-int main(int argc, char * argv[])
-{
+int main(int argc, char * argv[]) {
   osl_scop_p scop;
   clan_options_p options;
   FILE * input;

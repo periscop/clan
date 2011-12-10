@@ -74,101 +74,94 @@ int symbol_nb_functions  = 0; /**< Current number of function symbols  */
  * \param file   File where informations are printed.
  * \param symbol The symbol whose information have to be printed.
  * \param level  Number of spaces before printing, for each line.
- **
- * - 01/05/2008: first version.
  */
-void
-clan_symbol_print_structure(FILE * file, clan_symbol_p symbol, int level)
-{
+void clan_symbol_print_structure(FILE * file, clan_symbol_p symbol,
+                                 int level) {
   int i, j, first = 1, number = 1;
 
-  if (symbol != NULL)
-  {
+  if (symbol != NULL) {
     /* Go to the right level. */
     for(j = 0; j < level; j++)
-      fprintf(file,"|\t");
-    fprintf(file,"+-- clan_symbol_t (node %d)\n",number);
+      fprintf(file, "|\t");
+    fprintf(file, "+-- clan_symbol_t (node %d)\n", number);
   }
-  else
-  {
+  else {
     /* Go to the right level. */
     for(j = 0; j < level; j++)
-      fprintf(file,"|\t");
-    fprintf(file,"+-- NULL symbol\n");
+      fprintf(file, "|\t");
+    fprintf(file, "+-- NULL symbol\n");
   }
 
-  while (symbol != NULL)
-  { if (!first)
-    {
+  while (symbol != NULL) {
+    if (!first) {
       /* Go to the right level. */
       for (j = 0; j < level; j++)
-        fprintf(file,"|\t");
-      fprintf(file,"|   clan_symbol_t (node %d)\n",number);
+        fprintf(file, "|\t");
+      fprintf(file, "|   clan_symbol_t (node %d)\n", number);
     }
     else
       first = 0;
 
     /* A blank line. */
     for (j = 0; j <= level+1; j++)
-      fprintf(file,"|\t");
-    fprintf(file,"\n");
+      fprintf(file, "|\t");
+    fprintf(file, "\n");
 
     /* Print the identifier. */
     for (i = 0; i <= level; i++)
-      fprintf(file,"|\t");
+      fprintf(file, "|\t");
     if (symbol->identifier != NULL)
-      fprintf(file,"+-- Identifier: %s\n",symbol->identifier);
+      fprintf(file, "+-- Identifier: %s\n", symbol->identifier);
     else
-      fprintf(file,"+-- No identifier\n");
+      fprintf(file, "+-- No identifier\n");
 
     /* A blank line. */
-    for(j = 0; j <= level+1; j++)
-    fprintf(file,"|\t") ;
-    fprintf(file,"\n") ;
+    for(j = 0; j <= level + 1; j++)
+      fprintf(file, "|\t") ;
+    fprintf(file, "\n") ;
 
     /* Go to the right level and print the type. */
     for (j = 0; j <= level; j++)
-    fprintf(file,"|\t") ;
-    fprintf(file,"Type: ") ;
-    switch (symbol->type)
-    { case CLAN_TYPE_ITERATOR : fprintf(file,"Iterator\n");  break;
-      case CLAN_TYPE_PARAMETER: fprintf(file,"Parameter\n"); break;
-      case CLAN_TYPE_ARRAY    : fprintf(file,"Array\n");     break;
-      case CLAN_TYPE_FUNCTION : fprintf(file,"Function\n");  break;
-      default : fprintf(file,"Unknown\n") ;
+      fprintf(file, "|\t") ;
+    fprintf(file, "Type: ") ;
+    switch (symbol->type) {
+      case CLAN_TYPE_ITERATOR : fprintf(file, "Iterator\n");  break;
+      case CLAN_TYPE_PARAMETER: fprintf(file, "Parameter\n"); break;
+      case CLAN_TYPE_ARRAY    : fprintf(file, "Array\n");     break;
+      case CLAN_TYPE_FUNCTION : fprintf(file, "Function\n");  break;
+      default : fprintf(file, "Unknown\n") ;
     }
 
     /* A blank line. */
-    for (j = 0; j <= level+1; j++)
-      fprintf(file,"|\t");
-    fprintf(file,"\n");
+    for (j = 0; j <= level + 1; j++)
+      fprintf(file, "|\t");
+    fprintf(file, "\n");
 
     /* Go to the right level and print the rank. */
     for (j = 0; j <= level; j++)
-      fprintf(file,"|\t");
-    fprintf(file,"Rank: %d\n",symbol->rank);
+      fprintf(file, "|\t");
+    fprintf(file, "Rank: %d\n", symbol->rank);
 
     /* A blank line. */
-    for (j = 0; j <= level+1; j++)
-      fprintf(file,"|\t");
-    fprintf(file,"\n");
+    for (j = 0; j <= level + 1; j++)
+      fprintf(file, "|\t");
+    fprintf(file, "\n");
 
     symbol = symbol->next;
     number++;
 
     /* Next line. */
-    if (symbol != NULL)
-    {
+    if (symbol != NULL) {
       for (j = 0; j <= level; j++)
-        fprintf(file,"|\t");
-      fprintf(file,"V\n");
+        fprintf(file, "|\t");
+      fprintf(file, "V\n");
     }
   }
 
   /* The last line. */
-  for(j=0; j<=level; j++)
-    fprintf(file,"|\t");
-  fprintf(file,"\n");
+  for(j = 0; j <= level; j++)
+    fprintf(file, "|\t");
+  fprintf(file, "\n");
 }
 
 
@@ -178,13 +171,9 @@ clan_symbol_print_structure(FILE * file, clan_symbol_p symbol, int level)
  * a file (file, possibly stdout).
  * \param file   File where informations are printed.
  * \param symbol The symbol whose information have to be printed.
- **
- * - 01/05/2008: first version.
  */
-void
-clan_symbol_print(FILE * file, clan_symbol_p symbol)
-{
-  clan_symbol_print_structure(file,symbol,0);
+void clan_symbol_print(FILE * file, clan_symbol_p symbol) {
+  clan_symbol_print_structure(file, symbol, 0);
 }
 
 
@@ -198,21 +187,11 @@ clan_symbol_print(FILE * file, clan_symbol_p symbol)
  * This function allocates the memory space for a clan_symbol_t structure and
  * sets its fields with default values. Then it returns a pointer to the
  * allocated space.
- **
- * - 01/05/2008: first version.
  */
-clan_symbol_p
-clan_symbol_malloc()
-{
+clan_symbol_p clan_symbol_malloc() {
   clan_symbol_p symbol;
 
-  symbol = (clan_symbol_p)malloc(sizeof(clan_symbol_t));
-  if (symbol == NULL)
-  {
-    fprintf(stderr, "[Clan] Memory Overflow.\n");
-    exit(1);
-  }
-
+  CLAN_malloc(symbol, clan_symbol_p, sizeof(clan_symbol_t));
   symbol->identifier = NULL;
   symbol->next       = NULL;
 
@@ -224,16 +203,11 @@ clan_symbol_malloc()
  * clan_symbol_free function:
  * This function frees the allocated memory for a clan_symbol_t structure.
  * \param symbol The pointer to the symbol we want to free.
- **
- * - 01/05/2008: first version.
  */
-void
-clan_symbol_free(clan_symbol_p symbol)
-{
+void clan_symbol_free(clan_symbol_p symbol) {
   clan_symbol_p next;
 
-  while (symbol != NULL)
-  {
+  while (symbol != NULL) {
     next = symbol->next;
     free(symbol->identifier);
     free(symbol);
@@ -254,15 +228,31 @@ clan_symbol_free(clan_symbol_p symbol)
  * exists inside the table, NULL otherwise.
  * \param symbol     The first node of the list of symbols.
  * \param identifier The identifier we are looking for.
- **
- * - 01/05/2008: first version.
  */
-clan_symbol_p
-clan_symbol_lookup(clan_symbol_p symbol, char * identifier)
-{
-  while (symbol != NULL)
-  {
-    if (strcmp(symbol->identifier,identifier) == 0)
+clan_symbol_p clan_symbol_lookup(clan_symbol_p symbol, char * identifier) {
+  while (symbol != NULL) {
+    if (strcmp(symbol->identifier, identifier) == 0)
+      return symbol;
+    else
+      symbol = symbol->next;
+  }
+  return NULL;
+}
+
+  
+/**
+ * clan_symbol_lookup_by_type_rank( function:
+ * This function searches the symbol table for a symbol with the type and rank
+ * provided as parameter. It returns the pointer to the symbol if it already
+ * exists inside the table, NULL otherwise.
+ * \param symbol The first node of the list of symbols.
+ * \param type   The type of the searched symbol.
+ * \param rank   The rank of the searched symbol.
+ */
+clan_symbol_p clan_symbol_lookup_by_type_rank(clan_symbol_p symbol,
+                                              int type, int rank) {
+  while (symbol != NULL) {
+    if ((symbol->type == type) && (symbol->rank == rank))
       return symbol;
     else
       symbol = symbol->next;
@@ -282,16 +272,13 @@ clan_symbol_lookup(clan_symbol_p symbol, char * identifier)
  * \param identifier The identifier of the symbol we want to add.
  * \param type       The new symbol type
  * \param rank       The new symbol rank (depth if iterator, ignored otherwise)
- **
- * - 01/05/2008: first version.
  */
-clan_symbol_p
-clan_symbol_add(clan_symbol_p * location, char * identifier, int type, int rank)
-{
+clan_symbol_p clan_symbol_add(clan_symbol_p * location, char * identifier,
+                              int type, int rank) {
   clan_symbol_p symbol;
 
   /* If the identifier is already in the table, do nothing. */
-  symbol = clan_symbol_lookup(*location,identifier);
+  symbol = clan_symbol_lookup(*location, identifier);
   if (symbol != NULL)
     return symbol;
 
@@ -307,11 +294,10 @@ clan_symbol_add(clan_symbol_p * location, char * identifier, int type, int rank)
     type = CLAN_TYPE_PARAMETER;
   symbol->type = type;
 
-  switch (symbol->type)
-  {
+  switch (symbol->type) {
     case CLAN_TYPE_ITERATOR : symbol->rank = rank;
-                                  symbol_nb_iterators++;
-			          break;
+                              symbol_nb_iterators++;
+			      break;
     case CLAN_TYPE_PARAMETER: symbol->rank = ++symbol_nb_parameters; break;
     case CLAN_TYPE_ARRAY    : symbol->rank = ++symbol_nb_arrays;     break;
     case CLAN_TYPE_FUNCTION : symbol->rank = ++symbol_nb_functions;  break;
@@ -332,14 +318,9 @@ clan_symbol_add(clan_symbol_p * location, char * identifier, int type, int rank)
  * the specified identifier is not found, it returns -1.
  * \param symbol     The first node of the list of symbols.
  * \param identifier The identifier we want to know the rank.
- **
- * - 01/05/2008: first version.
  */
-int
-clan_symbol_get_rank(clan_symbol_p symbol, char * identifier)
-{
-  while (symbol != NULL)
-  {
+int clan_symbol_get_rank(clan_symbol_p symbol, char * identifier) {
+  while (symbol != NULL) {
     if (strcmp(symbol->identifier,identifier) == 0)
       return symbol->rank;
     else
@@ -356,14 +337,9 @@ clan_symbol_get_rank(clan_symbol_p symbol, char * identifier)
  * the specified identifier is not found, it returns -1.
  * \param symbol     The first node of the list of symbols.
  * \param identifier The identifier we want to know the type.
- **
- * - 01/05/2008: first version.
  */
-int
-clan_symbol_get_type(clan_symbol_p symbol, char * identifier)
-{
-  while (symbol != NULL)
-  {
+int clan_symbol_get_type(clan_symbol_p symbol, char * identifier) {
+  while (symbol != NULL) {
     if (strcmp(symbol->identifier,identifier) == 0)
       return symbol->type;
     else
@@ -383,7 +359,6 @@ clan_symbol_get_type(clan_symbol_p symbol, char * identifier)
  * \param[in] size   The size of the symbol array.
  * \return An osl_strings_t containing all the symbol strings.
  */
- 
 osl_strings_p clan_symbol_array_to_strings(clan_symbol_p *sarray, int size) {
   int i, length;
   char **identifiers = NULL;
@@ -516,7 +491,7 @@ osl_generic_p clan_symbol_to_arrays(clan_symbol_p symbol) {
   int i;
   int nb_arrays = 0;
   osl_arrays_p arrays = NULL;
-  osl_generic_p generic;
+  osl_generic_p generic = NULL;
   clan_symbol_p top = symbol;
 
   // A first scan to know how many arrays there are.

@@ -62,24 +62,22 @@
  * \param coefficient The constant or coefficient.
  * \param identifier  Identifier of iterator or parameter (NULL for constant).
  */
-osl_vector_p
-clan_vector_term(clan_symbol_p symbol, int coefficient, char * identifier)
-{
+osl_vector_p clan_vector_term(clan_symbol_p symbol, int coefficient,
+                              char * identifier) {
   int rank, size;
   osl_vector_p vector;
 
   size = CLAN_MAX_DEPTH + CLAN_MAX_PARAMETERS + 2 ;
   vector = osl_vector_pmalloc(CLAN_PRECISION, size);
 
-  if (identifier == NULL)
+  if (identifier == NULL) {
     osl_int_set_si(CLAN_PRECISION, vector->v, size - 1, coefficient);
-  else
-  {
+  }
+  else {
     rank = clan_symbol_get_rank(symbol,identifier);
 
     if (clan_symbol_get_type(symbol,identifier) == CLAN_TYPE_ITERATOR)
-      osl_int_set_si(CLAN_PRECISION,
-                     vector->v, rank, coefficient);
+      osl_int_set_si(CLAN_PRECISION, vector->v, rank, coefficient);
     else
       osl_int_set_si(CLAN_PRECISION,
                      vector->v, CLAN_MAX_DEPTH + rank, coefficient);

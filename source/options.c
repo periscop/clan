@@ -51,16 +51,12 @@
 
 /**
  * clan_option_print function:
- * This function prints the content of a clan_options_t structure (program) into
- * a file (foo, possibly stdout).
+ * This function prints the content of a clan_options_t structure (program)
+ * into a file (foo, possibly stdout).
  * \param foo     File where informations are printed.
  * \param options Option structure whose information have to be printed.
- **
- * - 24/05/2008: first version (from CLooG 0.14.1).
  */
-void
-clan_options_print(FILE * foo, clan_options_p options)
-{
+void clan_options_print(FILE * foo, clan_options_p options) {
   fprintf(foo,"Options:\n");
 
   if (options->name != NULL)
@@ -84,12 +80,8 @@ clan_options_print(FILE * foo, clan_options_p options)
  * clan_options_free function:
  * This function frees the allocated memory for a clan_options_t structure.
  * \param options Option structure to be freed.
- **
- * - 24/05/2008: first version (from CLooG 0.14.1).
  */
-void
-clan_options_free(clan_options_p options)
-{
+void clan_options_free(clan_options_p options) {
   free(options);
 }
 
@@ -104,12 +96,8 @@ clan_options_free(clan_options_p options)
  * This function displays the quick help when the user set the option -help
  * while calling clan. Prints are cut to respect the 509 characters
  * limitation of the ISO C 89 compilers.
- **
- * - 24/05/2008: first version (from CLooG 0.14.1).
  */
-void
-clan_options_help()
-{
+void clan_options_help() {
   printf(
   "Usage: clan [ options | file ] ...\n");
   printf(
@@ -135,12 +123,8 @@ clan_options_help()
  * This function displays some version informations when the user set the
  * option -version while calling clan. Prints are cut to respect the 509
  * characters limitation of the ISO C 89 compilers.
- **
- * - 24/05/2008: first version (from CLooG 0.14.1).
  */
-void
-clan_options_version()
-{
+void clan_options_version() {
   printf("clan %s ", CLAN_VERSION);
   osl_int_dump_precision(stdout, CLAN_PRECISION);
   printf("       The Chunky Loop Analyzer\n");
@@ -182,23 +166,19 @@ clan_options_version()
  * \param argc   Elements of the user's calling line,
  * \param number Number of the element corresponding to the considered option,
  *               this function adds 1 to number to pass away the option value.
- **
- * - 24/05/2008: first version (from CLooG 0.14.1).
  */
-void
-clan_options_set(int * option, int argv, char ** argc, int * number)
-{
+void clan_options_set(int * option, int argv, char ** argc, int * number) {
   char ** endptr;
 
-  if (*number+1 >= argv)
-  { fprintf(stderr, "[clan]ERROR: an option lacks of argument.\n");
+  if (*number+1 >= argv) {
+    fprintf(stderr, "[clan]ERROR: an option lacks of argument.\n");
     exit(1);
   }
 
   endptr = NULL;
   *option = strtol(argc[*number+1],endptr,10);
-  if (endptr != NULL)
-  { fprintf(stderr, "[clan]ERROR: %s value for %s option is not valid.\n",
+  if (endptr != NULL) {
+    fprintf(stderr, "[clan]ERROR: %s value for %s option is not valid.\n",
             argc[*number+1],argc[*number]);
     exit(1);
   }
@@ -211,20 +191,12 @@ clan_options_set(int * option, int argv, char ** argc, int * number)
  * This functions allocate the memory space for a clan_options_t structure and
  * fill its fields with the defaults values. It returns a pointer to the
  * allocated clan_options_t structure.
- **
- * - 24/05/2008: first version (from CLooG 0.14.1).
  */
-clan_options_p
-clan_options_malloc(void)
-{
+clan_options_p clan_options_malloc(void) {
   clan_options_p options;
 
   /* Memory allocation for the clan_options_t structure. */
-  options = (clan_options_p)malloc(sizeof(clan_options_t));
-  if (options == NULL)
-  { fprintf(stderr, "[clan]ERROR: memory overflow.\n");
-    exit(1);
-  }
+  CLAN_malloc(options, clan_options_p, sizeof(clan_options_t));
 
   /* We set the various fields with default values. */
   options->name      = NULL; /* Name of the input file is not set. */
@@ -247,12 +219,9 @@ clan_options_malloc(void)
  * \param argc    Array of command line strings.
  * \param input   Input  file (modified by the function).
  * \param output  Output file (modified by the function).
- **
- * - 24/05/2008: first version (from CLooG 0.14.1).
  */
-clan_options_p
-clan_options_read(int argv, char ** argc, FILE ** input, FILE ** output)
-{
+clan_options_p clan_options_read(int argv, char ** argc,
+                                 FILE ** input, FILE ** output) {
   int i, infos=0, input_is_set=0;
   clan_options_p options;
 
@@ -262,60 +231,52 @@ clan_options_read(int argv, char ** argc, FILE ** input, FILE ** output)
   /* The default output is the standard output. */
   *output = stdout;
 
-  for (i=1; i < argv; i++)
-  {
-    if (argc[i][0] == '-')
-    {
-      if (argc[i][1] == '\0')
-      {
+  for (i=1; i < argv; i++) {
+    if (argc[i][0] == '-') {
+      if (argc[i][1] == '\0') {
         /* "-" alone is a special option to set input to standard input. */
         input_is_set = 1;
 	*input = stdin;
       }
       else
-      if (strcmp(argc[i],"-castle") == 0)
-        clan_options_set(&(options)->castle,argv,argc,&i);
+      if (strcmp(argc[i], "-castle") == 0)
+        clan_options_set(&(options)->castle, argv, argc, &i);
       else
-      if (strcmp(argc[i],"-structure") == 0)
+      if (strcmp(argc[i], "-structure") == 0)
         options->structure = 1;
       else
-      if (strcmp(argc[i],"-inputscop") == 0)
+      if (strcmp(argc[i], "-inputscop") == 0)
         options->inputscop = 1;
       else
-      if (strcmp(argc[i],"-arraystag") == 0)
+      if (strcmp(argc[i], "-arraystag") == 0)
         options->arraystag = 1;
       else
-      if (strcmp(argc[i],"-boundedctxt") == 0)
+      if (strcmp(argc[i], "-boundedctxt") == 0)
         options->bounded_context = 1;
       else
-      if ((strcmp(argc[i],"--help") == 0) || (strcmp(argc[i],"-h") == 0))
-      {
+      if ((strcmp(argc[i], "--help") == 0) || (strcmp(argc[i], "-h") == 0)) {
         clan_options_help();
         infos = 1;
       }
       else
-      if ((strcmp(argc[i],"--version") == 0) || (strcmp(argc[i],"-v") == 0))
-      {
+      if ((strcmp(argc[i],"--version") == 0) || (strcmp(argc[i],"-v") == 0)) {
         clan_options_version();
         infos = 1;
       }
       else
-      if (strcmp(argc[i],"-o") == 0)
-      {
-        if (i+1 >= argv)
-        {
+      if (strcmp(argc[i], "-o") == 0) {
+        if (i+1 >= argv) {
 	  fprintf(stderr, "[clan]ERROR: no output name for -o option.\n");
           exit(1);
         }
 
         /* stdout is a special value to set output to standard output. */
-        if (strcmp(argc[i+1],"stdout") == 0)
+        if (strcmp(argc[i+1], "stdout") == 0) {
           *output = stdout;
-        else
-        {
-	  *output = fopen(argc[i+1],"w");
-          if (*output == NULL)
-          {
+        }
+        else {
+	  *output = fopen(argc[i+1], "w");
+          if (*output == NULL) {
 	    fprintf(stderr, "[clan]ERROR: can't create output file %s.\n",
 	            argc[i+1]);
             exit(1);
@@ -323,38 +284,34 @@ clan_options_read(int argv, char ** argc, FILE ** input, FILE ** output)
         }
         i++;
       }
-      else
-        fprintf(stderr, "[clan]WARNING: unknown %s option.\n",argc[i]);
+      else {
+        fprintf(stderr, "[clan]WARNING: unknown %s option.\n", argc[i]);
+      }
     }
-    else
-    {
-      if (!input_is_set)
-      {
+    else {
+      if (!input_is_set) {
         input_is_set = 1;
         options->name = argc[i];
         /* stdin is a special value to set input to standard input. */
-        if (strcmp(argc[i],"stdin") == 0)
+        if (strcmp(argc[i], "stdin") == 0) {
           *input = stdin;
-        else
-        {
-	  *input = fopen(argc[i],"r");
-          if (*input == NULL)
-          {
-	    fprintf(stderr, "[clan]ERROR: %s file does not exist.\n",argc[i]);
+        }
+        else {
+	  *input = fopen(argc[i], "r");
+          if (*input == NULL) {
+	    fprintf(stderr, "[clan]ERROR: %s file does not exist.\n", argc[i]);
             exit(1);
           }
         }
       }
-      else
-      {
+      else {
         fprintf(stderr, "[clan]ERROR: multiple input files.\n");
         exit(1);
       }
     }
   }
 
-  if (!input_is_set)
-  {
+  if (!input_is_set) {
     if (!infos)
       fprintf(stderr, "[clan]ERROR: no input file (-h for help).\n");
     clan_options_free(options);

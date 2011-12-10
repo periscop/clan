@@ -52,38 +52,32 @@ i NSECTIONS imod8 imodNSECTIONS
 
 # ----------------------------------------------  1.1 Domain
 DOMAIN
-1 7 1 0 0 4
-# e/i|fak.|  i  NSE. imo. imo.|  1  
-   0    1    0    0    0    0    0    ## fakeiter == 0
+0 6 0 0 0 4
 
 # ----------------------------------------------  1.2 Scattering
 SCATTERING
-3 10 3 1 0 4
-# e/i| c1   c2   c3 |fak.|  i  NSE. imo. imo.|  1  
-   0   -1    0    0    0    0    0    0    0    0    ## c1 == 0
-   0    0   -1    0    1    0    0    0    0    0    ## c2 == fakeiter
-   0    0    0   -1    0    0    0    0    0    0    ## c3 == 0
+1 7 1 0 0 4
+# e/i| c1 |  i  NSE. imo. imo.|  1  
+   0   -1    0    0    0    0    0    ## c1 == 0
 
 # ----------------------------------------------  1.3 Access
 WRITE
-1 8 1 1 0 4
-# e/i| Arr|fak.|  i  NSE. imo. imo.|  1  
-   0   -1    0    0    0    0    0    1    ## Arr == sum
+1 7 1 0 0 4
+# e/i| Arr|  i  NSE. imo. imo.|  1  
+   0   -1    0    0    0    0    1    ## Arr == sum
 
 READ
-2 9 2 1 0 4
-# e/i| Arr  [1]|fak.|  i  NSE. imo. imo.|  1  
-   0   -1    0    0    0    0    0    0    2    ## Arr == input
-   0    0   -1    0    1    0    0    0    0    ## [1] == i
+2 8 2 0 0 4
+# e/i| Arr  [1]|  i  NSE. imo. imo.|  1  
+   0   -1    0    0    0    0    0    2    ## Arr == input
+   0    0   -1    1    0    0    0    0    ## [1] == i
 
 # ----------------------------------------------  1.4 Body
 # Statement body is provided
 1
 <body>
 # Number of original iterators
-1
-# List of original iterators
-fakeiter
+0
 # Statement body expression
 sum=input[i];
 </body>
@@ -409,38 +403,32 @@ sum+=state_2*coefficient[imodNSECTIONS][j][2]+state_1*coefficient[imodNSECTIONS]
 
 # ----------------------------------------------  8.1 Domain
 DOMAIN
-1 7 1 0 0 4
-# e/i|fak.|  i  NSE. imo. imo.|  1  
-   0    1    0    0    0    0    0    ## fakeiter == 0
+0 6 0 0 0 4
 
 # ----------------------------------------------  8.2 Scattering
 SCATTERING
-3 10 3 1 0 4
-# e/i| c1   c2   c3 |fak.|  i  NSE. imo. imo.|  1  
-   0   -1    0    0    0    0    0    0    0    2    ## c1 == 2
-   0    0   -1    0    1    0    0    0    0    0    ## c2 == fakeiter
-   0    0    0   -1    0    0    0    0    0    6    ## c3 == 6
+1 7 1 0 0 4
+# e/i| c1 |  i  NSE. imo. imo.|  1  
+   0   -1    0    0    0    0    2    ## c1 == 2
 
 # ----------------------------------------------  8.3 Access
 WRITE
-2 9 2 1 0 4
-# e/i| Arr  [1]|fak.|  i  NSE. imo. imo.|  1  
-   0   -1    0    0    0    0    0    0    7    ## Arr == output
-   0    0   -1    0    1    0    0    0    0    ## [1] == i
+2 8 2 0 0 4
+# e/i| Arr  [1]|  i  NSE. imo. imo.|  1  
+   0   -1    0    0    0    0    0    7    ## Arr == output
+   0    0   -1    1    0    0    0    0    ## [1] == i
 
 READ
-1 8 1 1 0 4
-# e/i| Arr|fak.|  i  NSE. imo. imo.|  1  
-   0   -1    0    0    0    0    0    1    ## Arr == sum
+1 7 1 0 0 4
+# e/i| Arr|  i  NSE. imo. imo.|  1  
+   0   -1    0    0    0    0    1    ## Arr == sum
 
 # ----------------------------------------------  8.4 Body
 # Statement body is provided
 1
 <body>
 # Number of original iterators
-1
-# List of original iterators
-fakeiter
+0
 # Statement body expression
 output[i]=sum;
 </body>

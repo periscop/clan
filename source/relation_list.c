@@ -61,12 +61,9 @@
  * \param nb_iterators  The true number of iterators for this relation.
  * \param nb_parameters The true number of parameters in the SCoP.
  */
-void
-clan_relation_list_compact(osl_relation_list_p list, int nb_iterators, 
-		           int nb_parameters)
-{
-  while (list != NULL)
-  {
+void clan_relation_list_compact(osl_relation_list_p list, int nb_iterators, 
+		                int nb_parameters) {
+  while (list != NULL) {
      clan_relation_compact(list->elt, nb_iterators, nb_parameters);
      list = list->next;
   }

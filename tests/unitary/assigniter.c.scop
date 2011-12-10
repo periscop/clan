@@ -48,7 +48,7 @@ N
 
 # =============================================== Statement 1
 # Number of relations describing the statement:
-3
+5
 
 # ----------------------------------------------  1.1 Domain
 DOMAIN
@@ -75,6 +75,16 @@ WRITE
 # e/i| Arr  [1]|  i    j |  N |  1  
    0   -1    0    0    0    0    1    ## Arr == A
    0    0   -1    1    0    0    0    ## [1] == i
+
+READ
+1 6 1 2 0 1
+# e/i| Arr|  i    j |  N |  1  
+   0   -1    0    0    0    1    ## Arr == A
+
+READ
+1 6 1 2 0 1
+# e/i| Arr|  i    j |  N |  1  
+   0   -1    0    0    0    2    ## Arr == (null)
 
 # ----------------------------------------------  1.4 Body
 # Statement body is provided

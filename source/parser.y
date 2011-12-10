@@ -64,19 +64,24 @@
    void yyerror(char *);
    void clan_scanner_free();
 
-   int clan_parse_error = 0; /**< Set to 1 during parsing if
-                                  encountered an error */
+   int clan_parse_error = 0;           /**< Set to 1 during parsing if
+                                            encountered an error */
    void clan_parser_log(char *);
    osl_scop_p clan_parse(FILE *, clan_options_p);
 
    extern FILE * yyin;                 /**< File to be read by Lex */
    extern char * scanner_latest_text;  /**< Latest text read by Lex */
+   extern int    scanner_line;         /**< Current scanned line */
+   extern int    scanner_column;       /**< Current scanned column */
+   extern int    symbol_nb_arrays;     /**< Number of array symbols */
+   extern int    symbol_nb_iterators;  /**< Number of iterator symbols */
+   extern int    symbol_nb_parameters; /**< Number of parameter symbols */
+   extern int    symbol_nb_functions;  /**< Number of function symbols */
 
    /* This is the "parser state", a collection of variables that vary
     * during the parsing and thanks to we can extract all SCoP informations.
     */
    osl_scop_p      parser_scop;        /**< SCoP in construction */
-   osl_statement_p parser_statement;   /**< Statement in construction */
    clan_symbol_p   parser_symbol;      /**< Top of the symbol table */
    int             parser_recording;   /**< Boolean: do we record or not? */
    char *          parser_record;      /**< What we record (statement body) */
@@ -96,19 +101,21 @@
    clan_options_p  parser_options = NULL;
 %}
 
-%union { int value;                 /**< An integer value for integers */
-         char * symbol;             /**< A string for identifiers */
-         osl_vector_p affex;        /**< An affine expression */
-         osl_relation_p setex;      /**< A set of affine expressions */
-         osl_relation_list_p list;  /**< List of array accesses */
+%union { int value;                    /**< An integer value for integers */
+         char * symbol;                /**< A string for identifiers */
+         osl_vector_p affex;           /**< An affine expression */
+         osl_relation_p setex;         /**< A set of affine expressions */
+         osl_relation_list_p list;     /**< List of array accesses */
+         osl_statement_p stmt;         /**< List of statements */
+         osl_scop_p scop;              /**< SCoP */
        }
 
 
-%token IDENTIFIER CONSTANT STRING_LITERAL SIZEOF
+%token CONSTANT STRING_LITERAL SIZEOF
 %token PTR_OP INC_OP DEC_OP LEFT_OP RIGHT_OP LE_OP GE_OP EQ_OP NE_OP
 %token AND_OP OR_OP MUL_ASSIGN DIV_ASSIGN MOD_ASSIGN ADD_ASSIGN
 %token SUB_ASSIGN LEFT_ASSIGN RIGHT_ASSIGN AND_ASSIGN
-%token XOR_ASSIGN OR_ASSIGN
+%token XOR_ASSIGN OR_ASSIGN TYPE_NAME
 
 %token TYPEDEF EXTERN STATIC AUTO REGISTER INLINE RESTRICT
 %token CHAR SHORT INT LONG SIGNED UNSIGNED FLOAT DOUBLE CONST VOLATILE VOID
@@ -123,1365 +130,671 @@
 %token <symbol> ID
 %token <value>  INTEGER
 
-%left '+' '-'
-%left '*' '/' '%' '&' '|' '^'
-%left EQ_OP LE_OP GE_OP '<' '>' AND_OP ':' '?'
-%left '!'
-%left MAXPRIORITY /* Dummy token to help in removing shift/reduce conflicts */
+%left AND_OP
 
-%type <setex>  condition
-%type <setex>  min_affine_expression
-%type <setex>  max_affine_expression
+%type <stmt>   statement_list
+%type <stmt>   statement
+%type <stmt>   compound_statement
+%type <stmt>   expression_statement
+%type <stmt>   selection_statement
+%type <stmt>   iteration_statement
+%type <setex>  lower_bound
+%type <setex>  upper_bound
+
+%type <setex>  affine_min_expression
+%type <setex>  affine_max_expression
+%type <setex>  affine_condition
+%type <affex>  affine_primary_expression
+%type <affex>  affine_unary_expression
+%type <affex>  affine_multiplicative_expression
+%type <affex>  affine_ceild_expression
+%type <affex>  affine_floord_expression
 %type <affex>  affine_expression
-%type <affex>  term
-%type <setex>  array_index
-%type <setex>  variable
-%type <list>   variable_list
-%type <list>   expression
-%type <list>   expression_list
-%type <list>   assignment
-%type <list>   function_call
-%type <symbol> id
 
+%type <list>   primary_expression
+%type <list>   postfix_expression
+%type <list>   argument_expression_list
+%type <list>   unary_expression
+%type <list>   cast_expression
+%type <list>   multiplicative_expression
+%type <list>   additive_expression
+%type <list>   shift_expression
+%type <list>   relational_expression
+%type <list>   equality_expression
+%type <list>   and_expression
+%type <list>   exclusive_or_expression
+%type <list>   inclusive_or_expression
+%type <list>   logical_and_expression
+%type <list>   logical_or_expression
+%type <list>   conditional_expression
+%type <list>   assignment_expression
+%type <list>   expression
+
+%start scop
 %%
 
-/*
- * Start rule.
- *
- */
-program:
-    instruction_list
-      {
-	/* The full program was parsed. Allocate and fill the final
-	   .scop structures. */
-	int nb_parameters = clan_symbol_nb_of_type(parser_symbol,
-                                                   CLAN_TYPE_PARAMETER);
 
-        parser_scop->parameters = clan_symbol_to_strings(parser_symbol,
-                                                         CLAN_TYPE_PARAMETER);
-	if (parser_options->bounded_context)
-	  {
-	    parser_scop->context = osl_relation_pmalloc(CLAN_PRECISION,
-		                                        nb_parameters,
-						        nb_parameters + 2);
-	    int i;
-	    for (i = 0; i < nb_parameters; ++i)
-	      {
-		osl_int_set_si(CLAN_PRECISION,
-		               parser_scop->context->m[i], 0, 1);
-		osl_int_set_si(CLAN_PRECISION,
-		               parser_scop->context->m[i], i+1, 1);
-		osl_int_set_si(CLAN_PRECISION,
-		               parser_scop->context->m[i], nb_parameters+1, 1);
-	      }
-	  }
-	else
-          {
-	    parser_scop->context = osl_relation_pmalloc(CLAN_PRECISION,
-	                                                0, nb_parameters + 2);
-          }
-        osl_relation_set_type(parser_scop->context, OSL_TYPE_CONTEXT);
-        osl_relation_set_attributes(parser_scop->context,
-                                    0, 0, 0, nb_parameters);
-      }
-  |
-  ;
-
-/*
- * Rules for a list of instructions
- *
- */
-instruction_list:
-    instruction
-  | instruction_list instruction
-  | IGNORE
-  | instruction_list IGNORE
-  | '{' instruction_list '}'
-  ;
+// +--------------------------------------------------------------------------+
+// |                              SCoP GRAMMAR                                |
+// +--------------------------------------------------------------------------+
 
 
-/*
- * Rules for a bloc of instructions.
- */
-bloc:
-/*
- * Rule 1: bloc -> instruction
- */
-    instruction
-/*
- * Rule 2: bloc -> { instruction_list }
- */
-  | '{' instruction_list '}'
-  ;
-
-
-/*
- * Rules for a program instruction. Either a for(..., if(..., or a
- * regular statement.
- *
- */
-instruction:
-/*
- * Rule 1: instruction -> for ( id = <setex>; condition; increment) bloc
- *
- */
-    FOR
-    '('
-    id
-      {
-        clan_symbol_p symbol;
-        symbol = clan_symbol_add(&parser_symbol,$3,
-                                 CLAN_TYPE_ITERATOR,parser_depth+1);
-	/* Ensure that the returned symbol was either a new one,
-	   either from the same type. */
-	if (symbol->type != CLAN_TYPE_ITERATOR)
-	  {
-	    yyerror("[Clan] Error: the input file is not a SCoP\n"
-		    "\t> A loop iterator was previously used as a parameter"
-		    "\n");
-	    return 0;
-	  }
-	/* Update the rank, in case a symbol with the same name was
-	   already existing. */
-	if (symbol->rank != parser_depth + 1)
-	  symbol->rank = parser_depth + 1;
-        parser_iterators[parser_depth] = clan_symbol_clone_one(symbol);
-	/* Memorize the current iterator as a negative constraint prefix */
-      }
-    '='
-    max_affine_expression
-      {
-        osl_vector_p parser_i_term = clan_vector_term(parser_symbol,1,$3);
-	osl_vector_tag_inequality(parser_i_term);
-	int i, j;
-	for (i = 0; i < $6->nb_rows; ++i)
-	  {
-	    for (j = 1; j < $6->nb_columns; ++j)
-	      osl_int_oppose(CLAN_PRECISION, $6->m[i], j, $6->m[i], j);
-	    osl_relation_add_vector($6,parser_i_term,i);
-	  }
-        osl_relation_list_dup(&parser_stack);
-        osl_relation_insert_constraints(parser_stack->elt, $6, -1);
-        osl_vector_free(parser_i_term);
-        free($3);
-	osl_relation_free($6);
-      }
-    ';'
-    condition
-      {
-	osl_relation_insert_constraints(parser_stack->elt, $9, -1);
-        osl_relation_free($9);
-      }
-    ';'
-    incrementation
-    ')'
-      { 
-        parser_depth++;
-        parser_scattering[parser_depth] = 0;
-      }
-    bloc
-      {
-        parser_depth--;
-        parser_scattering[parser_depth]++;
-	clan_symbol_free(parser_iterators[parser_depth]);
-        osl_relation_list_drop(&parser_stack);
-      }
-/*
- * Rule 2: instruction -> if (condition) bloc
- *
- */
-  |  IF '(' condition ')'
-      {
-	/* Insert the condition constraint in the current parser domain. */
-        osl_relation_list_dup(&parser_stack);
-	osl_relation_insert_constraints(parser_stack->elt, $3, -1);
-      }
-    bloc
-      {
-        osl_relation_list_drop(&parser_stack);
-      }
-/*
- * Rule 3: instruction -> assignment
- *
- */
-  |   {
-        /* Yacc needs Lex to read the next token to ensure we are starting
-         * an assignment. So we keep track of the latest text Lex read
-         * and we start the statement body with it.
-         */
-        CLAN_strdup(parser_record, scanner_latest_text);
-        parser_recording = CLAN_TRUE;
-      }
-    assignment
-      {
-        parser_statement = osl_statement_malloc();
-        osl_relation_p temp;
-        osl_body_p body;
-	/* Deal with statements without surrounding loop by adding a
-	   fake iterator */
-        // TODO: What the hell is the problem with no surrounding loops ?!?!
-	int outside_loop = (parser_depth == 0);
-	if (outside_loop)
-	  {
-	    char* fakeiter = strdup(CLAN_FAKEITER);
-	    clan_symbol_p symbol;
-	    symbol = clan_symbol_add(&parser_symbol, fakeiter,
-				     CLAN_TYPE_ITERATOR, parser_depth+1);
-	    free(fakeiter);
-	    parser_iterators[parser_depth] = symbol;
-	    osl_vector_p constraint = osl_vector_pmalloc(CLAN_PRECISION,
-		parser_stack->elt->nb_columns);
-	    osl_int_set_si(CLAN_PRECISION, constraint->v, 1, 1);
-	    parser_depth++;
-            temp = parser_stack->elt;
-	    parser_stack->elt = osl_relation_concat_vector(parser_stack->elt,
-                                                           constraint);
-	    osl_vector_free(constraint);
-	  }
-	
-	/* Build the statement structure from the parser state */
-	/* - 1. Domain */
-	parser_statement->domain = osl_relation_clone(parser_stack->elt);
-        osl_relation_set_type(parser_statement->domain, OSL_TYPE_DOMAIN);
-        osl_relation_set_attributes(parser_statement->domain,
-            parser_depth, 0, 0, CLAN_MAX_PARAMETERS);
-
-	/* - 2. Scattering */
-        parser_statement->scattering = clan_relation_scattering(
-	    parser_scattering, parser_depth);
-
-	/* - 3. Array Accesses */
-        parser_statement->access = $2;
-	
-	/* - 5. Body */
-        body = osl_body_malloc();
-        body->iterators = clan_symbol_array_to_strings(parser_iterators, parser_depth);
-        body->expression = osl_strings_encapsulate(parser_record);
-        parser_statement->body = osl_generic_malloc();
-        parser_statement->body->interface = osl_body_interface();
-        parser_statement->body->data = body;
-        
-	parser_recording = CLAN_FALSE;
-        osl_statement_add(&(parser_scop->statement), parser_statement);
-	
-	/* We were parsing a statement without iterator. Restore the
-	   original state */
-	if (outside_loop)
-	  {
-	    --parser_depth;
-            osl_relation_free(parser_stack->elt);
-            parser_stack->elt = temp;
-	  }
-        parser_scattering[parser_depth]++;
-      }
-/*
- * Rule 4: instruction -> #pragma local-vars <vars>
- * NOTE: THIS RULE IS REPONSIBLE FOR 10 shift/reduce conflicts.
- * It is ok, though, the parsing will be correct.
- * FIXME: ndCed: the variable_list sounds craply used (function call)...
- *               Look at this.
- * TODO: rewrite it.
-  | PRAGMALOCALVARS variable_list
-      {
-	int i, j;
-	osl_relation_p m = $2->elt;
-	for (i = 0; i <  m->nb_rows; ++i)
-	  {
-	    int id = osl_int_get_si(CLAN_PRECISION, m->m[i], 0);
-	    for (j = 0; parser_variables_localvars[j] != -1 &&
-		   parser_variables_localvars[j] != id; ++j)
-	      ;
-	    if (j == CLAN_MAX_LOCAL_VARIABLES)
-	      {
-		yyerror("[Clan] Error: maximum number of local variables reached\n");
-		return 0;
-	      }
-	    if (parser_variables_localvars[j] == -1)
-	      parser_variables_localvars[j] = id;
-	  }
-      }
- */
-/*
- * Rule 5: instruction -> #pragma live-out <vars>
- * NOTE: THIS RULE IS REPONSIBLE FOR 10 shift/reduce conflicts.
- * It is ok, though, the parsing will be correct.
- * TODO: rewrite it.
-  | PRAGMALIVEOUT variable_list
-      {
-	int i, j;
-	osl_relation_p m = $2->elt;
-	for (i = 0; i <  m->nb_rows; ++i)
-	  {
-	    int id = osl_int_get_si(CLAN_PRECISION, m->m[i], 0);
-	    for (j = 0; parser_variables_liveout[j] != -1 &&
-		   parser_variables_liveout[j] != id; ++j)
-	      ;
-	    if (j == CLAN_MAX_LOCAL_VARIABLES)
-	      {
-		yyerror("[Clan] Error: maximum number of live-out variables reached\n");
-		return 0;
-	      }
-	    if (parser_variables_liveout[j] == -1)
-	      parser_variables_liveout[j] = id;
-	  }
-      }
- */
-  ;
-
-
-/*
- * Rules for the for loop increment.
- * Handled cases:
- * i++, ++i, i = i + 1, i += 1
- *
- */
-incrementation:
-    id INC_OP
-      {
-        free($1);
-      }
-  | INC_OP id
-      {
-        free($2);
-      }
-  | id '=' id '+' INTEGER
-     {
-       if ($5 != 1)
-	 {
-	   yyerror("[Clan] Error: loop increment is not 1\n");
-	   return 0;
-	 }
-       free ($1);
-       free ($3);
-     }
-  | id ADD_ASSIGN INTEGER
-     {
-       if ($3 != 1)
-	 {
-	   yyerror("[Clan] Error: loop increment is not 1\n");
-	   return 0;
-	 }
-       free ($1);
-     }
-  ;
-
-
-/*
- * Reduction rules for min(... operators.
- * return <setex>
- *
- */
-min_affine_expression:
-/*
- * Rule 1: min_affine_expression -> <affex>
- */
-    affine_expression
-      {
-        CLAN_debug("Yacc min_affine_expression.1: <affex>");
-	$$ = osl_relation_from_vector($1);
-        osl_vector_free($1);
-        CLAN_debug_call(osl_relation_dump(stderr, $$));
-      }
-/*
- * Rule 2: min_affine_expression -> MIN ( min_aff_expr , min_aff_expr )
- */
-  | MIN '(' min_affine_expression ',' min_affine_expression ')'
-      {
-        CLAN_debug("Yacc min_affine_expression.2: "
-                   "MIN ( min_affine_expression , min_affine_expresssion");
-        $$ = osl_relation_concat_constraints($3, $5);
-        CLAN_debug_call(osl_relation_dump(stderr, $$));
-      }
-  ;
-
-
-/*
- * Reduction rules for max(... operators.
- * return <setex>
- *
- */
-max_affine_expression:
-/*
- * Rule 1: max_affine_expression -> <affex>
- */
-    affine_expression
-      {
-        CLAN_debug("Yacc max_affine_expression.1: <affex>");
-	$$ = osl_relation_from_vector($1);
-        osl_vector_free($1);
-        CLAN_debug_call(osl_relation_dump(stderr, $$));
-      }
-/*
- * Rule 2: max_affine_expression -> MAX ( max_aff_expr , max_aff_expr )
- */
-  | MAX '(' max_affine_expression ',' max_affine_expression ')'
-      {
-        CLAN_debug("Yacc max_affine_expression.2: "
-                   "MAX ( max_affine_expression , max_affine_expression");
-        $$ = osl_relation_concat_constraints($3, $5);
-        CLAN_debug_call(osl_relation_dump(stderr, $$));
-      }
-  ;
-
-
-/*
- * Reduction rules for affine expression.
- * return <affex>
- *
- */
-affine_expression:
-/*
- * Rule 1: affine_expression -> term
- */
-    term
-      {
-        CLAN_debug("Yacc affine_expression.1: term");
-        $$ = $1;
-        CLAN_debug_call(osl_vector_dump(stderr, $$));
-      }
-/*
- * Rule 2: affine_expression -> <affex> + <affex>
- */
-  | affine_expression '+' affine_expression
-      {
-        CLAN_debug("Yacc affine_expression.2: <affex> + <affex>");
-        $$ = osl_vector_add($1,$3);
-        osl_vector_free($1);
-        osl_vector_free($3);
-        CLAN_debug_call(osl_vector_dump(stderr, $$));
-      }
-/*
- * Rule 3: affine_expression -> <affex> - <affex>
- */
-  | affine_expression '-' affine_expression
-      {
-        CLAN_debug("Yacc affine_expression.3: <affex> - <affex>");
-        $$ = osl_vector_sub($1,$3);
-	osl_vector_free($1);
-        osl_vector_free($3);
-        CLAN_debug_call(osl_vector_dump(stderr, $$));
-      }
-/*
- * Rule 4: affine_expression -> ( <affex> )
- */
-  | '(' affine_expression ')'
-      {
-        CLAN_debug("Yacc affine_expression.4: ( <affex> )");
-        $$ = $2;
-        CLAN_debug_call(osl_vector_dump(stderr, $$));
-      }
-/*
- * Rule 5: affine_expression -> CEILD ( <affex> , term )
- */
-  | CEILD '(' affine_expression ',' term ')'
-      {
-        CLAN_debug("Yacc affine_expression.5: ceild ( <affex> , term )");
-	osl_int_assign(CLAN_PRECISION, $3->v, 0, $5->v, $5->size - 1);
-	$$ = $3;
-        CLAN_debug_call(osl_vector_dump(stderr, $$));
-      }
-/*
- * Rule 6: affine_expression -> CEILD ( <affex> , term )
- */
-  | FLOORD '(' affine_expression ',' term ')'
-      {
-        CLAN_debug("Yacc affine_expression.6: floord ( <affex> , term )");
-	osl_int_assign(CLAN_PRECISION, $3->v, 0, $5->v, $5->size - 1);
-	$$ = $3;
-        CLAN_debug_call(osl_vector_dump(stderr, $$));
-      }
-  ;
-
-
-/*
- * Reduction rules for a term.
- * return <affex>
- *
- */
-term:
-/*
- * Rule 1: term -> INT
- */
-    INTEGER
-      {
-        CLAN_debug("Yacc term.1: INT");
-        $$ = clan_vector_term(parser_symbol, $1, NULL);
-        CLAN_debug_call(osl_vector_dump(stderr, $$));
-      }
-/*
- * Rule 2: term -> id
- */
-  | id
-      {
-        CLAN_debug("Yacc term.2: id");
-        clan_symbol_add(&parser_symbol, $1, CLAN_TYPE_UNKNOWN, parser_depth);
-        $$ = clan_vector_term(parser_symbol, 1, $1);
-        free($1);
-        CLAN_debug_call(osl_vector_dump(stderr, $$));
-      }
-/*
- * Rule 3: term -> - INT
- */
-  | '-' INTEGER
-      {
-        CLAN_debug("Yacc term.3: - INT");
-        $$ = clan_vector_term(parser_symbol, -($2), NULL);
-        CLAN_debug_call(osl_vector_dump(stderr, $$));
-      }
-/*
- * Rule 4: term -> INT * id
- */
-  | INTEGER '*' id
-      {
-        CLAN_debug("Yacc term.4: INT * id");
-        clan_symbol_add(&parser_symbol, $3, CLAN_TYPE_UNKNOWN, parser_depth);
-        $$ = clan_vector_term(parser_symbol, $1, $3);
-        free($3);
-        CLAN_debug_call(osl_vector_dump(stderr, $$));
-      }
-/*
- * Rule 4': term -> id * INT
- */
-  | id '*' INTEGER
-      {
-        CLAN_debug("Yacc term.4': id * INT");
-        clan_symbol_add(&parser_symbol, $1, CLAN_TYPE_UNKNOWN, parser_depth);
-        $$ = clan_vector_term(parser_symbol, $3, $1);
-        free($1);
-        CLAN_debug_call(osl_vector_dump(stderr, $$));
-      }
-/*
- * Rule 5: term -> INT * INT
- */
-  | INTEGER '*' INTEGER
-      {
-        CLAN_debug("Yacc term.5: INT * INT");
-        $$ = clan_vector_term(parser_symbol, ($1) * ($3), NULL);
-        CLAN_debug_call(osl_vector_dump(stderr, $$));
-      }
-/*
- * Rule 6: term -> INT / INT
- */
-  | INTEGER '/' INTEGER
-      {
-        CLAN_debug("Yacc term.6: INT / INT");
-        $$ = clan_vector_term(parser_symbol, ($1) / ($3), NULL);
-        CLAN_debug_call(osl_vector_dump(stderr, $$));
-      }
-/*
- * Rule 7: term -> - INT * id
- */
-  | '-' INTEGER '*' id
-      {
-        CLAN_debug("Yacc term.7: - INT * id");
-        clan_symbol_add(&parser_symbol, $4, CLAN_TYPE_UNKNOWN, parser_depth);
-        $$ = clan_vector_term(parser_symbol, -($2), $4);
-        free($4);
-        CLAN_debug_call(osl_vector_dump(stderr, $$));
-      }
-/*
- * Rule 7': term -> - id * INT
- */
-  | '-' id '*' INTEGER
-      {
-        CLAN_debug("Yacc term.7': - id * INT");
-        clan_symbol_add(&parser_symbol, $2, CLAN_TYPE_UNKNOWN, parser_depth);
-        $$ = clan_vector_term(parser_symbol, -($4), $2);
-        free($2);
-        CLAN_debug_call(osl_vector_dump(stderr, $$));
-      }
-/*
- * Rule 8: term -> - id
- */
-  | '-' id
-      {
-        CLAN_debug("Yacc term.8: - id");
-        clan_symbol_add(&parser_symbol, $2, CLAN_TYPE_UNKNOWN, parser_depth);
-        $$ = clan_vector_term(parser_symbol, -1, $2);
-        free($2);
-        CLAN_debug_call(osl_vector_dump(stderr, $$));
-      }
-  ;
-
-
-/*
- * Rules for defining a condition. A condition is an affine expression
- * (possibly with min/max operator(s)) of the form 'affex1 op affex2'
- * where affex2 may contain min operators iff op is '<' or '<=', and
- * max operators iff op is '>' or '>='.
- * return: <setex>
- */
-condition:
-/*
- * Rule 1: condition -> <affex> < min_affex
- */
-    affine_expression '<' min_affine_expression
-      {
-        /* a<b translates to -a+b-1>=0 */
-	int i;
-        
-        CLAN_debug("Yacc condition.1: <affex> < min_affex");
-	osl_vector_p tmp = osl_vector_add_scalar($1, 1);
-	osl_vector_tag_inequality(tmp);
-	for (i = 0; i < $3->nb_rows; ++i)
-	  {
-	    /* We have parsed a ceild/floord at an earlier stage. */
-	    if (!osl_int_zero(CLAN_PRECISION, $3->m[i], 0) &&
-                !osl_int_one(CLAN_PRECISION, $3->m[i], 0))
-	      {
-		osl_int_p val = osl_int_malloc(CLAN_PRECISION);
-		osl_int_assign(CLAN_PRECISION, val, 0, $3->m[i], 0);
-		osl_int_set_si(CLAN_PRECISION, $3->m[i], 0, 0);
-		osl_vector_p tmp2 = osl_vector_add_scalar($1, 0);
-		int j;
-		for (j = 1; j < $1->size; ++j)
-                  osl_int_mul(CLAN_PRECISION, tmp2->v, j, $1->v, j, val, 0);
-		osl_vector_p tmp3 = osl_vector_add_scalar(tmp2, 1);
-		osl_vector_tag_inequality(tmp3);
-		osl_relation_sub_vector($3, tmp3, i);
-		osl_vector_free(tmp2);
-		osl_vector_free(tmp3);
-                osl_int_free(CLAN_PRECISION, val, 0);
-	      }
-	    else
-	      osl_relation_sub_vector($3, tmp, i);
-	  }
-	osl_vector_free($1);
-	osl_vector_free(tmp);
-	$$ = $3;
-        CLAN_debug_call(osl_relation_dump(stderr, $$));
-      }
-/*
- * Rule 2: condition -> <affex> > max_affex
- */
-  | affine_expression '>' max_affine_expression
-      {
-        /* a>b translates to a-b-1>=0 */
-	int i, j;
-	osl_vector_p tmp = osl_vector_add_scalar($1, -1);
-        
-        CLAN_debug("Yacc condition.2: <affex> > max_affex");
-	osl_vector_tag_inequality(tmp);
-	for (i = 0; i < $3->nb_rows; ++i)
-	  {
-	    for (j = 1; j < $3->nb_columns; ++j)
-              osl_int_oppose(CLAN_PRECISION, $3->m[i], j, $3->m[i], j);
-	    /* We have parsed a ceild/floord at an earlier stage. */
-	    if (!osl_int_zero(CLAN_PRECISION, $3->m[i], 0) &&
-                !osl_int_one(CLAN_PRECISION, $3->m[i], 0))
-	      {
-		osl_int_p val = osl_int_malloc(CLAN_PRECISION);
-		osl_int_assign(CLAN_PRECISION, val, 0, $3->m[i], 0);
-		osl_int_set_si(CLAN_PRECISION, $3->m[i], 0, 0);
-		osl_vector_p tmp2 = osl_vector_add_scalar($1,0);
-		int j;
-		for (j = 1; j < $1->size; ++j)
-                  osl_int_mul(CLAN_PRECISION, tmp2->v, j, $1->v, j, val, 0);
-		osl_vector_p tmp3 = osl_vector_add_scalar(tmp2,-1);
-		osl_vector_tag_inequality(tmp3);
-		osl_relation_add_vector($3, tmp3, i);
-		osl_vector_free(tmp2);
-		osl_vector_free(tmp3);
-                osl_int_free(CLAN_PRECISION, val, 0);
-	      }
-           else
-                osl_relation_add_vector($3,tmp,i);
-	  }
-        osl_vector_free($1);
-        osl_vector_free(tmp);
-        $$ = $3;
-        CLAN_debug_call(osl_relation_dump(stderr, $$));
-      }
-/*
- * Rule 3: condition -> <affex> <= min_affex
- */
-  | affine_expression LE_OP min_affine_expression
-      {
-        /* a<=b translates to -a+b>=0 */
-	int i;
-	osl_vector_p tmp;
-        
-        CLAN_debug("Yacc condition.3: <affex> <= min_affex");
-	tmp = osl_vector_add_scalar($1,0);
-	osl_vector_tag_inequality(tmp);
-	for (i = 0; i < $3->nb_rows; ++i)
-	  {
-	    /* We have parsed a ceild/floord at an earlier stage. */
-	    if (!osl_int_zero(CLAN_PRECISION, $3->m[i], 0) &&
-                !osl_int_one(CLAN_PRECISION, $3->m[i], 0))
-	      {
-		osl_int_p val = osl_int_malloc(CLAN_PRECISION);
-		osl_int_assign(CLAN_PRECISION, val, 0, $3->m[i], 0);
-		osl_int_set_si(CLAN_PRECISION, $3->m[i], 0, 0);
-		osl_vector_p tmp2 = osl_vector_add_scalar($1,0);
-		int j;
-		for (j = 1; j < $1->size; ++j)
-                  osl_int_mul(CLAN_PRECISION, tmp2->v, j, $1->v, j, val, 0);
-		osl_vector_tag_inequality(tmp2);
-		osl_relation_sub_vector($3, tmp2, i);
-		osl_vector_free(tmp2);
-                osl_int_free(CLAN_PRECISION, val, 0);
-	      }
-	    else
-                osl_relation_sub_vector($3,tmp,i);
-	  }
-        osl_vector_free($1);
-        osl_vector_free(tmp);
-        $$ = $3;
-        CLAN_debug_call(osl_relation_dump(stderr, $$));
-      }
-/*
- * Rule 4: condition -> <affex> >= max_affex
- */
-  | affine_expression GE_OP max_affine_expression
-      {
-        /* a>=b translates to a-b>=0 */
-	int i, j;
-	osl_vector_p tmp;
-        
-        CLAN_debug("Yacc condition.4: <affex> >= max_affex");
-	tmp = osl_vector_add_scalar($1,0);
-	osl_vector_tag_inequality(tmp);
-	for (i = 0; i < $3->nb_rows; ++i)
-	  {
-	    for (j = 1; j < $3->nb_columns; ++j)
-              osl_int_oppose(CLAN_PRECISION, $3->m[i], j, $3->m[i], j);
-	    /* We have parsed a ceild/floord at an earlier stage. */
-	    if (!osl_int_zero(CLAN_PRECISION, $3->m[i], 0) &&
-                !osl_int_one(CLAN_PRECISION, $3->m[i], 0))
-	      {
-		osl_int_p val = osl_int_malloc(CLAN_PRECISION);
-		osl_int_assign(CLAN_PRECISION, val, 0, $3->m[i], 0);
-		osl_int_set_si(CLAN_PRECISION, $3->m[i], 0, 0);
-		osl_vector_p tmp2 = osl_vector_add_scalar($1,0);
-		int j;
-		for (j = 1; j < $1->size; ++j)
-                  osl_int_mul(CLAN_PRECISION, tmp2->v, j, $1->v, j, val, 0);
-		osl_vector_tag_inequality(tmp2);
-		osl_relation_add_vector($3, tmp2, i);
-		osl_vector_free(tmp2);
-                osl_int_free(CLAN_PRECISION, val, 0);
-	      }
-	    else
-                osl_relation_add_vector($3,tmp,i);
-	  }
-        osl_vector_free($1);
-        osl_vector_free(tmp);
-        $$ = $3;
-        CLAN_debug_call(osl_relation_dump(stderr, $$));
-      }
-/*
- * Rule 5: condition -> <affex> == <affex>
- */
-  | affine_expression EQ_OP affine_expression
-      {
-	osl_vector_p res;
-        
-        CLAN_debug("Yacc condition.5: <affex> == <affex>");
-        /* a==b translates to a-b==0 */
-	/* Warning: cases like ceild(M,32) == ceild(N,32) are not handled.
-	   Assert if we encounter such a case. */
-	assert ((osl_int_zero(CLAN_PRECISION, $1->v, 0) ||
-                 osl_int_one(CLAN_PRECISION,  $1->v, 0)) &&
-                (osl_int_zero(CLAN_PRECISION, $3->v, 0) ||
-                 osl_int_one(CLAN_PRECISION,  $3->v, 0)));
-	res = osl_vector_sub($1,$3);
-	osl_vector_tag_equality(res);
-	$$ = osl_relation_from_vector(res);
-	osl_vector_free(res);
-        osl_vector_free($1);
-	osl_vector_free($3);
-        CLAN_debug_call(osl_relation_dump(stderr, $$));
-      }
-/*
- * Rule 6: condition -> ( condition )
- */
-  | '(' condition ')'
-      {
-        CLAN_debug("Yacc condition.6: ( condition )");
-	$$ = $2;
-        CLAN_debug_call(osl_relation_dump(stderr, $$));
-      }
-/*
- * Rule 7: condition -> condition && condition
- */
-  | condition AND_OP condition
-     {
-       CLAN_debug("Yacc condition.7: condition && condition");
-       $$ = osl_relation_concat_constraints($1, $3);
-       osl_relation_free($1);
-       osl_relation_free($3);
-       CLAN_debug_call(osl_relation_dump(stderr, $$));
-     }
-  ;
-
-
-/*
- * Shortcut rules for reduction operators (+=, -=, ...)
- *
- */
-reduction_operator:
-    ADD_ASSIGN
-  | SUB_ASSIGN
-  | MUL_ASSIGN
-  | DIV_ASSIGN
-  | MOD_ASSIGN
-  | AND_ASSIGN
-  | OR_ASSIGN
-  | XOR_ASSIGN
-  ;
-
-
-/*
- * Shortcut rules for unary increment/decrement operators (-- and ++)
- *
- */
-unary_operator:
-    INC_OP
-  | DEC_OP
-  ;
-
-
-/*
- * Rule for a function call -> id_function ( expression_list )
- * return: <list>
- *
- */
-function_call:
-  id '(' expression_list ')'
+// Rules for a scop
+scop:
+    statement_list
     {
-      CLAN_debug("Yacc function_call.1: id_function ( expression_list )");
+      int nb_parameters;
+      osl_scop_p scop;
+
+      CLAN_debug("rule scop.1: statement_list");
+      scop = osl_scop_malloc();
+      CLAN_strdup(scop->language, "C");
+      
+      // Build the SCoP context.
+      nb_parameters = clan_symbol_nb_of_type(parser_symbol, CLAN_TYPE_PARAMETER);
+      scop->parameters = clan_symbol_to_strings(parser_symbol, CLAN_TYPE_PARAMETER);
+      scop->context = osl_relation_pmalloc(CLAN_PRECISION, 0, nb_parameters + 2);
+      osl_relation_set_type(scop->context, OSL_TYPE_CONTEXT);
+      osl_relation_set_attributes(scop->context, 0, 0, 0, nb_parameters);
+
+      // Set the statements.
+      scop->statement = $1;
+      
+      parser_scop = scop;
+      CLAN_debug_call(osl_scop_dump(stderr, scop));
+    } 
+  ;
+
+
+// Rules for a statement list
+// Return <stmt>
+statement_list:
+    statement                { $$ = $1; }
+  | statement_list statement { $$ = $1; osl_statement_add(&$$, $2); }
+  ;
+
+
+// Rules for a statement
+// Return <stmt>
+statement:
+    compound_statement       { $$ = $1; }
+  | expression_statement     { $$ = $1; }
+  | selection_statement      { $$ = $1; }
+  | iteration_statement      { $$ = $1; }
+  | IGNORE                   { $$ = NULL; }
+  ;
+
+
+// Rules for a compound statement
+// Return <stmt>
+compound_statement:
+    '{' '}'                  { $$ = NULL; }
+  | '{' statement_list '}'   { $$ = $2; }
+;
+
+
+// +--------------------------------------------------------------------------+
+// |                           AFFINE CONTROL PART                            |
+// +--------------------------------------------------------------------------+
+
+
+selection_statement:
+    IF '(' affine_condition ')'
+    {
+      osl_relation_list_dup(&parser_stack);
+      osl_relation_insert_constraints(parser_stack->elt, $3, -1);
+      osl_relation_free($3);
+    }
+    statement
+    {
+      CLAN_debug("rule selection_statement.1: for ( lb ub step ) <stmt>");
+      osl_relation_list_drop(&parser_stack);
+      $$ = $6;
+      CLAN_debug_call(osl_statement_dump(stderr, $$));
+    }
+//| IF '(' expression ')' statement ELSE statement
+  ;
+
+
+iteration_statement:
+    FOR '(' lower_bound upper_bound step ')'
+    {
+      osl_relation_list_dup(&parser_stack);
+      osl_relation_insert_constraints(parser_stack->elt, $3, -1);
+      osl_relation_insert_constraints(parser_stack->elt, $4, -1);
+      osl_relation_free($3);
+      osl_relation_free($4);
+      parser_depth++;
+      parser_scattering[parser_depth] = 0;
+    }
+    statement
+    {
+      CLAN_debug("rule iteration_statement.1: for ( lb ub step ) <stmt>");
+      parser_depth--;
+      clan_symbol_free(parser_iterators[parser_depth]);
+      osl_relation_list_drop(&parser_stack);
+      $$ = $8;
+      parser_scattering[parser_depth]++;
+      CLAN_debug_call(osl_statement_dump(stderr, $$));
+    }
+  ;
+
+
+lower_bound:
+    ID
+    {
+      clan_symbol_p symbol;
+      symbol = clan_symbol_add(&parser_symbol, $1,
+	                       CLAN_TYPE_ITERATOR, parser_depth + 1);
+      // Ensure that the returned symbol was either a new one,
+      // either from the same type.
+      if (symbol->type != CLAN_TYPE_ITERATOR) {
+	yyerror("a loop iterator was previously used as a parameter");
+	return 0;
+      }
+      // Update the rank, in case the symbol already exists.
+      if (symbol->rank != parser_depth + 1)
+        symbol->rank = parser_depth + 1;
+      parser_iterators[parser_depth] = clan_symbol_clone_one(symbol);
+    }
+    '=' affine_max_expression ';'
+    {
+      osl_vector_p id_term;
+      osl_relation_p id_relation;
+
+      CLAN_debug("rule lower_bound.1: ID = max_affex ;");
+      id_term = clan_vector_term(parser_symbol, 1, $1);
+      id_relation = osl_relation_from_vector(id_term);
+      $$ = clan_relation_greater(id_relation, $4, 0);
+      osl_vector_free(id_term);
+      osl_relation_free(id_relation);
+      osl_relation_free($4);
+      free($1);
+      CLAN_debug_call(osl_relation_dump(stderr, $$));
+    }
+  ;
+
+
+upper_bound:
+    affine_condition ';'
+    {
+      CLAN_debug("rule upper_bound.1: <affex> ;");
+      $$ = $1;
+      CLAN_debug_call(osl_relation_dump(stderr, $$));
+    }
+  ;
+
+//
+// Rules for the for loop increment.
+// Handled cases:
+// i++, ++i, i = i + 1, i += 1
+//
+step:
+  ID INC_OP
+    {
+      free($1);
+    }
+  | INC_OP ID
+    {
+      free($2);
+    }
+  | ID '=' ID '+' INTEGER
+    {
+      if ($5 != 1) {
+	yyerror("loop increment is not 1\n");
+	return 0;
+      }
+      free ($1);
+      free ($3);
+    }
+  | ID ADD_ASSIGN INTEGER
+    {
+      if ($3 != 1) {
+	yyerror("loop increment is not 1\n");
+	return 0;
+      }
+      free ($1);
+    }
+  ;
+
+
+// +--------------------------------------------------------------------------+
+// |                             AFFINE EXPRESSIONS                           |
+// +--------------------------------------------------------------------------+
+
+
+//
+// Rules for min(... operators.
+// return <setex>
+//
+affine_min_expression:
+//
+// Rule affine_min_expression.1: <affex>
+//
+    affine_floord_expression
+    {
+      CLAN_debug("rule min_affine_expression.1: <affex>");
+      $$ = osl_relation_from_vector($1);
+      osl_vector_free($1);
+      CLAN_debug_call(osl_relation_dump(stderr, $$));
+    }
+//
+// Rule affine_min_expression.2 MIN ( aff_min_expr , aff_min_expr )
+//
+  | MIN '(' affine_min_expression ',' affine_min_expression ')'
+    {
+      CLAN_debug("rule min_affine_expression.2: "
+                 "MIN ( min_affine_expression , min_affine_expresssion");
+      $$ = osl_relation_concat_constraints($3, $5);
+      osl_relation_free($3);
+      osl_relation_free($5);
+      CLAN_debug_call(osl_relation_dump(stderr, $$));
+    }
+  ;
+
+
+//
+// Rules for max(... operators.
+// return <setex>
+//
+affine_max_expression:
+//
+// Rule affine_max_expression.1: <affex>
+//
+    affine_ceild_expression
+    {
+      CLAN_debug("rule max_affine_expression.1: <affex>");
+      $$ = osl_relation_from_vector($1);
+      osl_vector_free($1);
+      CLAN_debug_call(osl_relation_dump(stderr, $$));
+    }
+//
+// Rule affine_max_expression.2: MAX ( aff_max_expr , aff_max_expr )
+//
+  | MAX '(' affine_max_expression ',' affine_max_expression ')'
+    {
+      CLAN_debug("rule max_affine_expression.2: "
+                 "MAX ( max_affine_expression , max_affine_expression )");
+      $$ = osl_relation_concat_constraints($3, $5);
+      osl_relation_free($3);
+      osl_relation_free($5);
+      CLAN_debug_call(osl_relation_dump(stderr, $$));
+    }
+  ;
+
+
+//
+// Rules for defining an affine condition. A condition is an affine expression
+// (possibly with min/max operator(s)) of the form 'affex1 op affex2'
+// where affex2 may contain min operators iff op is '<' or '<=', and
+// max operators iff op is '>' or '>='.
+// return: <setex>
+//
+affine_condition:
+//
+// Rule affine_condition.1: max_affex < min_affex
+//
+    affine_max_expression '<' affine_min_expression
+    {
+      CLAN_debug("rule affine_condition.1: max_affex < min_affex");
+      $$ = clan_relation_greater($3, $1, 1);
+      osl_relation_free($1);
+      osl_relation_free($3);
+      CLAN_debug_call(osl_relation_dump(stderr, $$));
+    }
+//
+// Rule affine_condition.2: min_affex > max_affex
+//
+  | affine_min_expression '>' affine_max_expression
+    {
+      CLAN_debug("rule affine_condition.2: min_affex > max_affex");
+      $$ = clan_relation_greater($1, $3, 1);
+      osl_relation_free($1);
+      osl_relation_free($3);
+      CLAN_debug_call(osl_relation_dump(stderr, $$));
+    }
+//
+// Rule affine_condition.3: max_affex <= min_affex
+//
+  | affine_max_expression LE_OP affine_min_expression
+    {
+      CLAN_debug("rule affine_condition.3: max_affex <= min_affex");
+      $$ = clan_relation_greater($3, $1, 0);
+      osl_relation_free($1);
+      osl_relation_free($3);
+      CLAN_debug_call(osl_relation_dump(stderr, $$));
+    }
+//
+// Rule affine_condition.4: min_affex >= max_affex
+//
+  | affine_min_expression GE_OP affine_max_expression
+    {
+      CLAN_debug("rule affine_condition.4: min_affex >= max_affex");
+      $$ = clan_relation_greater($1, $3, 0);
+      osl_relation_free($1);
+      osl_relation_free($3);
+      CLAN_debug_call(osl_relation_dump(stderr, $$));
+    }
+//
+// Rule affine_condition.5: <affex> == <affex>
+//
+  | affine_expression EQ_OP affine_expression
+    {
+      // a==b translates to a-b==0.
+      osl_vector_p res;
+
+      CLAN_debug("rule affine_condition.5: <affex> == <affex>");
+      // Warning: cases like ceild(M,32) == ceild(N,32) are not handled.
+      // Assert if we encounter such a case.
+      assert ((osl_int_zero(CLAN_PRECISION, $1->v, 0) ||
+	       osl_int_one(CLAN_PRECISION,  $1->v, 0)) &&
+	      (osl_int_zero(CLAN_PRECISION, $3->v, 0) ||
+	       osl_int_one(CLAN_PRECISION,  $3->v, 0)));
+      res = osl_vector_sub($1, $3);
+      osl_vector_tag_equality(res);
+      $$ = osl_relation_from_vector(res);
+      osl_vector_free(res);
+      osl_vector_free($1);
+      osl_vector_free($3);
+      CLAN_debug_call(osl_relation_dump(stderr, $$));
+    }
+//
+// Rule affine_condition.6: ( afine_condition )
+//
+  | '(' affine_condition ')'
+    {
+      CLAN_debug("rule affine_condition.6: ( condition )");
+      $$ = $2;
+      CLAN_debug_call(osl_relation_dump(stderr, $$));
+    }
+//
+// Rule affine_condition.7: affine_condition && affine_condition
+//
+  | affine_condition AND_OP affine_condition
+    {
+      CLAN_debug("rule affine_condition.7: condition && condition");
+      $$ = osl_relation_concat_constraints($1, $3);
+      osl_relation_free($1);
+      osl_relation_free($3);
+      CLAN_debug_call(osl_relation_dump(stderr, $$));
+    }
+  ;
+
+
+affine_primary_expression:
+    ID
+    {
+      CLAN_debug("rule affine_primary_expression.1: id");
+      clan_symbol_add(&parser_symbol, $1, CLAN_TYPE_UNKNOWN, parser_depth);
+      $$ = clan_vector_term(parser_symbol, 1, $1);
+      free($1);
+      CLAN_debug_call(osl_vector_dump(stderr, $$));
+    }
+  | INTEGER
+    {
+      CLAN_debug("rule affine_primary_expression.2: INTEGER");
+      $$ = clan_vector_term(parser_symbol, $1, NULL);
+      CLAN_debug_call(osl_vector_dump(stderr, $$));
+    }
+  | '(' affine_expression ')'
+    {
+      CLAN_debug("rule affine_primary_expression.3: "
+                 "affine_additive_expression");
+      $$ = $2;
+      CLAN_debug_call(osl_vector_dump(stderr, $$));
+    }
+  ;
+
+
+affine_unary_expression:
+    affine_primary_expression
+    {
+      CLAN_debug("rule affine_unary_expression.1: affine_primary_expression");
+      $$ = $1;
+      CLAN_debug_call(osl_vector_dump(stderr, $$));
+    }
+  | '+' affine_primary_expression
+    {
+      CLAN_debug("rule affine_unary_expression.2: +affine_primary_expression");
+      $$ = $2;
+      CLAN_debug_call(osl_vector_dump(stderr, $$));
+    }
+  | '-' affine_primary_expression
+    {
+      CLAN_debug("rule affine_unary_expression.2: -affine_primary_expression");
+      $$ = osl_vector_mul_scalar($2, -1);
+      osl_vector_free($2);
+      CLAN_debug_call(osl_vector_dump(stderr, $$));
+    }
+  ;
+
+
+affine_multiplicative_expression:
+    affine_unary_expression
+    { 
+      CLAN_debug("rule affine_multiplicative_expression.1: "
+                 "affine_unary_expression");
+      $$ = $1;
+      CLAN_debug_call(osl_vector_dump(stderr, $$));
+    }
+  | affine_multiplicative_expression '*' affine_unary_expression
+    {
+      int coef;
+      
+      CLAN_debug("rule affine_multiplicative_expression.2: "
+                 "affine_multiplicative_expression * affine_unary_expression");
+      if (!osl_vector_is_scalar($1) && !osl_vector_is_scalar($3))
+        yyerror("non-affine expression");
+
+      if (osl_vector_is_scalar($1)) {
+        coef = osl_int_get_si($1->precision, $1->v, $1->size - 1);
+        $$ = osl_vector_mul_scalar($3, coef);
+      }
+      else {
+        coef = osl_int_get_si($3->precision, $3->v, $3->size - 1);
+        $$ = osl_vector_mul_scalar($1, coef);
+      }
+      osl_vector_free($1);
+      osl_vector_free($3);
+      CLAN_debug_call(osl_vector_dump(stderr, $$));
+    }
+  | affine_multiplicative_expression '/' affine_unary_expression
+    {
+      int val1, val2;
+      
+      CLAN_debug("rule affine_multiplicative_expression.3: "
+                 "affine_multiplicative_expression / affine_unary_expression");
+      if (!osl_vector_is_scalar($1) || !osl_vector_is_scalar($3))
+        yyerror("non-affine expression");
+      val1 = osl_int_get_si($1->precision, $1->v, $1->size - 1);
+      val2 = osl_int_get_si($3->precision, $3->v, $3->size - 1);
+      $$ = clan_vector_term(parser_symbol, val1 / val2, NULL);
+      osl_vector_free($1);
+      osl_vector_free($3);
+      CLAN_debug_call(osl_vector_dump(stderr, $$));
+    }
+  ;
+
+
+affine_expression:
+    affine_multiplicative_expression
+    { 
+      CLAN_debug("rule affine_expression.1: "
+                 "affine_multiplicative_expression");
+      $$ = $1;
+      CLAN_debug_call(osl_vector_dump(stderr, $$));
+    }
+  | affine_expression '+' affine_multiplicative_expression
+    {
+      CLAN_debug("rule affine_expression.2: "
+          "affine_expression + affine_multiplicative_expression");
+      $$ = osl_vector_add($1, $3);
+      osl_vector_free($1);
+      osl_vector_free($3);
+      CLAN_debug_call(osl_vector_dump(stderr, $$));
+    }
+  | affine_expression '-' affine_multiplicative_expression
+    {
+      CLAN_debug("rule affine_expression.3: "
+          "affine_expression - affine_multiplicative_expression");
+      $$ = osl_vector_sub($1, $3);
+      osl_vector_free($1);
+      osl_vector_free($3);
+      CLAN_debug_call(osl_vector_dump(stderr, $$));
+    }
+  ;
+
+
+affine_ceild_expression:
+    affine_expression
+    {
+      CLAN_debug("affine_ceil_expression.1: affine_expression");
+      $$ = $1;
+      CLAN_debug_call(osl_vector_dump(stderr, $$));
+    }
+  | CEILD '(' affine_expression ',' INTEGER ')'
+    {
+      CLAN_debug("affine_ceil_expression.2: "
+                 "CEILD ( affine_expression , INTEGER )");
+      osl_int_set_si(CLAN_PRECISION, $3->v, 0, $5);
       $$ = $3;
+      CLAN_debug_call(osl_vector_dump(stderr, $$));
+    }
+  ;
+
+
+affine_floord_expression:
+    affine_expression
+    {
+      CLAN_debug("affine_floor_expression.1: affine_expression");
+      $$ = $1;
+      CLAN_debug_call(osl_vector_dump(stderr, $$));
+    }
+  | FLOORD '(' affine_expression ',' INTEGER ')'
+    {
+      CLAN_debug("affine_floor_expression.2: "
+                 "FLOORD ( affine_expression , INTEGER )");
+      osl_int_set_si(CLAN_PRECISION, $3->v, 0, $5);
+      $$ = $3;
+      CLAN_debug_call(osl_vector_dump(stderr, $$));
+    }
+  ;
+
+
+// +--------------------------------------------------------------------------+
+// |                          QUASI-ANSI C STATEMENTS                         |
+// +--------------------------------------------------------------------------+
+
+
+primary_expression:
+    ID
+    {
+      int rank, nb_columns;
+      osl_relation_p id;
+      osl_relation_list_p list;
+
+      CLAN_debug("rule primary_expression.1: ID");
+      clan_symbol_add(&parser_symbol, $1, CLAN_TYPE_ARRAY, parser_depth);
+      rank = clan_symbol_get_rank(parser_symbol, $1);
+      nb_columns = CLAN_MAX_DEPTH + CLAN_MAX_PARAMETERS + 2;
+      id = osl_relation_pmalloc(CLAN_PRECISION, 0, nb_columns);
+      osl_relation_set_attributes(id, 0, parser_depth, 0, CLAN_MAX_PARAMETERS);
+      clan_relation_tag_array(id, rank);
+      list = osl_relation_list_malloc();
+      list->elt = id;
+      free($1);
+      $$ = list;
       CLAN_debug_call(osl_relation_list_dump(stderr, $$));
     }
-  ;
-
-
-/*
- * Rules for an assignment (an instruction which is not a 'for' nor an 'if')
- * return: <list>
- *
- */
-assignment:
-/*
- * Rule 1: assignment -> var = expression;
- */
-    variable '=' expression ';'
-      {
-        CLAN_debug("Yacc assignment.1: var = expression");
-        if ($1 == NULL)
-	  {
-	    yyerror ("[Clan] Error: changing value of iterator/parameter");
-	    return 0;
-	  }
-        osl_relation_list_set_type($3, OSL_TYPE_READ);
-        osl_relation_set_type($1, OSL_TYPE_WRITE);
-        $$ = osl_relation_list_node($1);
-        osl_relation_list_add(&($$), $3);
-        osl_relation_free($1);
-        CLAN_debug_call(osl_relation_list_dump(stderr, $$));
-      }
-/*
- * Rule 2: assignment -> var red_op expression;
- */
-  | variable reduction_operator expression ';'
-      {
-        CLAN_debug("Yacc assignment.2: var red_op expression ;");
-	if ($1 == NULL)
-	  {
-	    yyerror ("[Clan] Error: changing value of iterator/parameter");
-	    return 0;
-	  }
-        osl_relation_list_set_type($3, OSL_TYPE_READ);
-        osl_relation_set_type($1, OSL_TYPE_WRITE);
-        $$ = osl_relation_list_node($1);
-        osl_relation_list_add(&($$), $3);
-        osl_relation_free($1);
-        CLAN_debug_call(osl_relation_list_dump(stderr, $$));
-      }
-/*
- * Rule 3: assignment -> var un_op;
- */
-  | variable unary_operator ';'
-      {
-        CLAN_debug("Yacc assignment.3: var un_op ;");
-	if ($1 == NULL)
-	  {
-	    yyerror ("[Clan] Error: changing value of iterator/parameter");
-	    return 0;
-	  }
-        osl_relation_set_type($1, OSL_TYPE_WRITE);
-        $$ = osl_relation_list_node($1);
-        osl_relation_set_type($1, OSL_TYPE_READ);
-        osl_relation_list_add(&($$), osl_relation_list_node($1));
-        osl_relation_free($1);
-        CLAN_debug_call(osl_relation_list_dump(stderr, $$));
-      }
-/*
- * Rule 4: assignment -> un_op var;
- */
-  | unary_operator variable ';'
-      {
-        CLAN_debug("Yacc assignment.4: un_op var ;");
-	if ($2 == NULL)
-	  {
-	    yyerror ("[Clan] Error: changing value of iterator/parameter");
-	    return 0;
-	  }
-        osl_relation_set_type($2, OSL_TYPE_WRITE);
-        $$ = osl_relation_list_node($2);
-        osl_relation_set_type($2, OSL_TYPE_READ);
-        osl_relation_list_add(&($$), osl_relation_list_node($2));
-        osl_relation_free($2);
-        CLAN_debug_call(osl_relation_list_dump(stderr, $$));
-      }
-/*
- * Rule 5: assignment -> var;
- */
-  | variable ';'
-      {
-        CLAN_debug("Yacc assignment.5: var ;");
-        osl_relation_set_type($1, OSL_TYPE_READ);
-        $$ = osl_relation_list_node($1);
-        osl_relation_free($1);
-        CLAN_debug_call(osl_relation_list_dump(stderr, $$));
-      }
-/*
- * Rule 6: assignment -> { assignment }
- */
-  | '{' assignment '}'
-      {
-        CLAN_debug("Yacc assignment.6: { assignment }");
-        $$ = $2;
-        CLAN_debug_call(osl_relation_list_dump(stderr, $$));
-      }
-/*
- * Rule 7: assignment -> function_call;
- */
-  | function_call ';'
-      {
-        CLAN_debug("Yacc assignment.7: function_call ;");
-        osl_relation_list_set_type($1, OSL_TYPE_READ);
-        $$ = $1;
-        CLAN_debug_call(osl_relation_list_dump(stderr, $$));
-      }
-  ;
-
-
-/*
- * Shortcut rules for all binary operators BUT '='.
- *
- */
-binary_operator:
-    '+'
-  | '-'
-  | '*'
-  | '/'
-  | '%'
-  | GE_OP
-  | '>'
-  | LE_OP
-  | '<'
-  | EQ_OP
-  | '&'
-  | '|'
-  | '^'
-  ;
-
-/*
- * Rules for an expression.
- * return: <list>
- *
- */
-expression:
-/*
- * Rule 1: expression -> number
- */
-    NUMBER
-      {
-        CLAN_debug("Yacc expression.1: number");
-        $$ = NULL;
-        CLAN_debug_call(osl_relation_list_dump(stderr, $$));
-      }
-/*
- * Rule 2: expression -> - number
- */
-  | '-' NUMBER
-      {
-        CLAN_debug("Yacc expression.2: - number");
-        $$ = NULL;
-        CLAN_debug_call(osl_relation_list_dump(stderr, $$));
-      }
-/*
- * Rule 3: expression -> variable
- */
-  | variable
-      {
-        CLAN_debug("Yacc expression.3: variable");
-        $$ = osl_relation_list_node($1);
-        osl_relation_free($1);
-        CLAN_debug_call(osl_relation_list_dump(stderr, $$));
-      }
-/*
- * Rule 4: expression -> expression bin_op expression
- * The %prec is a hack to force to shift in this rule.
- */
-  | expression binary_operator expression %prec MAXPRIORITY
-      {
-        CLAN_debug("Yacc expression.4: expression bin_op expression");
-	$$ = $1;
-        osl_relation_list_add(&($$), $3);
-        CLAN_debug_call(osl_relation_list_dump(stderr, $$));
-      }
-/*
- * Rule 5: expression -> ! expression
- */
-  | '!' expression
-      {
-        CLAN_debug("Yacc expression.5: ! expression");
-        $$ = $2;
-        CLAN_debug_call(osl_relation_list_dump(stderr, $$));
-      }
-/*
- * Rule 6: expression -> ( expression )
- */
+  | CONSTANT
+    { $$ = NULL; }
+  | INTEGER
+    { $$ = NULL; }
+  | STRING_LITERAL
+    { $$ = NULL; }
   | '(' expression ')'
-      {
-        CLAN_debug("Yacc expression.6: ( expression )");
-	$$ = $2;
-        CLAN_debug_call(osl_relation_list_dump(stderr, $$));
-      }
-/*
- * Rule 7: expression -> expression : expression ? expression
- */
-  | expression '?' expression ':' expression
-      {
-        CLAN_debug("Yacc expression.7: expression : expression ? expression");
-	$$ = $1;
-        osl_relation_list_add(&($$), $3);
-        osl_relation_list_add(&($$), $5);
-        CLAN_debug_call(osl_relation_list_dump(stderr, $$));
-      }
-/*
- * Rule 8: expression -> function_call
- */
-  | function_call %prec MAXPRIORITY 
-      {
-        CLAN_debug("Yacc expression.8: function_call");
-        $$ = $1;
-        CLAN_debug_call(osl_relation_list_dump(stderr, $$));
-      }
+    { $$ = $2; }
   ;
 
 
-/*
- * Rules for a comma-separated expression list.
- * return: <list>
- *
- */
-expression_list:
-/*
- * Rule 1: expression_list -> expression
- */
-    expression
-     {
-       CLAN_debug("Yacc expression_list.1: expression");
-       $$ = $1;
-       CLAN_debug_call(osl_relation_list_dump(stderr, $$));
-     }
-/*
- * Rule 2: expression_list -> expression , expression_list
- */
-  | expression_list ',' expression 
-     {
-       CLAN_debug("Yacc expression_list.2: expression , expression_list");
-       $$ = $1;
-       osl_relation_list_add(&($$),$3);
-       CLAN_debug_call(osl_relation_list_dump(stderr, $$));
-     }
-  |
-/*
- * Rule 3: expression_list -> NULL
- */
+postfix_expression:
+    primary_expression
+    { $$ = $1; }
+  | postfix_expression '[' affine_expression ']' // ANSI: expression
     {
+      CLAN_debug("rule postfix_expression.2: postfix_expression [ <affex> ]");
+      clan_relation_new_output_vector($1->elt, $3);
+      osl_vector_free($3);
+      $$ = $1;
+      CLAN_debug_call(osl_relation_list_dump(stderr, $$));
+    }
+  | postfix_expression '(' ')'
+    { 
+      osl_relation_list_free($1);
       $$ = NULL;
+    }
+  | postfix_expression '(' argument_expression_list ')'
+    {
+      osl_relation_list_free($1);
+      $$ = $3;
+    }
+  | postfix_expression '.' ID
+    {
+      int rank;
+
+      CLAN_debug("rule postfix_expression.4: postfix_expression . ID");
+      clan_symbol_add(&parser_symbol, $3, CLAN_TYPE_ARRAY, parser_depth);
+      rank = clan_symbol_get_rank(parser_symbol, $3);
+      clan_relation_new_output_scalar($1->elt, rank);
+      free($3);
+      $$ = $1;
+      CLAN_debug_call(osl_relation_list_dump(stderr, $$));
+    }
+  | postfix_expression PTR_OP ID
+    {
+      int rank;
+
+      CLAN_debug("rule postfix_expression.5: postfix_expression -> ID");
+      clan_symbol_add(&parser_symbol, $3, CLAN_TYPE_ARRAY, parser_depth);
+      rank = clan_symbol_get_rank(parser_symbol, $3);
+      clan_relation_new_output_scalar($1->elt, rank);
+      free($3);
+      $$ = $1;
+      CLAN_debug_call(osl_relation_list_dump(stderr, $$));
+    }
+  | postfix_expression INC_OP
+    { $$ = $1; }
+  | postfix_expression DEC_OP
+    { $$ = $1; }
+  ;
+
+argument_expression_list:
+    assignment_expression
+    { $$ = $1; }
+  | argument_expression_list ',' assignment_expression
+    {
+      $$ = $1;
+      osl_relation_list_add(&$$, $3);
     }
   ;
 
-
-/*
- * Rules to describe a variable. It can be a scalar ('a'), a
- * n-dimensional array ('a[i]').
- * return: <setex>
- *
- */
-variable:
-/*
- * Rule 1: variable -> id
- * ex: variable -> a
- */
-    id
-      {
-        int rank;
-	char* s;
-        osl_relation_p relation;
-        clan_symbol_p symbol;
-        
-        CLAN_debug("Yacc variable.1: id");
-	s = (char*) $1;
-	symbol = clan_symbol_lookup(parser_symbol, s);
-	// If the variable is an iterator or a parameter, discard it
-	// from the read/write clause.
-	if ((symbol && symbol->type == CLAN_TYPE_ITERATOR) ||
-	    (symbol && symbol->type == CLAN_TYPE_PARAMETER))
-	  $$ = NULL;
-	else
-	  {
-	    clan_symbol_add(&parser_symbol, s, CLAN_TYPE_ARRAY,
-		            parser_depth);
-	    rank = clan_symbol_get_rank(parser_symbol, s);
-	    relation = osl_relation_pmalloc(CLAN_PRECISION,
-		0, CLAN_MAX_DEPTH + CLAN_MAX_PARAMETERS + 2);
-            // The fakeiter makes sure there is at least one dimension.
-            osl_relation_set_attributes(relation,
-                0, CLAN_max(1, parser_depth), 0, CLAN_MAX_PARAMETERS);
-	    clan_relation_tag_array(relation, rank);
-	    $$ = relation;
-	  }
-        free($1);
-        CLAN_debug_call(osl_relation_dump(stderr, $$));
-      }
-/*
- * Rule 2: variable -> id array_index
- * ex: variable -> a[i][j]
- */
-  | id array_index
-      {
-        int rank;
-        
-        CLAN_debug("Yacc variable.2: id array_index");
-        clan_symbol_add(&parser_symbol, $1, CLAN_TYPE_ARRAY, parser_depth);
-        rank = clan_symbol_get_rank(parser_symbol, $1);
-        // The fakeiter makes sure there is at least one dimension.
-        osl_relation_set_attributes($2, 0, CLAN_max(1, parser_depth), 0,
-                                    CLAN_MAX_PARAMETERS);
-        clan_relation_outputize($2);
-        clan_relation_tag_array($2, rank);
-        $$ = $2;
-        free($1);
-        CLAN_debug_call(osl_relation_dump(stderr, $$));
-      }
-/*
- * Rule 3: variable -> - variable
- */
-   | '-' variable
-      {
-        CLAN_debug("Yacc variable.3: - variable");
-	$$ = $2;
-        CLAN_debug_call(osl_relation_dump(stderr, $$));
-      }
-/*
- * Rule 4: variable -> + variable
- */
-   | '+' variable
-      {
-        CLAN_debug("Yacc variable.4: + variable");
-	$$ = $2;
-        CLAN_debug_call(osl_relation_dump(stderr, $$));
-      }
-  ;
-
-
-/*
- * Dummy rule for basic arithmetic expression. Used in variable_list.
- *
- */
-arithmetic_expression:
-    NUMBER
-  | arithmetic_expression '-' arithmetic_expression
-  | arithmetic_expression '+' arithmetic_expression
-  | arithmetic_expression '*' arithmetic_expression
-  | arithmetic_expression '/' arithmetic_expression
-  | '(' arithmetic_expression ')'
-  ;
-
-
-/*
- * Rules to describe a list of variables, separated by a comma.
- * return: <list>
- *
- */
-variable_list:
-/*
- * Rule 1: variable_list -> variable
- */
-    variable
-      {
-	$$ = osl_relation_list_node($1);
-        osl_relation_free($1);
-      }
-/*
- * Rule 2: variable_list -> variable_list , variable
- */
-  | variable_list ',' variable
-      {
-        osl_relation_list_p temp = osl_relation_list_node($3);
-	$$ = osl_relation_list_concat($1,temp);
-        osl_relation_free($3);
-        osl_relation_list_free(temp);
-        osl_relation_list_free($1);
-      }
-/*
- * Rule 3: variable_list -> variable_list , arithmetic_expression
- */
-  | variable_list ',' arithmetic_expression
-      {
-	$$ = $1;
-      }
-/*
- * Rule 4: variable_list -> arithmetic_expression, variable_list
- */
-  | arithmetic_expression
-      {
-	$$ = NULL;
-      }
-/*
- * Rule 5: variable_list -> VOID
- */
-  |
-      {
-	$$ = NULL;
-      }
-  ;
-
-
-/*
- * Rules for n-level array indices
- * return: <setex>
- *
- */
-array_index:
-/*
- * Rule 1: array_index -> [ <affex> ]
- */
-    '[' affine_expression ']'
-      {
-        CLAN_debug("Yacc array_index.1: [ <affex> ]");
-        $$ = osl_relation_from_vector($2);
-        osl_vector_free($2);
-        CLAN_debug_call(osl_relation_dump(stderr, $$));
-      }
-/*
- * Rule 2: array_index -> array_index [ <affex> ]
- */
-  | array_index '[' affine_expression ']'
-      {
-        CLAN_debug("Yacc array_index.2: array_index [ <affex> ]");
-	if ($1 != NULL)
-	  osl_relation_insert_vector($1,$3,$1->nb_rows);
-        osl_vector_free($3);
-        $$ = $1;
-        CLAN_debug_call(osl_relation_dump(stderr, $$));
-      }
-  ;
-
-
-/*
- * Rules to (1) eliminate the parenthesis around an identifier, and
- * (2) support the &ID reference operator
- * operator.
- *
- * return <symbol>
- */
-id:
-/*
- * Rule 1: id -> ID
- */
-    ID
-     {
-       CLAN_debug("Yacc id.1: ID");
-       $$ = $1;
-       CLAN_debug_call(printf("$$: %s\n", $$));
-     }
-/*
- * Rule 2: id -> ( ID )
- */
-  | '(' ID ')'
-     {
-       CLAN_debug("Yacc id.2: ( ID )");
-       $$ = $2;
-       CLAN_debug_call(printf("$$: %s\n", $$));
-     }
-/*
- * Rule 3: id -> & ID
- */
-  | '&' ID
-     {
-       CLAN_debug("Yacc id.3: & ID");
-       $$ = $2;
-       CLAN_debug_call(printf("$$: %s\n", $$));
-     }
-/*
- * Rule 4: id -> math_func_list
- */
-  | math_func_list
-     {
-       CLAN_debug("Yacc id.4: math_func_list");
-       $$ = NULL;
-       CLAN_debug_call(printf("$$: NULL\n"));
-     }
-  ;
-
-math_func_list: MIN | MAX | CEILD | FLOORD;
-
-NUMBER:
-    INTEGER
-  | CONSTANT
-  ;
-
-
-/*---------------------------------------------------------------------------+
- |                            ANSI C STATEMENTS                              |
- +---------------------------------------------------------------------------*/
-
-/*
-
-primary_expression
-  : IDENTIFIER
-  | CONSTANT
-  | STRING_LITERAL
-  | '(' expression ')'
-  ;
-
-postfix_expression
-  : primary_expression
-  | postfix_expression '[' expression ']'
-  | postfix_expression '(' ')'
-  | postfix_expression '(' argument_expression_list ')'
-  | postfix_expression '.' IDENTIFIER
-  | postfix_expression PTR_OP IDENTIFIER
-  | postfix_expression INC_OP
-  | postfix_expression DEC_OP
-  | '(' type_name ')' '{' initializer_list '}'
-  | '(' type_name ')' '{' initializer_list ',' '}'
-  ;
-
-argument_expression_list
-  : assignment_expression
-  | argument_expression_list ',' assignment_expression
-  ;
-
-unary_expression
-  : postfix_expression
+unary_expression:
+    postfix_expression
+    { $$ = $1; }
   | INC_OP unary_expression
+    { $$ = $2; }
   | DEC_OP unary_expression
+    { $$ = $2; }
   | unary_operator cast_expression
+    { $$ = $2; }
   | SIZEOF unary_expression
+    { $$ = $2; }
   | SIZEOF '(' type_name ')'
+    { $$ = NULL; }
   ;
 
-unary_operator
-  : '&'
+unary_operator:
+    '&'
   | '*'
   | '+'
   | '-'
@@ -1489,81 +802,192 @@ unary_operator
   | '!'
   ;
 
-cast_expression
-  : unary_expression
+cast_expression:
+    unary_expression
+    { $$ = $1; }
   | '(' type_name ')' cast_expression
+    { $$ = $4; }
   ;
 
-multiplicative_expression
-  : cast_expression
+multiplicative_expression:
+    cast_expression
+    { $$ = $1; }
   | multiplicative_expression '*' cast_expression
+    {
+      $$ = $1;
+      osl_relation_list_add(&$$, $3);
+    }
   | multiplicative_expression '/' cast_expression
+    {
+      $$ = $1;
+      osl_relation_list_add(&$$, $3);
+    }
   | multiplicative_expression '%' cast_expression
+    {
+      $$ = $1;
+      osl_relation_list_add(&$$, $3);
+    }
   ;
 
-additive_expression
-  : multiplicative_expression
+additive_expression:
+    multiplicative_expression
+    { $$ = $1; }
   | additive_expression '+' multiplicative_expression
+    {
+      $$ = $1;
+      osl_relation_list_add(&$$, $3);
+    }
   | additive_expression '-' multiplicative_expression
+    {
+      $$ = $1;
+      osl_relation_list_add(&$$, $3);
+    }
   ;
 
-shift_expression
-  : additive_expression
+shift_expression:
+    additive_expression
+    { $$ = $1; }
   | shift_expression LEFT_OP additive_expression
+    {
+      $$ = $1;
+      osl_relation_list_add(&$$, $3);
+    }
   | shift_expression RIGHT_OP additive_expression
+    {
+      $$ = $1;
+      osl_relation_list_add(&$$, $3);
+    }
   ;
 
-relational_expression
-  : shift_expression
+relational_expression:
+    shift_expression
+    { $$ = $1; }
   | relational_expression '<' shift_expression
+    {
+      $$ = $1;
+      osl_relation_list_add(&$$, $3);
+    }
   | relational_expression '>' shift_expression
+    {
+      $$ = $1;
+      osl_relation_list_add(&$$, $3);
+    }
   | relational_expression LE_OP shift_expression
+    {
+      $$ = $1;
+      osl_relation_list_add(&$$, $3);
+    }
   | relational_expression GE_OP shift_expression
+    {
+      $$ = $1;
+      osl_relation_list_add(&$$, $3);
+    }
   ;
 
-equality_expression
-  : relational_expression
+equality_expression:
+    relational_expression
+    { $$ = $1; }
   | equality_expression EQ_OP relational_expression
+    {
+      $$ = $1;
+      osl_relation_list_add(&$$, $3);
+    }
   | equality_expression NE_OP relational_expression
+    {
+      $$ = $1;
+      osl_relation_list_add(&$$, $3);
+    }
   ;
 
-and_expression
-  : equality_expression
+and_expression:
+    equality_expression
+    { $$ = $1; }
   | and_expression '&' equality_expression
+    {
+      $$ = $1;
+      osl_relation_list_add(&$$, $3);
+    }
   ;
 
-exclusive_or_expression
-  : and_expression
+exclusive_or_expression:
+    and_expression
+    { $$ = $1; }
   | exclusive_or_expression '^' and_expression
+    {
+      $$ = $1;
+      osl_relation_list_add(&$$, $3);
+    }
   ;
 
-inclusive_or_expression
-  : exclusive_or_expression
+inclusive_or_expression:
+    exclusive_or_expression
+    { $$ = $1; }
   | inclusive_or_expression '|' exclusive_or_expression
+    {
+      $$ = $1;
+      osl_relation_list_add(&$$, $3);
+    }
   ;
 
-logical_and_expression
-  : inclusive_or_expression
+logical_and_expression:
+    inclusive_or_expression
+    { $$ = $1; }
   | logical_and_expression AND_OP inclusive_or_expression
+    {
+      $$ = $1;
+      osl_relation_list_add(&$$, $3);
+    }
   ;
 
-logical_or_expression
-  : logical_and_expression
+logical_or_expression:
+    logical_and_expression
+    { $$ = $1; }
   | logical_or_expression OR_OP logical_and_expression
+    {
+      $$ = $1;
+      osl_relation_list_add(&$$, $3);
+    }
   ;
 
-conditional_expression
-  : logical_or_expression
+conditional_expression:
+    logical_or_expression
+    { $$ = $1; }
   | logical_or_expression '?' expression ':' conditional_expression
+    {
+      $$ = $1;
+      osl_relation_list_add(&$$, $3);
+      osl_relation_list_add(&$$, $5);
+    }
   ;
 
-assignment_expression
-  : conditional_expression
+assignment_expression:
+    conditional_expression
+    {
+      CLAN_debug("rule assignment_expression.1: conditional_expression;");
+      $$ = $1;
+      osl_relation_list_set_type($$, OSL_TYPE_READ);
+      CLAN_debug_call(osl_relation_list_dump(stderr, $$));
+    }
   | unary_expression assignment_operator assignment_expression
+    {
+      osl_relation_list_p list;
+
+      CLAN_debug("rule assignment_expression.2: unary_expression "
+	         "assignment_operator assignment_expression;");
+      $$ = $1;
+      // Accesses of $1 are READ except the last one which is a WRITE.
+      osl_relation_list_set_type($$, OSL_TYPE_READ);
+      list = $$;
+      while (list->next != NULL)
+	list = list->next;
+      osl_relation_set_type(list->elt, OSL_TYPE_WRITE);
+      osl_relation_list_add(&$$, $3);
+      CLAN_debug_call(osl_relation_list_dump(stderr, $$));
+    }
   ;
 
-assignment_operator
-  : '='
+assignment_operator:
+    '='
   | MUL_ASSIGN
   | DIV_ASSIGN
   | MOD_ASSIGN
@@ -1576,28 +1000,284 @@ assignment_operator
   | OR_ASSIGN
   ;
 
-expression
-  : assignment_expression
+expression:
+    assignment_expression
+    { $$ = $1; }
   | expression ',' assignment_expression
+    {
+      $$ = $1;
+      osl_relation_list_add(&$$, $3);
+    }
   ;
 
-expression_statement
-  : ';'
-  | expression ';'
+expression_statement:
+    ';'
+    {
+      CLAN_debug("rule expression_statement.1: ;");
+      $$ = NULL;
+      CLAN_debug_call(osl_statement_dump(stderr, $$));
+    }
+  | 
+    {
+      CLAN_strdup(parser_record, scanner_latest_text);
+      parser_recording = CLAN_TRUE;
+    }
+    expression ';'
+    {
+      osl_statement_p statement;
+      osl_body_p body;
+      
+      CLAN_debug("rule expression_statement.2: expression ;");
+      statement = osl_statement_malloc();
+
+      // - 1. Domain
+      statement->domain = osl_relation_clone(parser_stack->elt);
+      osl_relation_set_type(statement->domain, OSL_TYPE_DOMAIN);
+      osl_relation_set_attributes(statement->domain, parser_depth, 0, 0,
+	                          CLAN_MAX_PARAMETERS);
+
+      // - 2. Scattering
+      statement->scattering = clan_relation_scattering(parser_scattering,
+	                                               parser_depth);
+
+      // - 3. Array accesses
+      statement->access = $2;
+
+      // - 4. Body.
+      body = osl_body_malloc();
+      body->iterators = clan_symbol_array_to_strings(parser_iterators, parser_depth);
+      body->expression = osl_strings_encapsulate(parser_record);
+      statement->body = osl_generic_malloc();
+      statement->body->interface = osl_body_interface();
+      statement->body->data = body;
+      parser_recording = CLAN_FALSE;
+      
+      parser_scattering[parser_depth]++;
+
+      $$ = statement;
+      CLAN_debug_call(osl_statement_dump(stderr, $$));
+    }
   ;
 
-*/
+
+// +--------------------------------------------------------------------------+
+// |                              ANSI C CASTING                              |
+// +--------------------------------------------------------------------------+
 
 
+constant_expression:
+    conditional_expression
+  ;
 
+declaration_specifiers:
+    storage_class_specifier
+  | storage_class_specifier declaration_specifiers
+  | type_specifier
+  | type_specifier declaration_specifiers
+  | type_qualifier
+  | type_qualifier declaration_specifiers
+  ;
+
+storage_class_specifier:
+    TYPEDEF
+  | EXTERN
+  | STATIC
+  | AUTO
+  | REGISTER
+  ;
+
+type_specifier:
+    VOID
+  | CHAR
+  | SHORT
+  | INT
+  | LONG
+  | FLOAT
+  | DOUBLE
+  | SIGNED
+  | UNSIGNED
+  | struct_or_union_specifier
+  | enum_specifier
+  | TYPE_NAME
+  ;
+
+struct_or_union_specifier:
+    struct_or_union ID '{' struct_declaration_list '}' { free($2); }
+  | struct_or_union '{' struct_declaration_list '}'
+  | struct_or_union ID { free($2); }
+  ;
+
+struct_or_union:
+    STRUCT
+  | UNION
+  ;
+
+struct_declaration_list:
+    struct_declaration
+  | struct_declaration_list struct_declaration
+  ;
+
+struct_declaration:
+    specifier_qualifier_list struct_declarator_list ';'
+  ;
+
+specifier_qualifier_list:
+    type_specifier specifier_qualifier_list
+  | type_specifier
+  | type_qualifier specifier_qualifier_list
+  | type_qualifier
+  ;
+
+struct_declarator_list:
+    struct_declarator
+  | struct_declarator_list ',' struct_declarator
+  ;
+
+struct_declarator:
+    declarator
+  | ':' constant_expression
+  | declarator ':' constant_expression
+  ;
+
+enum_specifier:
+    ENUM '{' enumerator_list '}'
+  | ENUM ID '{' enumerator_list '}' { free($2); }
+  | ENUM ID { free($2); }
+  ;
+
+enumerator_list:
+    enumerator
+  | enumerator_list ',' enumerator
+  ;
+
+enumerator:
+    ID { free($1); }
+  | ID '=' constant_expression { free($1); }
+  ;
+
+type_qualifier:
+    CONST
+  | VOLATILE
+  ;
+
+declarator:
+    pointer direct_declarator
+  | direct_declarator
+  ;
+
+direct_declarator:
+    ID { free($1); }
+  | '(' declarator ')'
+  | direct_declarator '[' constant_expression ']'
+  | direct_declarator '[' ']'
+  | direct_declarator '(' parameter_type_list ')'
+  | direct_declarator '(' identifier_list ')'
+  | direct_declarator '(' ')'
+  ;
+
+pointer:
+    '*'
+  | '*' type_qualifier_list
+  | '*' pointer
+  | '*' type_qualifier_list pointer
+  ;
+
+type_qualifier_list:
+    type_qualifier
+  | type_qualifier_list type_qualifier
+  ;
+
+
+parameter_type_list:
+    parameter_list
+  | parameter_list ',' ELLIPSIS
+  ;
+
+parameter_list:
+    parameter_declaration
+  | parameter_list ',' parameter_declaration
+  ;
+
+parameter_declaration:
+    declaration_specifiers declarator
+  | declaration_specifiers abstract_declarator
+  | declaration_specifiers
+  ;
+
+identifier_list:
+    ID { free($1); }
+  | identifier_list ',' ID { free($3); }
+  ;
+
+type_name:
+    specifier_qualifier_list
+  | specifier_qualifier_list abstract_declarator
+  ;
+
+abstract_declarator:
+    pointer
+  | direct_abstract_declarator
+  | pointer direct_abstract_declarator
+  ;
+
+direct_abstract_declarator:
+    '(' abstract_declarator ')'
+  | '[' ']'
+  | '[' constant_expression ']'
+  | direct_abstract_declarator '[' ']'
+  | direct_abstract_declarator '[' constant_expression ']'
+  | '(' ')'
+  | '(' parameter_type_list ')'
+  | direct_abstract_declarator '(' ')'
+  | direct_abstract_declarator '(' parameter_type_list ')'
+  ;
 
 %%
 
 
-void
-yyerror(char *s)
-{
-  fprintf(stderr, "%s\n", s);
+void yyerror(char *s) {
+  int i, line = 1;
+  char c = 'C';
+  FILE *file;
+  
+  fprintf(stderr, "[Clan] Error: %s at line %d, column %d.\n", s,
+          scanner_line, scanner_column - 1);
+  
+  // Print a message to show where is the problem.
+  if ((parser_options != NULL) && (parser_options->name != NULL)) {
+    file = fopen(parser_options->name, "r");
+    if (file != NULL) {
+      // Go to the right line.
+      while (line != scanner_line) {
+        c = fgetc(file);
+        if (c == '\n')
+          line++;
+      }
+
+      // Print the line.
+      while (c != EOF) {
+        c = fgetc(file);
+        fprintf(stderr, "%c", c);
+        if (c == '\n')
+          break;
+      }
+
+      // Print the situation line.
+      for (i = 0; i < scanner_column - 1; i++) {
+        if (i < scanner_column - 5)
+          fprintf(stderr, " ");
+        else if (i < scanner_column - 2)
+          fprintf(stderr, "~");
+        else
+          fprintf(stderr, "^\n");
+      }
+      fclose(file);
+    }
+    else {
+      CLAN_warning("cannot open input file");
+    }
+  }
+  
   clan_parse_error = 1;
 }
 
@@ -1607,27 +1287,25 @@ yyerror(char *s)
  * this function achieves the initialization of the "parser state": a
  * collection of variables that vary during the parsing and thanks to we
  * can extract all SCoP informations.
- **
- * - 02/05/2008: First version.
  */
-void
-clan_parser_initialize_state(clan_options_p options)
-{
+void clan_parser_initialize_state(clan_options_p options) {
   int i, nb_rows, nb_columns, depth;
 
-  nb_rows    = CLAN_MAX_CONSTRAINTS;
-  nb_columns = CLAN_MAX_DEPTH + CLAN_MAX_PARAMETERS + 2;
-  depth      = CLAN_MAX_DEPTH;
-
-  parser_scop       = osl_scop_malloc();
+  nb_rows           = CLAN_MAX_CONSTRAINTS;
+  nb_columns        = CLAN_MAX_DEPTH + CLAN_MAX_PARAMETERS + 2;
+  depth             = CLAN_MAX_DEPTH;
   parser_symbol     = NULL;
+  parser_scop       = NULL;
   parser_stack      = osl_relation_list_malloc();
   parser_stack->elt = osl_relation_pmalloc(CLAN_PRECISION, 0, nb_columns);
+  parser_depth      = 0;
+  parser_options    = options;
+  parser_record     = NULL;
 
-  parser_scattering = (int *)malloc(depth * sizeof(int));
+  CLAN_malloc(parser_scattering, int *, depth * sizeof(int));
   for (i = 0; i < depth; i++)
     parser_scattering[i] = 0;
-  parser_iterators = (clan_symbol_p *)malloc(depth * sizeof(clan_symbol_p));
+  CLAN_malloc(parser_iterators, clan_symbol_p *, depth * sizeof(clan_symbol_p));
 
 #if 0
   parser_variables_localvars =
@@ -1636,16 +1314,11 @@ clan_parser_initialize_state(clan_options_p options)
     (int*)malloc((CLAN_MAX_LOCAL_VARIABLES + 1) * sizeof(int));
 #endif
 
-  parser_depth = 0;
   /* Reset also the Symbol global variables. */
-  extern int symbol_nb_iterators;
-  symbol_nb_iterators = 0;
-  extern int symbol_nb_parameters;
+  symbol_nb_iterators  = 0;
   symbol_nb_parameters = 0;
-  extern int symbol_nb_arrays;
-  symbol_nb_arrays = 0;
-  extern int symbol_nb_functions;
-  symbol_nb_functions = 0;
+  symbol_nb_arrays     = 0;
+  symbol_nb_functions  = 0;
 
 #if 0
   for (i = 0; i <= CLAN_MAX_LOCAL_VARIABLES; ++i)
@@ -1653,22 +1326,14 @@ clan_parser_initialize_state(clan_options_p options)
   for (i = 0; i <= CLAN_MAX_LOCAL_VARIABLES; ++i)
     parser_variables_liveout[i] = -1;
 #endif
-
-  parser_options = options;
-  parser_scop->language = strdup("C");
-  parser_record = NULL;
 }
+
 
 /**
  * clan_parser_free_state function:
- * this function frees the memory allocated for the "parser state", except
- * for parser_scop, obviously.
- **
- * - 02/05/2008: First version.
+ * this function frees the memory allocated for the "parser state".
  */
-void
-clan_parser_free_state()
-{
+void clan_parser_free_state() {
   clan_symbol_free(parser_symbol);
   free(parser_scattering);
   free(parser_iterators);
@@ -1679,58 +1344,57 @@ clan_parser_free_state()
 #endif
 }
 
+
 /**
  * clan_parse function:
  * this function parses a file to extract a SCoP and returns, if successful,
  * a pointer to the osl_scop_t structure.
  * \param input   The file to parse (already open).
  * \param options Options for file parsing.
- **
- * - 01/05/2008: First version.
  */
-osl_scop_p
-clan_parse(FILE * input, clan_options_p options)
-{
+osl_scop_p clan_parse(FILE * input, clan_options_p options) {
   osl_generic_p arrays;
+  osl_scop_p scop;
   yyin = input;
 
   clan_parser_initialize_state(options);
 
   yyparse();
 
-  CLAN_debug("parsing successful");
+  CLAN_debug("parsing done");
 
   fclose(yyin);
   clan_scanner_free();
 
-  if (!clan_parse_error)
-    {
-      /*if (parser_variables_localvars[0] != -1 ||
-	  parser_variables_liveout[0] != -1)
-	clan_scop_fill_options(parser_scop, parser_variables_localvars,
-			       parser_variables_liveout);
-      */
-      clan_scop_compact(parser_scop);
-      CLAN_debug("compaction successful");
+  if (!clan_parse_error) {
+    /*if (parser_variables_localvars[0] != -1 ||
+      parser_variables_liveout[0] != -1)
+      clan_scop_fill_options(parser_scop, parser_variables_localvars,
+      parser_variables_liveout);
+    */
+    scop = parser_scop;
+    clan_scop_compact(scop);
+    CLAN_debug("compaction successful");
 
-      // Add extensions.
-      parser_scop->registry = osl_interface_get_default_registry();
-      clan_scop_generate_scatnames(parser_scop);
-      arrays = clan_symbol_to_arrays(parser_symbol);
-      osl_generic_add(&parser_scop->extension, arrays);
-      
-      // OpenScop wants an empty context rather than a NULL context.
-      if (parser_scop->context == NULL) {
-        parser_scop->context = osl_relation_pmalloc(CLAN_PRECISION, 0, 2);
-        parser_scop->context->type = OSL_TYPE_CONTEXT;
-        osl_relation_set_attributes(parser_scop->context, 0, 0, 0, 0);
-      }
+    // Add extensions.
+    scop->registry = osl_interface_get_default_registry();
+    clan_scop_generate_scatnames(scop);
+    arrays = clan_symbol_to_arrays(parser_symbol);
+    osl_generic_add(&scop->extension, arrays);
+
+    // OpenScop wants an empty context rather than a NULL context.
+    if (scop->context == NULL) {
+      scop->context = osl_relation_pmalloc(CLAN_PRECISION, 0, 2);
+      scop->context->type = OSL_TYPE_CONTEXT;
+      osl_relation_set_attributes(scop->context, 0, 0, 0, 0);
     }
-  else
-    parser_scop = NULL;
+  }
+  else {
+    scop = NULL;
+  }
   clan_parser_free_state();
   CLAN_debug("parser state successfully freed");
 
-  return parser_scop;
+  return scop;
 }
 

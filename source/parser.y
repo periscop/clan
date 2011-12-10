@@ -103,28 +103,30 @@
          osl_relation_list_p list;  /**< List of array accesses */
        }
 
+
+%token IDENTIFIER CONSTANT STRING_LITERAL SIZEOF
+%token PTR_OP INC_OP DEC_OP LEFT_OP RIGHT_OP LE_OP GE_OP EQ_OP NE_OP
+%token AND_OP OR_OP MUL_ASSIGN DIV_ASSIGN MOD_ASSIGN ADD_ASSIGN
+%token SUB_ASSIGN LEFT_ASSIGN RIGHT_ASSIGN AND_ASSIGN
+%token XOR_ASSIGN OR_ASSIGN
+
+%token TYPEDEF EXTERN STATIC AUTO REGISTER INLINE RESTRICT
+%token CHAR SHORT INT LONG SIGNED UNSIGNED FLOAT DOUBLE CONST VOLATILE VOID
+%token BOOL COMPLEX IMAGINARY
+%token STRUCT UNION ENUM ELLIPSIS
+
+%token CASE DEFAULT IF ELSE SWITCH WHILE DO FOR GOTO CONTINUE BREAK RETURN
+
 %token IGNORE
-%token IF ELSE FOR PRAGMALOCALVARS PRAGMALIVEOUT
+%token PRAGMALOCALVARS PRAGMALIVEOUT
 %token MIN MAX CEILD FLOORD
-%token REAL
 %token <symbol> ID
 %token <value>  INTEGER
 
-%token syRPARENTHESIS syLPARENTHESIS syRBRACKET syLBRACKET syRBRACE syLBRACE
-%token sySEMICOLON syCOMMA syPOINT syARROW
-
-%token opEQUAL opLEQ opGEQ opLOWER opGREATER opPLUS opMINUS
-%token opINCREMENTATION opDECREMENTATION opNOT
-%token opMULTIPLY opDIVIDE opMOD opAND opOR opCOMP
-%token opASSIGNMENT
-%token opPLUSEQUAL opMINUSEQUAL opMULTIPLYEQUAL opDIVIDEEQUAL
-%token opMODEQUAL opANDEQUAL opOREQUAL opCOMPEQUAL
-%token opLAND opLOR opQMARK opCOLON
-
-%left opPLUS opMINUS
-%left opMULTIPLY opDIVIDE opMOD opAND opOR opCOMP
-%left opEQUAL opLEQ opGEQ opLOWER opGREATER opLAND opCOLON opQMARK
-%left opNOT
+%left '+' '-'
+%left '*' '/' '%' '&' '|' '^'
+%left EQ_OP LE_OP GE_OP '<' '>' AND_OP ':' '?'
+%left '!'
 %left MAXPRIORITY /* Dummy token to help in removing shift/reduce conflicts */
 
 %type <setex>  condition
@@ -194,7 +196,7 @@ instruction_list:
   | instruction_list instruction
   | IGNORE
   | instruction_list IGNORE
-  | syRBRACE instruction_list syLBRACE
+  | '{' instruction_list '}'
   ;
 
 
@@ -209,7 +211,7 @@ bloc:
 /*
  * Rule 2: bloc -> { instruction_list }
  */
-  | syRBRACE instruction_list syLBRACE
+  | '{' instruction_list '}'
   ;
 
 
@@ -224,7 +226,7 @@ instruction:
  *
  */
     FOR
-    syRPARENTHESIS
+    '('
     id
       {
         clan_symbol_p symbol;
@@ -246,7 +248,7 @@ instruction:
         parser_iterators[parser_depth] = clan_symbol_clone_one(symbol);
 	/* Memorize the current iterator as a negative constraint prefix */
       }
-    opASSIGNMENT
+    '='
     max_affine_expression
       {
         osl_vector_p parser_i_term = clan_vector_term(parser_symbol,1,$3);
@@ -264,15 +266,15 @@ instruction:
         free($3);
 	osl_relation_free($6);
       }
-    sySEMICOLON
+    ';'
     condition
       {
 	osl_relation_insert_constraints(parser_stack->elt, $9, -1);
         osl_relation_free($9);
       }
-    sySEMICOLON
+    ';'
     incrementation
-    syLPARENTHESIS
+    ')'
       { 
         parser_depth++;
         parser_scattering[parser_depth] = 0;
@@ -288,7 +290,7 @@ instruction:
  * Rule 2: instruction -> if (condition) bloc
  *
  */
-  |  IF syRPARENTHESIS condition syLPARENTHESIS
+  |  IF '(' condition ')'
       {
 	/* Insert the condition constraint in the current parser domain. */
         osl_relation_list_dup(&parser_stack);
@@ -434,15 +436,15 @@ instruction:
  *
  */
 incrementation:
-    id opINCREMENTATION
+    id INC_OP
       {
         free($1);
       }
-  | opINCREMENTATION id
+  | INC_OP id
       {
         free($2);
       }
-  | id opASSIGNMENT id opPLUS INTEGER
+  | id '=' id '+' INTEGER
      {
        if ($5 != 1)
 	 {
@@ -452,7 +454,7 @@ incrementation:
        free ($1);
        free ($3);
      }
-  | id opPLUSEQUAL INTEGER
+  | id ADD_ASSIGN INTEGER
      {
        if ($3 != 1)
 	 {
@@ -483,8 +485,7 @@ min_affine_expression:
 /*
  * Rule 2: min_affine_expression -> MIN ( min_aff_expr , min_aff_expr )
  */
-  | MIN syRPARENTHESIS min_affine_expression syCOMMA min_affine_expression
-    syLPARENTHESIS
+  | MIN '(' min_affine_expression ',' min_affine_expression ')'
       {
         CLAN_debug("Yacc min_affine_expression.2: "
                    "MIN ( min_affine_expression , min_affine_expresssion");
@@ -513,8 +514,7 @@ max_affine_expression:
 /*
  * Rule 2: max_affine_expression -> MAX ( max_aff_expr , max_aff_expr )
  */
-  | MAX syRPARENTHESIS max_affine_expression syCOMMA max_affine_expression
-    syLPARENTHESIS
+  | MAX '(' max_affine_expression ',' max_affine_expression ')'
       {
         CLAN_debug("Yacc max_affine_expression.2: "
                    "MAX ( max_affine_expression , max_affine_expression");
@@ -542,7 +542,7 @@ affine_expression:
 /*
  * Rule 2: affine_expression -> <affex> + <affex>
  */
-  | affine_expression opPLUS affine_expression
+  | affine_expression '+' affine_expression
       {
         CLAN_debug("Yacc affine_expression.2: <affex> + <affex>");
         $$ = osl_vector_add($1,$3);
@@ -553,7 +553,7 @@ affine_expression:
 /*
  * Rule 3: affine_expression -> <affex> - <affex>
  */
-  | affine_expression opMINUS affine_expression
+  | affine_expression '-' affine_expression
       {
         CLAN_debug("Yacc affine_expression.3: <affex> - <affex>");
         $$ = osl_vector_sub($1,$3);
@@ -564,7 +564,7 @@ affine_expression:
 /*
  * Rule 4: affine_expression -> ( <affex> )
  */
-  | syRPARENTHESIS affine_expression syLPARENTHESIS
+  | '(' affine_expression ')'
       {
         CLAN_debug("Yacc affine_expression.4: ( <affex> )");
         $$ = $2;
@@ -573,7 +573,7 @@ affine_expression:
 /*
  * Rule 5: affine_expression -> CEILD ( <affex> , term )
  */
-  | CEILD syRPARENTHESIS affine_expression syCOMMA term syLPARENTHESIS
+  | CEILD '(' affine_expression ',' term ')'
       {
         CLAN_debug("Yacc affine_expression.5: ceild ( <affex> , term )");
 	osl_int_assign(CLAN_PRECISION, $3->v, 0, $5->v, $5->size - 1);
@@ -583,7 +583,7 @@ affine_expression:
 /*
  * Rule 6: affine_expression -> CEILD ( <affex> , term )
  */
-  | FLOORD syRPARENTHESIS affine_expression syCOMMA term syLPARENTHESIS
+  | FLOORD '(' affine_expression ',' term ')'
       {
         CLAN_debug("Yacc affine_expression.6: floord ( <affex> , term )");
 	osl_int_assign(CLAN_PRECISION, $3->v, 0, $5->v, $5->size - 1);
@@ -622,7 +622,7 @@ term:
 /*
  * Rule 3: term -> - INT
  */
-  | opMINUS INTEGER
+  | '-' INTEGER
       {
         CLAN_debug("Yacc term.3: - INT");
         $$ = clan_vector_term(parser_symbol, -($2), NULL);
@@ -631,7 +631,7 @@ term:
 /*
  * Rule 4: term -> INT * id
  */
-  | INTEGER opMULTIPLY id
+  | INTEGER '*' id
       {
         CLAN_debug("Yacc term.4: INT * id");
         clan_symbol_add(&parser_symbol, $3, CLAN_TYPE_UNKNOWN, parser_depth);
@@ -642,7 +642,7 @@ term:
 /*
  * Rule 4': term -> id * INT
  */
-  | id opMULTIPLY INTEGER
+  | id '*' INTEGER
       {
         CLAN_debug("Yacc term.4': id * INT");
         clan_symbol_add(&parser_symbol, $1, CLAN_TYPE_UNKNOWN, parser_depth);
@@ -653,7 +653,7 @@ term:
 /*
  * Rule 5: term -> INT * INT
  */
-  | INTEGER opMULTIPLY INTEGER
+  | INTEGER '*' INTEGER
       {
         CLAN_debug("Yacc term.5: INT * INT");
         $$ = clan_vector_term(parser_symbol, ($1) * ($3), NULL);
@@ -662,7 +662,7 @@ term:
 /*
  * Rule 6: term -> INT / INT
  */
-  | INTEGER opDIVIDE INTEGER
+  | INTEGER '/' INTEGER
       {
         CLAN_debug("Yacc term.6: INT / INT");
         $$ = clan_vector_term(parser_symbol, ($1) / ($3), NULL);
@@ -671,7 +671,7 @@ term:
 /*
  * Rule 7: term -> - INT * id
  */
-  | opMINUS INTEGER opMULTIPLY id
+  | '-' INTEGER '*' id
       {
         CLAN_debug("Yacc term.7: - INT * id");
         clan_symbol_add(&parser_symbol, $4, CLAN_TYPE_UNKNOWN, parser_depth);
@@ -682,7 +682,7 @@ term:
 /*
  * Rule 7': term -> - id * INT
  */
-  | opMINUS id opMULTIPLY INTEGER
+  | '-' id '*' INTEGER
       {
         CLAN_debug("Yacc term.7': - id * INT");
         clan_symbol_add(&parser_symbol, $2, CLAN_TYPE_UNKNOWN, parser_depth);
@@ -693,7 +693,7 @@ term:
 /*
  * Rule 8: term -> - id
  */
-  | opMINUS id
+  | '-' id
       {
         CLAN_debug("Yacc term.8: - id");
         clan_symbol_add(&parser_symbol, $2, CLAN_TYPE_UNKNOWN, parser_depth);
@@ -715,7 +715,7 @@ condition:
 /*
  * Rule 1: condition -> <affex> < min_affex
  */
-    affine_expression opLOWER min_affine_expression
+    affine_expression '<' min_affine_expression
       {
         /* a<b translates to -a+b-1>=0 */
 	int i;
@@ -754,7 +754,7 @@ condition:
 /*
  * Rule 2: condition -> <affex> > max_affex
  */
-  | affine_expression opGREATER max_affine_expression
+  | affine_expression '>' max_affine_expression
       {
         /* a>b translates to a-b-1>=0 */
 	int i, j;
@@ -795,7 +795,7 @@ condition:
 /*
  * Rule 3: condition -> <affex> <= min_affex
  */
-  | affine_expression opLEQ min_affine_expression
+  | affine_expression LE_OP min_affine_expression
       {
         /* a<=b translates to -a+b>=0 */
 	int i;
@@ -833,7 +833,7 @@ condition:
 /*
  * Rule 4: condition -> <affex> >= max_affex
  */
-  | affine_expression opGEQ max_affine_expression
+  | affine_expression GE_OP max_affine_expression
       {
         /* a>=b translates to a-b>=0 */
 	int i, j;
@@ -873,7 +873,7 @@ condition:
 /*
  * Rule 5: condition -> <affex> == <affex>
  */
-  | affine_expression opEQUAL affine_expression
+  | affine_expression EQ_OP affine_expression
       {
 	osl_vector_p res;
         
@@ -896,7 +896,7 @@ condition:
 /*
  * Rule 6: condition -> ( condition )
  */
-  | syRPARENTHESIS condition syLPARENTHESIS
+  | '(' condition ')'
       {
         CLAN_debug("Yacc condition.6: ( condition )");
 	$$ = $2;
@@ -905,7 +905,7 @@ condition:
 /*
  * Rule 7: condition -> condition && condition
  */
-  | condition opLAND condition
+  | condition AND_OP condition
      {
        CLAN_debug("Yacc condition.7: condition && condition");
        $$ = osl_relation_concat_constraints($1, $3);
@@ -921,14 +921,14 @@ condition:
  *
  */
 reduction_operator:
-    opPLUSEQUAL
-  | opMINUSEQUAL
-  | opMULTIPLYEQUAL
-  | opDIVIDEEQUAL
-  | opMODEQUAL
-  | opANDEQUAL
-  | opOREQUAL
-  | opCOMPEQUAL
+    ADD_ASSIGN
+  | SUB_ASSIGN
+  | MUL_ASSIGN
+  | DIV_ASSIGN
+  | MOD_ASSIGN
+  | AND_ASSIGN
+  | OR_ASSIGN
+  | XOR_ASSIGN
   ;
 
 
@@ -937,8 +937,8 @@ reduction_operator:
  *
  */
 unary_operator:
-    opINCREMENTATION
-  | opDECREMENTATION
+    INC_OP
+  | DEC_OP
   ;
 
 
@@ -948,7 +948,7 @@ unary_operator:
  *
  */
 function_call:
-  id syRPARENTHESIS expression_list syLPARENTHESIS
+  id '(' expression_list ')'
     {
       CLAN_debug("Yacc function_call.1: id_function ( expression_list )");
       $$ = $3;
@@ -966,7 +966,7 @@ assignment:
 /*
  * Rule 1: assignment -> var = expression;
  */
-    variable opASSIGNMENT expression sySEMICOLON
+    variable '=' expression ';'
       {
         CLAN_debug("Yacc assignment.1: var = expression");
         if ($1 == NULL)
@@ -984,9 +984,9 @@ assignment:
 /*
  * Rule 2: assignment -> var red_op expression;
  */
-  | variable reduction_operator expression sySEMICOLON
+  | variable reduction_operator expression ';'
       {
-        CLAN_debug("Yacc assignment.2: var red_op expression");
+        CLAN_debug("Yacc assignment.2: var red_op expression ;");
 	if ($1 == NULL)
 	  {
 	    yyerror ("[Clan] Error: changing value of iterator/parameter");
@@ -1002,9 +1002,9 @@ assignment:
 /*
  * Rule 3: assignment -> var un_op;
  */
-  | variable unary_operator sySEMICOLON
+  | variable unary_operator ';'
       {
-        CLAN_debug("Yacc assignment.3: var un_op");
+        CLAN_debug("Yacc assignment.3: var un_op ;");
 	if ($1 == NULL)
 	  {
 	    yyerror ("[Clan] Error: changing value of iterator/parameter");
@@ -1020,9 +1020,9 @@ assignment:
 /*
  * Rule 4: assignment -> un_op var;
  */
-  | unary_operator variable sySEMICOLON
+  | unary_operator variable ';'
       {
-        CLAN_debug("Yacc assignment.4: un_op var");
+        CLAN_debug("Yacc assignment.4: un_op var ;");
 	if ($2 == NULL)
 	  {
 	    yyerror ("[Clan] Error: changing value of iterator/parameter");
@@ -1038,9 +1038,9 @@ assignment:
 /*
  * Rule 5: assignment -> var;
  */
-  | variable sySEMICOLON
+  | variable ';'
       {
-        CLAN_debug("Yacc assignment.5: var");
+        CLAN_debug("Yacc assignment.5: var ;");
         osl_relation_set_type($1, OSL_TYPE_READ);
         $$ = osl_relation_list_node($1);
         osl_relation_free($1);
@@ -1049,7 +1049,7 @@ assignment:
 /*
  * Rule 6: assignment -> { assignment }
  */
-  | syRBRACE assignment syLBRACE
+  | '{' assignment '}'
       {
         CLAN_debug("Yacc assignment.6: { assignment }");
         $$ = $2;
@@ -1058,9 +1058,9 @@ assignment:
 /*
  * Rule 7: assignment -> function_call;
  */
-  | function_call sySEMICOLON
+  | function_call ';'
       {
-        CLAN_debug("Yacc assignment.7: function_call");
+        CLAN_debug("Yacc assignment.7: function_call ;");
         osl_relation_list_set_type($1, OSL_TYPE_READ);
         $$ = $1;
         CLAN_debug_call(osl_relation_list_dump(stderr, $$));
@@ -1073,19 +1073,19 @@ assignment:
  *
  */
 binary_operator:
-    opPLUS
-  | opMINUS
-  | opMULTIPLY
-  | opDIVIDE
-  | opMOD
-  | opGEQ
-  | opGREATER
-  | opLEQ
-  | opLOWER
-  | opEQUAL
-  | opAND
-  | opOR
-  | opCOMP
+    '+'
+  | '-'
+  | '*'
+  | '/'
+  | '%'
+  | GE_OP
+  | '>'
+  | LE_OP
+  | '<'
+  | EQ_OP
+  | '&'
+  | '|'
+  | '^'
   ;
 
 /*
@@ -1106,7 +1106,7 @@ expression:
 /*
  * Rule 2: expression -> - number
  */
-  | opMINUS NUMBER
+  | '-' NUMBER
       {
         CLAN_debug("Yacc expression.2: - number");
         $$ = NULL;
@@ -1136,7 +1136,7 @@ expression:
 /*
  * Rule 5: expression -> ! expression
  */
-  | opNOT expression
+  | '!' expression
       {
         CLAN_debug("Yacc expression.5: ! expression");
         $$ = $2;
@@ -1145,7 +1145,7 @@ expression:
 /*
  * Rule 6: expression -> ( expression )
  */
-  | syRPARENTHESIS expression syLPARENTHESIS
+  | '(' expression ')'
       {
         CLAN_debug("Yacc expression.6: ( expression )");
 	$$ = $2;
@@ -1154,7 +1154,7 @@ expression:
 /*
  * Rule 7: expression -> expression : expression ? expression
  */
-  | expression opQMARK expression opCOLON expression
+  | expression '?' expression ':' expression
       {
         CLAN_debug("Yacc expression.7: expression : expression ? expression");
 	$$ = $1;
@@ -1192,7 +1192,7 @@ expression_list:
 /*
  * Rule 2: expression_list -> expression , expression_list
  */
-  | expression_list syCOMMA expression 
+  | expression_list ',' expression 
      {
        CLAN_debug("Yacc expression_list.2: expression , expression_list");
        $$ = $1;
@@ -1203,6 +1203,9 @@ expression_list:
 /*
  * Rule 3: expression_list -> NULL
  */
+    {
+      $$ = NULL;
+    }
   ;
 
 
@@ -1271,7 +1274,7 @@ variable:
 /*
  * Rule 3: variable -> - variable
  */
-   | opMINUS variable
+   | '-' variable
       {
         CLAN_debug("Yacc variable.3: - variable");
 	$$ = $2;
@@ -1280,7 +1283,7 @@ variable:
 /*
  * Rule 4: variable -> + variable
  */
-   | opPLUS variable
+   | '+' variable
       {
         CLAN_debug("Yacc variable.4: + variable");
 	$$ = $2;
@@ -1295,11 +1298,11 @@ variable:
  */
 arithmetic_expression:
     NUMBER
-  | arithmetic_expression opMINUS arithmetic_expression
-  | arithmetic_expression opPLUS arithmetic_expression
-  | arithmetic_expression opMULTIPLY arithmetic_expression
-  | arithmetic_expression opDIVIDE arithmetic_expression
-  | syRPARENTHESIS arithmetic_expression syLPARENTHESIS
+  | arithmetic_expression '-' arithmetic_expression
+  | arithmetic_expression '+' arithmetic_expression
+  | arithmetic_expression '*' arithmetic_expression
+  | arithmetic_expression '/' arithmetic_expression
+  | '(' arithmetic_expression ')'
   ;
 
 
@@ -1320,7 +1323,7 @@ variable_list:
 /*
  * Rule 2: variable_list -> variable_list , variable
  */
-  | variable_list syCOMMA variable
+  | variable_list ',' variable
       {
         osl_relation_list_p temp = osl_relation_list_node($3);
 	$$ = osl_relation_list_concat($1,temp);
@@ -1331,7 +1334,7 @@ variable_list:
 /*
  * Rule 3: variable_list -> variable_list , arithmetic_expression
  */
-  | variable_list syCOMMA arithmetic_expression
+  | variable_list ',' arithmetic_expression
       {
 	$$ = $1;
       }
@@ -1361,7 +1364,7 @@ array_index:
 /*
  * Rule 1: array_index -> [ <affex> ]
  */
-    syRBRACKET affine_expression syLBRACKET
+    '[' affine_expression ']'
       {
         CLAN_debug("Yacc array_index.1: [ <affex> ]");
         $$ = osl_relation_from_vector($2);
@@ -1371,7 +1374,7 @@ array_index:
 /*
  * Rule 2: array_index -> array_index [ <affex> ]
  */
-  | array_index syRBRACKET affine_expression syLBRACKET
+  | array_index '[' affine_expression ']'
       {
         CLAN_debug("Yacc array_index.2: array_index [ <affex> ]");
 	if ($1 != NULL)
@@ -1403,7 +1406,7 @@ id:
 /*
  * Rule 2: id -> ( ID )
  */
-  | syRPARENTHESIS ID syLPARENTHESIS
+  | '(' ID ')'
      {
        CLAN_debug("Yacc id.2: ( ID )");
        $$ = $2;
@@ -1412,7 +1415,7 @@ id:
 /*
  * Rule 3: id -> & ID
  */
-  | opAND ID
+  | '&' ID
      {
        CLAN_debug("Yacc id.3: & ID");
        $$ = $2;
@@ -1433,8 +1436,160 @@ math_func_list: MIN | MAX | CEILD | FLOORD;
 
 NUMBER:
     INTEGER
-  | REAL
+  | CONSTANT
   ;
+
+
+/*---------------------------------------------------------------------------+
+ |                            ANSI C STATEMENTS                              |
+ +---------------------------------------------------------------------------*/
+
+/*
+
+primary_expression
+  : IDENTIFIER
+  | CONSTANT
+  | STRING_LITERAL
+  | '(' expression ')'
+  ;
+
+postfix_expression
+  : primary_expression
+  | postfix_expression '[' expression ']'
+  | postfix_expression '(' ')'
+  | postfix_expression '(' argument_expression_list ')'
+  | postfix_expression '.' IDENTIFIER
+  | postfix_expression PTR_OP IDENTIFIER
+  | postfix_expression INC_OP
+  | postfix_expression DEC_OP
+  | '(' type_name ')' '{' initializer_list '}'
+  | '(' type_name ')' '{' initializer_list ',' '}'
+  ;
+
+argument_expression_list
+  : assignment_expression
+  | argument_expression_list ',' assignment_expression
+  ;
+
+unary_expression
+  : postfix_expression
+  | INC_OP unary_expression
+  | DEC_OP unary_expression
+  | unary_operator cast_expression
+  | SIZEOF unary_expression
+  | SIZEOF '(' type_name ')'
+  ;
+
+unary_operator
+  : '&'
+  | '*'
+  | '+'
+  | '-'
+  | '~'
+  | '!'
+  ;
+
+cast_expression
+  : unary_expression
+  | '(' type_name ')' cast_expression
+  ;
+
+multiplicative_expression
+  : cast_expression
+  | multiplicative_expression '*' cast_expression
+  | multiplicative_expression '/' cast_expression
+  | multiplicative_expression '%' cast_expression
+  ;
+
+additive_expression
+  : multiplicative_expression
+  | additive_expression '+' multiplicative_expression
+  | additive_expression '-' multiplicative_expression
+  ;
+
+shift_expression
+  : additive_expression
+  | shift_expression LEFT_OP additive_expression
+  | shift_expression RIGHT_OP additive_expression
+  ;
+
+relational_expression
+  : shift_expression
+  | relational_expression '<' shift_expression
+  | relational_expression '>' shift_expression
+  | relational_expression LE_OP shift_expression
+  | relational_expression GE_OP shift_expression
+  ;
+
+equality_expression
+  : relational_expression
+  | equality_expression EQ_OP relational_expression
+  | equality_expression NE_OP relational_expression
+  ;
+
+and_expression
+  : equality_expression
+  | and_expression '&' equality_expression
+  ;
+
+exclusive_or_expression
+  : and_expression
+  | exclusive_or_expression '^' and_expression
+  ;
+
+inclusive_or_expression
+  : exclusive_or_expression
+  | inclusive_or_expression '|' exclusive_or_expression
+  ;
+
+logical_and_expression
+  : inclusive_or_expression
+  | logical_and_expression AND_OP inclusive_or_expression
+  ;
+
+logical_or_expression
+  : logical_and_expression
+  | logical_or_expression OR_OP logical_and_expression
+  ;
+
+conditional_expression
+  : logical_or_expression
+  | logical_or_expression '?' expression ':' conditional_expression
+  ;
+
+assignment_expression
+  : conditional_expression
+  | unary_expression assignment_operator assignment_expression
+  ;
+
+assignment_operator
+  : '='
+  | MUL_ASSIGN
+  | DIV_ASSIGN
+  | MOD_ASSIGN
+  | ADD_ASSIGN
+  | SUB_ASSIGN
+  | LEFT_ASSIGN
+  | RIGHT_ASSIGN
+  | AND_ASSIGN
+  | XOR_ASSIGN
+  | OR_ASSIGN
+  ;
+
+expression
+  : assignment_expression
+  | expression ',' assignment_expression
+  ;
+
+expression_statement
+  : ';'
+  | expression ';'
+  ;
+
+*/
+
+
+
 
 %%
 

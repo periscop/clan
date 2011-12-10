@@ -113,7 +113,7 @@ WRITE
 # List of original iterators
 fakeiter
 # Statement body expression
-b=120.7234234d;
+b=120.7234234E1;
 </body>
 
 # =============================================== Statement 3

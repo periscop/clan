@@ -24,7 +24,7 @@
  * This software is distributed in the hope that it will be useful, but       *
  * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY *
  * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License   *
- * for more details.							      *
+ * for more details.      *
  *                                                                            *
  * You should have received a copy of the GNU Lesser General Public License   *
  * along with software; if not, write to the Free Software Foundation, Inc.,  *
@@ -34,6 +34,15 @@
  * Written by Cedric Bastoul, Cedric.Bastoul@u-psud.fr                        *
  *                                                                            *
  ******************************************************************************/
+
+
+D                      [0-9]
+L                      [a-zA-Z_]
+H                      [a-fA-F0-9]
+E                      [Ee][+-]?{D}+
+P                      [Pp][+-]?{D}+
+FS                     (f|F|l|L)
+IS                     ((u|U)|(u|U)?(l|L|ll|LL)|(l|L|ll|LL)(u|U))
 
 
 %{
@@ -48,7 +57,7 @@
    #include <clan/symbol.h>
 
    void yyerror(char *);
-   int  clan_scanner(int, char *, char *);
+   int  clan_scanner(int, char *);
 
    extern int           parser_recording; /**< Do we record what we read ? */
    extern char *        parser_record;    /**< What we record */
@@ -81,82 +90,137 @@
                          BEGIN FULLCOMMENT; /* Enter FULLCOMMENT mode */
                          scanner_comment ++;
                        }
+
+"auto"                 { return clan_scanner(AUTO, "auto"); }
+"_Bool"                { return clan_scanner(BOOL, "_Bool"); }
+"break"                { return clan_scanner(BREAK, "break"); }
+"case"                 { return clan_scanner(CASE, "case"); }
+"char"                 { return clan_scanner(CHAR, "char"); }
+"_Complex"             { return clan_scanner(COMPLEX, "_Complex"); }
+"const"                { return clan_scanner(CONST, "const"); }
+"continue"             { return clan_scanner(CONTINUE, "continue"); }
+"default"              { return clan_scanner(DEFAULT, "default"); }
+"do"                   { return clan_scanner(DO, "do"); }
+"double"               { return clan_scanner(DOUBLE, "double"); }
+"else"                 { return clan_scanner(ELSE, "else"); }
+"enum"                 { return clan_scanner(ENUM, "enum"); }
+"extern"               { return clan_scanner(EXTERN, "extern"); }
+"float"                { return clan_scanner(FLOAT, "float"); }
+"for"                  { return clan_scanner(FOR, "for"); }
+"goto"                 { return clan_scanner(GOTO, "goto"); }
+"if"                   { return clan_scanner(IF, "if"); }
+"_Imaginary"           { return clan_scanner(IMAGINARY, "_Imaginary"); }
+"inline"               { return clan_scanner(INLINE, "inline"); }
+"int"                  { return clan_scanner(INT, "int"); }
+"long"                 { return clan_scanner(LONG, "long"); }
+"register"             { return clan_scanner(REGISTER, "register"); }
+"restrict"             { return clan_scanner(RESTRICT, "restrict"); }
+"return"               { return clan_scanner(RETURN, "return"); }
+"short"                { return clan_scanner(SHORT, "short"); }
+"signed"               { return clan_scanner(SIGNED, "signed"); }
+"sizeof"               { return clan_scanner(SIZEOF, "sizeof"); }
+"static"               { return clan_scanner(STATIC, "static"); }
+"struct"               { return clan_scanner(STRUCT, "struct"); }
+"switch"               { return clan_scanner(SWITCH, "switch"); }
+"typedef"              { return clan_scanner(TYPEDEF, "typedef"); }
+"union"                { return clan_scanner(UNION, "union"); }
+"unsigned"             { return clan_scanner(UNSIGNED, "unsigned"); }
+"void"                 { return clan_scanner(VOID, "void"); }
+"volatile"             { return clan_scanner(VOLATILE, "volatile"); }
+"while"                { return clan_scanner(WHILE, "while"); }
+"min"                  { return clan_scanner(MIN, "min"); }
+"max"                  { return clan_scanner(MAX, "max"); }
+"ceild"                { return clan_scanner(CEILD, "ceild"); }
+"floord"               { return clan_scanner(FLOORD, "floord"); }
+
 "#pragma"[ ]+"scop"    { scanner_parsing = CLAN_TRUE;  /* Start parsing */ }
 "#pragma"[ ]+"endscop" { scanner_parsing = CLAN_FALSE; /* Stop  parsing */ }
-"#pragma"[ ]+"local-vars" { return clan_scanner(PRAGMALOCALVARS, yytext,"PRAGMALOCALVARS");   }
-"#pragma"[ ]+"live-out" { return clan_scanner(PRAGMALIVEOUT, yytext,"PRAGMALIVEOUT");   }
-"if"                   { return clan_scanner(IF,       yytext,"IF");   }
-"else"                 { return clan_scanner(ELSE,     yytext,"ELSE"); }
-"for"                  { return clan_scanner(FOR,      yytext,"FOR");  }
-"min"                  { return clan_scanner(MIN,      yytext,"min");  }
-"max"                  { return clan_scanner(MAX,      yytext,"max");  }
-"ceild"                { return clan_scanner(CEILD,  yytext,"ceild");  }
-"floord"               { return clan_scanner(FLOORD, yytext,"floord");  }
+"#pragma"[ ]+"local-vars" { return clan_scanner(PRAGMALOCALVARS, "PRAGMALOCALVARS"); }
+"#pragma"[ ]+"live-out" { return clan_scanner(PRAGMALIVEOUT, "PRAGMALIVEOUT"); }
 
 [_A-Za-z]"."[A-Za-z0-9_]* |
 [_A-Za-z]"->"[A-Za-z0-9_]* |
 [_A-Za-z][A-Za-z0-9_]* {
                          if (scanner_parsing == CLAN_TRUE) { 
                            char * word;
-                           word = (char *)malloc((strlen(yytext)+1)*sizeof(char));
-			   strcpy(word,yytext);
-			   yylval.symbol = word;
+                           CLAN_malloc(word, char *,
+                                       (strlen(yytext) + 1) * sizeof(char));
+                           strcpy(word, yytext);
+                           yylval.symbol = word;
                          }
-			 return clan_scanner(ID,yytext,"ID");
+                         return clan_scanner(ID, "ID");
                        }
-[0-9]+"."[0-9]*[d,f]*  { return clan_scanner(REAL,yytext,"REAL"); }
 [0-9]+                 {
-		         yylval.value = atoi(yytext) ;
-                         return clan_scanner(INTEGER,yytext,"INTEGER");
-		       }
+                         yylval.value = atoi(yytext) ;
+                         return clan_scanner(INTEGER, "INTEGER");
+                       }
+0[xX]{H}+{IS}?         { return clan_scanner(CONSTANT, "CONSTANT_0"); }
+0{D}+{IS}?             { return clan_scanner(CONSTANT, "CONSTANT_1"); }
+{D}+{IS}?              { return clan_scanner(CONSTANT, "CONSTANT_2"); }
+L?'(\\.|[^\\'\n])+'    { return clan_scanner(CONSTANT, "CONSTANT_3"); }
+{D}+{E}{FS}?           { return clan_scanner(CONSTANT, "CONSTANT_4"); }
+{D}*"."{D}+({E})?{FS}? { return clan_scanner(CONSTANT, "CONSTANT_5"); }
+{D}+"."{D}*({E})?{FS}? { return clan_scanner(CONSTANT, "CONSTANT_6"); }
+0[xX]{H}+{P}{FS}?      { return clan_scanner(CONSTANT, "CONSTANT_7"); }
+0[xX]{H}*"."{H}+({P})?{FS}? { return clan_scanner(CONSTANT, "CONSTANT_8"); }
+0[xX]{H}+"."{H}*({P})?{FS}? { return clan_scanner(CONSTANT, "CONSTANT_9"); }
 
-"("                    { return clan_scanner(syRPARENTHESIS,   yytext,"(");  }
-")"                    { return clan_scanner(syLPARENTHESIS,   yytext,")");  }
-"["                    { return clan_scanner(syRBRACKET,       yytext,"[");  }
-"]"                    { return clan_scanner(syLBRACKET,       yytext,"]");  }
-"{"                    { return clan_scanner(syRBRACE,         yytext,"{");  }
-"}"                    { return clan_scanner(syLBRACE,         yytext,"}");  }
-","                    { return clan_scanner(syCOMMA,          yytext,",");  }
-";"                    { return clan_scanner(sySEMICOLON,      yytext,";");  }
-"."                    { return clan_scanner(syPOINT,          yytext,".");  }
-"->"                   { return clan_scanner(syARROW,          yytext,"->"); }
-":"                    { return clan_scanner(opCOLON,          yytext,":");  }
-"!"                    { return clan_scanner(opNOT,            yytext,"!");  }
-"?"                    { return clan_scanner(opQMARK,          yytext,"?");  }
-"++"                   { return clan_scanner(opINCREMENTATION, yytext,"++"); }
-"--"                   { return clan_scanner(opDECREMENTATION, yytext,"--"); }
-"+="                   { return clan_scanner(opPLUSEQUAL,      yytext,"+="); }
-"-="                   { return clan_scanner(opMINUSEQUAL,     yytext,"-="); }
-"*="                   { return clan_scanner(opMULTIPLYEQUAL,  yytext,"*="); }
-"/="                   { return clan_scanner(opDIVIDEEQUAL,    yytext,"/="); }
-"|="                   { return clan_scanner(opOREQUAL,        yytext,"|="); }
-"^="                   { return clan_scanner(opCOMPEQUAL,      yytext,"^="); }
-"&="                   { return clan_scanner(opANDEQUAL,       yytext,"&="); }
-"%="                   { return clan_scanner(opMODEQUAL,       yytext,"%="); }
-"=="                   { return clan_scanner(opEQUAL,          yytext,"=="); }
-"<="                   { return clan_scanner(opLEQ,            yytext,"<="); }
-">="                   { return clan_scanner(opGEQ,            yytext,">="); }
-"<"                    { return clan_scanner(opLOWER,          yytext,"<");  }
-">"                    { return clan_scanner(opGREATER,        yytext,">");  }
-"+"                    { return clan_scanner(opPLUS,           yytext,"+");  }
-"-"                    { return clan_scanner(opMINUS,          yytext,"-");  }
-"*"                    { return clan_scanner(opMULTIPLY,       yytext,"*");  }
-"/"                    { return clan_scanner(opDIVIDE,         yytext,"/");  }
-"%"                    { return clan_scanner(opMOD,            yytext,"%");  }
-"&"                    { return clan_scanner(opAND,            yytext,"&");  }
-"&&"                   { return clan_scanner(opLAND,           yytext,"&&"); }
-"|"                    { return clan_scanner(opOR,             yytext,"|");  }
-"||"                   { return clan_scanner(opLOR,            yytext,"||"); }
-"^"                    { return clan_scanner(opCOMP,           yytext,"^");  }
-"="                    { return clan_scanner(opASSIGNMENT,     yytext,"=");  }
 
-.                      { if (scanner_parsing == CLAN_TRUE)
-                         {
-			    //if (CLAN_DEBUG)
-			    //   printf("Lex: Unknown character (%s)\n",yytext);
-			   //yyerror("Lex: Unknown character");
+L?\"(\\.|[^\\"\n])*\"  { return clan_scanner(STRING_LITERAL, "STRING"); }
+
+
+"..."                  { return clan_scanner(ELLIPSIS, "..."); }
+">>="                  { return clan_scanner(RIGHT_ASSIGN, ">>="); }
+"<<="                  { return clan_scanner(LEFT_ASSIGN, "<<="); }
+"+="                   { return clan_scanner(ADD_ASSIGN, "+="); }
+"-="                   { return clan_scanner(SUB_ASSIGN, "-="); }
+"*="                   { return clan_scanner(MUL_ASSIGN, "*="); }
+"/="                   { return clan_scanner(DIV_ASSIGN, "/="); }
+"%="                   { return clan_scanner(MOD_ASSIGN, "%="); }
+"&="                   { return clan_scanner(AND_ASSIGN, "&="); }
+"^="                   { return clan_scanner(XOR_ASSIGN, "^="); }
+"|="                   { return clan_scanner(OR_ASSIGN, "|="); }
+">>"                   { return clan_scanner(RIGHT_OP, ">>"); }
+"<<"                   { return clan_scanner(LEFT_OP, "<<"); }
+"++"                   { return clan_scanner(INC_OP, "++"); }
+"--"                   { return clan_scanner(DEC_OP, "--"); }
+"->"                   { return clan_scanner(PTR_OP, "->"); }
+"&&"                   { return clan_scanner(AND_OP, "&&"); }
+"||"                   { return clan_scanner(OR_OP, "||"); }
+"<="                   { return clan_scanner(LE_OP, "<="); }
+">="                   { return clan_scanner(GE_OP, ">="); }
+"=="                   { return clan_scanner(EQ_OP, "=="); }
+"!="                   { return clan_scanner(NE_OP, "!="); }
+";"                    { return clan_scanner(';', ";"); }
+("{"|"<%")             { return clan_scanner('{', "{"); }
+("}"|"%>")             { return clan_scanner('}', "}"); }
+","                    { return clan_scanner(',', ","); }
+":"                    { return clan_scanner(':', ":"); }
+"="                    { return clan_scanner('=', "="); }
+"("                    { return clan_scanner('(', "("); }
+")"                    { return clan_scanner(')', ")"); }
+("["|"<:")             { return clan_scanner('[', "["); }
+("]"|":>")             { return clan_scanner(']', "]"); }
+"."                    { return clan_scanner('.', "."); }
+"&"                    { return clan_scanner('&', "&"); }
+"!"                    { return clan_scanner('!', "!"); }
+"~"                    { return clan_scanner('~', "~"); }
+"-"                    { return clan_scanner('-', "-"); }
+"+"                    { return clan_scanner('+', "+"); }
+"*"                    { return clan_scanner('*', "*"); }
+"/"                    { return clan_scanner('/', "/"); }
+"%"                    { return clan_scanner('%', "%"); }
+"<"                    { return clan_scanner('<', "<"); }
+">"                    { return clan_scanner('>', ">"); }
+"^"                    { return clan_scanner('^', "^"); }
+"|"                    { return clan_scanner('|', "|"); }
+"?"                    { return clan_scanner('?', "?"); }
+.                      { 
+                         if (scanner_parsing == CLAN_TRUE) {
+                           CLAN_warning("unmatched characters by Lex");
+                           yyerror("Lex: Unknown character");
                          }
-		       }
+                       }
 
 %%
 
@@ -186,23 +250,19 @@ void clan_scanner_free() {
  * scanner_latest_text with the string that have been read and returns the
  * token if we are scanning a SCoP or the special token IGNORE otherwise.
  * \param token   The token code to send to Yacc for the Lex item.
- * \param text    The textual Lex item.
  * \param message A string to be printed for debugging.
- **
- * - 30/04/2008: first version.
  */
-
-int clan_scanner(int token, char * text, char * message)
+int clan_scanner(int token, char * message)
 {
   if (CLAN_DEBUG)
-    fprintf(stderr, "[Clan] Info: Lex yytext = %s (%s)\n",message, text);
+    fprintf(stderr, "[Clan] Info: Lex yytext = %s (%s)\n",message, yytext);
 
   free(scanner_latest_text);
-  scanner_latest_text = strdup(text);
+  scanner_latest_text = strdup(yytext);
   if (parser_recording) {
     CLAN_realloc(parser_record, char *,
-                 (strlen(parser_record) + strlen(text) + 1) * sizeof(char));
-    strcat(parser_record, text);
+                 (strlen(parser_record) + strlen(yytext) + 1) * sizeof(char));
+    strcat(parser_record, yytext);
   }
 
   if (scanner_parsing == CLAN_TRUE)

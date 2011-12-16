@@ -2,7 +2,7 @@
    /*+------- <| --------------------------------------------------------**
     **         A                     Clan                                **
     **---     /.\   -----------------------------------------------------**
-    **   <|  [""M#                 relation.h                              **
+    **   <|  [""M#                 relation.h                            **
     **-   A   | #   -----------------------------------------------------**
     **   /.\ [""M#         First version: 30/04/2008                     **
     **- [""M# | #  U"U#U  -----------------------------------------------**
@@ -56,6 +56,10 @@ void           clan_relation_new_output_vector(osl_relation_p, osl_vector_p);
 void           clan_relation_new_output_scalar(osl_relation_p, int);
 void           clan_relation_compact(osl_relation_p, int, int);
 osl_relation_p clan_relation_greater(osl_relation_p, osl_relation_p, int);
+osl_relation_p clan_relation_negative_relation(osl_relation_p source);
+osl_relation_p clan_relation_not(osl_relation_p);
+void           clan_relation_and(osl_relation_p, osl_relation_p);
+osl_relation_p clan_relation_inverse_unions(osl_relation_p src);
 
 # if defined(__cplusplus)
   }

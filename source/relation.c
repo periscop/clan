@@ -234,45 +234,45 @@ void clan_relation_compact(osl_relation_p relation, int nb_iterators,
   int i, j, nb_columns, nb_output_dims, nb_input_dims;
   osl_relation_p compacted;
 
-  if (relation == NULL)
-    return;
+  while (relation != NULL) {
+    nb_output_dims = relation->nb_output_dims;
+    nb_input_dims  = relation->nb_input_dims;
 
-  nb_output_dims = relation->nb_output_dims;
-  nb_input_dims  = relation->nb_input_dims;
+    nb_columns = nb_output_dims + nb_input_dims + nb_parameters + 2;
+    compacted = osl_relation_pmalloc(CLAN_PRECISION,
+        relation->nb_rows, nb_columns);
 
-  nb_columns = nb_output_dims + nb_input_dims + nb_parameters + 2;
-  compacted = osl_relation_pmalloc(CLAN_PRECISION,
-                                   relation->nb_rows, nb_columns);
+    for (i = 0; i < relation->nb_rows; i++) {
+      // We copy the equality/inequality tag, the output and the input
+      // coefficients.
+      for (j = 0; j <= nb_output_dims + nb_input_dims; j++)
+        osl_int_assign(CLAN_PRECISION, compacted->m[i], j, relation->m[i], j);
 
-  for (i = 0; i < relation->nb_rows; i++) {
-    /* We copy the equality/inequality tag, the output and the input
-     * coefficients
-     */
-    for (j = 0; j <= nb_output_dims + nb_input_dims; j++)
-      osl_int_assign(CLAN_PRECISION, compacted->m[i], j, relation->m[i], j);
+      // Then we copy the parameter coefficients.
+      for (j = 0; j < nb_parameters; j++)
+        osl_int_assign(CLAN_PRECISION,
+            compacted->m[i], j + nb_output_dims + nb_input_dims + 1,
+            relation->m[i], relation->nb_columns - CLAN_MAX_PARAMETERS -1 +j);
 
-    /* Then we copy the parameter coefficients */
-    for (j = 0; j < nb_parameters; j++)
+      // Lastly the scalar coefficient.
       osl_int_assign(CLAN_PRECISION,
-          compacted->m[i], j + nb_output_dims + nb_input_dims + 1,
-          relation->m[i], relation->nb_columns - CLAN_MAX_PARAMETERS -1 +j);
+          compacted->m[i], nb_columns - 1,
+          relation->m[i], relation->nb_columns - 1);
+    }
 
-    /* Lastly the scalar coefficient */
-    osl_int_assign(CLAN_PRECISION,
-                   compacted->m[i], nb_columns - 1,
-                   relation->m[i], relation->nb_columns - 1);
+    osl_relation_free_inside(relation);
+
+    // Replace the inside of relation.
+    relation->nb_rows       = compacted->nb_rows;
+    relation->nb_columns    = compacted->nb_columns;
+    relation->m             = compacted->m;
+    relation->nb_parameters = nb_parameters;
+
+    // Free the compacted "container".
+    free(compacted);
+
+    relation = relation->next;
   }
-
-  osl_relation_free_inside(relation);
-
-  /* Replace the inside of relation */
-  relation->nb_rows       = compacted->nb_rows;
-  relation->nb_columns    = compacted->nb_columns;
-  relation->m             = compacted->m;
-  relation->nb_parameters = nb_parameters;
-
-  /* Free the compacted "container" */
-  free(compacted);
 }
 
 
@@ -359,4 +359,230 @@ osl_relation_p clan_relation_greater(osl_relation_p min, osl_relation_p max,
   osl_int_free(CLAN_PRECISION, b_min, 0);
   osl_int_free(CLAN_PRECISION, a_max, 0); 
   return r;
+}
+
+
+/**
+ * clan_relation_negate_inequality function:
+ * this function replaces an inequality constraint in a relation with its
+ * negation (e.g., i >= 0 will become i < 0). Note that it does not check
+ * that the constraint is actually an inequality.
+ * \param[in,out] relation The relation where to oppose a constraint.
+ * \param[in]     row      The row corresponding to the constraint to oppose.
+ */
+static 
+void clan_relation_negate_inequality(osl_relation_p relation, int row) {
+  int i;
+  
+  // Oppose all constraint elements.
+  for (i = 1; i < relation->nb_columns; i++)
+    osl_int_oppose(CLAN_PRECISION,
+                   relation->m[row], i, relation->m[row], i);
+  
+  // The constant term - 1.
+  osl_int_decrement(CLAN_PRECISION,
+                    relation->m[row], relation->nb_columns - 1,
+                    relation->m[row], relation->nb_columns - 1);
+}
+
+
+/**
+ * clan_relation_extract_constraint function:
+ * this function creates and returns a new relation from a single constraint
+ * of a relation. The constraint corresponds to a specified row of the
+ * constraint matrix of the first element of the specified relation union.
+ * \param[in] relation The input relation.
+ * \param[in] row      The row corresponding to the constraint to extract.
+ * \return A new relation with the extracted constraint only.
+ */
+static
+osl_relation_p clan_relation_extract_constraint(osl_relation_p relation,
+                                                int row) {
+  int i;
+  osl_relation_p constraint;
+  
+  constraint = osl_relation_pmalloc(CLAN_PRECISION, 1, relation->nb_columns);
+  constraint->type           = relation->type;
+  constraint->nb_output_dims = relation->nb_output_dims;
+  constraint->nb_input_dims  = relation->nb_input_dims;
+  constraint->nb_local_dims  = relation->nb_local_dims;
+  constraint->nb_parameters  = relation->nb_parameters;
+
+  for (i = 0; i < relation->nb_columns; i++)
+    osl_int_assign(CLAN_PRECISION, constraint->m[0], i, relation->m[row], i);
+
+  return constraint;
+}
+
+
+/**
+ * clan_relation_is_equality function:
+ * this function returns 1 if a given row of a given relation corresponds
+ * to an equality constraint, 0 otherwise (which means it corresponds to
+ * an inequality constraint).
+ * \param[in] relation The input relation.
+ * \param[in] row      The row corresponding to the constraint to check.
+ * \return 1 if the constraint is an equality, 0 if it is an inequality.
+ */
+static
+int clan_relation_is_equality(osl_relation_p relation, int row) {
+
+  return (osl_int_zero(CLAN_PRECISION, relation->m[row], 0)) ? 1 : 0;
+}
+
+
+/**
+ * clan_relation_tag_inequality function:
+ * this function tags a given constraint of a given relation as being an
+ * inequality >=0. This means in the PolyLib format, to set to 1 the very
+ * first entry of the constraint row. It modifies directly the relation
+ * provided as an argument.
+ * \param relation The relation which includes a constraint to be tagged.
+ * \param row      The row corresponding to the constraint to tag.
+ */
+static
+void clan_relation_tag_inequality(osl_relation_p relation, int row) {
+  if ((relation == NULL) || (relation->nb_rows < row))
+    CLAN_error("the constraint cannot be inquality-tagged");
+  osl_int_set_si(relation->precision, relation->m[row], 0, 1);
+}
+
+
+/**
+ * clan_relation_tag_equality function:
+ * this function tags a given constraint of a given relation as being an
+ * equality == 0. This means in the PolyLib format, to set to 0 the very
+ * first entry of the constraint row. It modifies directly the relation
+ * provided as an argument.
+ * \param relation The relation which includes a constraint to be tagged.
+ * \param row      The row corresponding to the constraint to tag.
+ */
+/*
+static
+void clan_relation_tag_equality(osl_relation_p relation, int row) {
+  if ((relation == NULL) || (relation->nb_rows < row))
+    CLAN_error("the constraint cannot be equality-tagged");
+  osl_int_set_si(relation->precision, relation->m[row], 0, 0);
+}
+*/
+
+
+/**
+ * clan_relation_constraint_not function:
+ * this function returns the negative form of one constraint in a
+ * relation (seen as a constraint set).
+ * \param relation The relation set where is the constraint to negate.
+ * \param row      The row number of the constraint to negate.
+ * \return A new relation containing the negation of the constraint.
+ */
+static
+osl_relation_p clan_relation_constraint_not(osl_relation_p relation, int row) {
+  osl_relation_p tmp, tmp_eq = NULL;
+  
+  if (row > relation->nb_rows)
+    return NULL;
+
+  // Extract the constraint.
+  tmp = clan_relation_extract_constraint(relation, row);
+
+  // Negate it (inequality-style): a >= 0 becomes a < 0, i.e., -a - 1 >= 0.
+  clan_relation_negate_inequality(tmp, 0);
+
+  // If the constraint is an equality we need to build an union.
+  // a == 0 becomes a > 0 || a < 0, i.e., a - 1 >= 0 || -a - 1 >= 0.
+  if (clan_relation_is_equality(relation, row)) {
+    
+    tmp_eq = clan_relation_extract_constraint(relation, row);
+    osl_int_decrement(CLAN_PRECISION,
+                      tmp_eq->m[0], tmp_eq->nb_columns - 1,
+                      tmp_eq->m[0], tmp_eq->nb_columns - 1);
+
+    // Set the two constraints as inequalities and build the union.
+    clan_relation_tag_inequality(tmp, 0);
+    clan_relation_tag_inequality(tmp_eq, 0);
+    tmp->next = tmp_eq;
+  }
+
+  return tmp;
+}
+
+
+/**
+ * clan_relation_not function:
+ * this function returns the negative form of a relation (union).
+ * \param relation The relation to oppose.
+ * \return A new relation corresponding to the negative form of the input.
+ */
+osl_relation_p clan_relation_not(osl_relation_p relation) {
+  int i;
+  osl_relation_p not_constraint;
+  osl_relation_p not = NULL, part;
+
+  while (relation != NULL) {
+    // Build the negation of one relation union part.
+    part = NULL;
+    for (i = 0; i < relation->nb_rows; i++) {
+      not_constraint = clan_relation_constraint_not(relation, i);
+      osl_relation_add(&part, not_constraint);
+    }
+
+    // AND it to the previously negated parts.
+    if (not == NULL) {
+      not = part;
+    }
+    else {
+      clan_relation_and(not, part);
+      osl_relation_free(part);
+    }
+    relation = relation->next;
+  } 
+
+  return not;
+}
+
+
+/**
+ * clan_relation_and function:
+ * this function inserts the src constraints rows into every parts of dest.
+ * If src is an union, the function creates exactly the right number
+ * of new unions.
+ * \param dest modified relation which contains the result.
+ * \param src relation to be inserted.
+ */
+void clan_relation_and(osl_relation_p dest, osl_relation_p src) {
+  osl_relation_p next_dest,
+                 next_src,
+	         dup_dest,
+                 next_mem = NULL;
+  
+  // initializing
+  next_src = src;
+  next_dest = dest;
+  dup_dest = osl_relation_clone(dest);
+  if (dest == NULL || src == NULL)
+    return;
+
+  // For each union
+  while (next_src != NULL) {
+    // Add in each unions
+    while(next_dest != NULL) {
+      osl_relation_insert_constraints(next_dest, next_src, next_dest->nb_rows);
+      // TODO: re-introduce local-dims management...
+      //if(next_dest->nb_local_dims == OSL_UNDEFINED)
+      //  next_dest->nb_local_dims = next_src->nb_local_dims;
+      //else if (next_src->nb_local_dims != OSL_UNDEFINED)
+      //  next_dest->nb_local_dims += next_src->nb_local_dims;
+      next_mem = next_dest;
+      next_dest = next_dest->next;
+    }
+    if (next_src->next != NULL)
+      next_mem->next = osl_relation_clone(dup_dest);
+    else
+      next_mem->next = NULL;
+
+    // Next union
+    next_src = next_src->next;
+    next_dest = next_mem->next;
+  }
+  osl_relation_free(dup_dest);
 }

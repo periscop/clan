@@ -35,6 +35,13 @@
  *                                                                            *
  ******************************************************************************/
 
+/*
+ * Clan's parsing has been derived from Jeff Lee and Jutta Degener's work:
+ * Yacc Grammar:      http://www.quut.com/c/ANSI-C-grammar-y.html
+ * Lex Specification: http://www.quut.com/c/ANSI-C-grammar-l-1998.html
+ * FAQ:               http://www.quut.com/c/ANSI-C-grammar-FAQ.html
+ * For those about to Clan, Jeff and Jutta, we salute you!
+ */
 
 %{
    #include <stdio.h>
@@ -101,6 +108,9 @@
    clan_options_p  parser_options = NULL;
 %}
 
+/* We expect the if-then-else shift/reduce to be there, nothing else. */
+%expect 1
+
 %union { int value;                    /**< An integer value for integers */
          char * symbol;                /**< A string for identifiers */
          osl_vector_p affex;           /**< An affine expression */
@@ -130,12 +140,11 @@
 %token <symbol> ID
 %token <value>  INTEGER
 
-%left AND_OP
-
 %type <stmt>   statement_list
 %type <stmt>   statement
 %type <stmt>   compound_statement
 %type <stmt>   expression_statement
+%type <stmt>   selection_else_statement
 %type <stmt>   selection_statement
 %type <stmt>   iteration_statement
 %type <setex>  lower_bound
@@ -143,6 +152,8 @@
 
 %type <setex>  affine_min_expression
 %type <setex>  affine_max_expression
+%type <setex>  affine_relation
+%type <setex>  affine_logical_and_expression
 %type <setex>  affine_condition
 %type <affex>  affine_primary_expression
 %type <affex>  affine_unary_expression
@@ -238,21 +249,49 @@ compound_statement:
 // +--------------------------------------------------------------------------+
 
 
+selection_else_statement:
+    ELSE statement
+    {
+      CLAN_debug("rule selection_else_statement.1: else <stmt>");
+      $$ = $2;
+      CLAN_debug_call(osl_statement_dump(stderr, $$));
+    }
+  |
+    {
+      CLAN_debug("rule selection_else_statement.2: <void>");
+      $$ = NULL;
+    }
+  ;
+
+
 selection_statement:
     IF '(' affine_condition ')'
     {
+      CLAN_debug("rule selection_statement.1.1: if ( condition ) ...");
       osl_relation_list_dup(&parser_stack);
-      osl_relation_insert_constraints(parser_stack->elt, $3, -1);
-      osl_relation_free($3);
+      clan_relation_and(parser_stack->elt, $3);
     }
     statement
     {
-      CLAN_debug("rule selection_statement.1: for ( lb ub step ) <stmt>");
+      osl_relation_p not_if;
+      
+      CLAN_debug("rule selection_statement.1.2: if ( condition ) <stmt> ...");
+      osl_relation_list_drop(&parser_stack);
+      osl_relation_list_dup(&parser_stack);
+      not_if = clan_relation_not($3);
+      clan_relation_and(parser_stack->elt, not_if);
+      osl_relation_free(not_if);
+      osl_relation_free($3);
+    }
+    selection_else_statement
+    {
+      CLAN_debug("rule selection_statement.1.3: if ( condition ) <stmt>"
+	         "[else <stmt>]");
       osl_relation_list_drop(&parser_stack);
       $$ = $6;
+      osl_statement_add(&$$, $8);
       CLAN_debug_call(osl_statement_dump(stderr, $$));
     }
-//| IF '(' expression ')' statement ELSE statement
   ;
 
 
@@ -260,8 +299,8 @@ iteration_statement:
     FOR '(' lower_bound upper_bound step ')'
     {
       osl_relation_list_dup(&parser_stack);
-      osl_relation_insert_constraints(parser_stack->elt, $3, -1);
-      osl_relation_insert_constraints(parser_stack->elt, $4, -1);
+      clan_relation_and(parser_stack->elt, $3);
+      clan_relation_and(parser_stack->elt, $4);
       osl_relation_free($3);
       osl_relation_free($4);
       parser_depth++;
@@ -424,66 +463,66 @@ affine_max_expression:
 
 
 //
-// Rules for defining an affine condition. A condition is an affine expression
+// Rules for defining an affine condition. A condition is an affine relation
 // (possibly with min/max operator(s)) of the form 'affex1 op affex2'
 // where affex2 may contain min operators iff op is '<' or '<=', and
 // max operators iff op is '>' or '>='.
 // return: <setex>
 //
-affine_condition:
+affine_relation:
 //
-// Rule affine_condition.1: max_affex < min_affex
+// Rule affine_relation.1: max_affex < min_affex
 //
     affine_max_expression '<' affine_min_expression
     {
-      CLAN_debug("rule affine_condition.1: max_affex < min_affex");
+      CLAN_debug("rule affine_relation.1: max_affex < min_affex");
       $$ = clan_relation_greater($3, $1, 1);
       osl_relation_free($1);
       osl_relation_free($3);
       CLAN_debug_call(osl_relation_dump(stderr, $$));
     }
 //
-// Rule affine_condition.2: min_affex > max_affex
+// Rule affine_relation.2: min_affex > max_affex
 //
   | affine_min_expression '>' affine_max_expression
     {
-      CLAN_debug("rule affine_condition.2: min_affex > max_affex");
+      CLAN_debug("rule affine_relation.2: min_affex > max_affex");
       $$ = clan_relation_greater($1, $3, 1);
       osl_relation_free($1);
       osl_relation_free($3);
       CLAN_debug_call(osl_relation_dump(stderr, $$));
     }
 //
-// Rule affine_condition.3: max_affex <= min_affex
+// Rule affine_relation.3: max_affex <= min_affex
 //
   | affine_max_expression LE_OP affine_min_expression
     {
-      CLAN_debug("rule affine_condition.3: max_affex <= min_affex");
+      CLAN_debug("rule affine_relation.3: max_affex <= min_affex");
       $$ = clan_relation_greater($3, $1, 0);
       osl_relation_free($1);
       osl_relation_free($3);
       CLAN_debug_call(osl_relation_dump(stderr, $$));
     }
 //
-// Rule affine_condition.4: min_affex >= max_affex
+// Rule affine_relation.4: min_affex >= max_affex
 //
   | affine_min_expression GE_OP affine_max_expression
     {
-      CLAN_debug("rule affine_condition.4: min_affex >= max_affex");
+      CLAN_debug("rule affine_relation.4: min_affex >= max_affex");
       $$ = clan_relation_greater($1, $3, 0);
       osl_relation_free($1);
       osl_relation_free($3);
       CLAN_debug_call(osl_relation_dump(stderr, $$));
     }
 //
-// Rule affine_condition.5: <affex> == <affex>
+// Rule affine_relation.5: <affex> == <affex>
 //
   | affine_expression EQ_OP affine_expression
     {
       // a==b translates to a-b==0.
       osl_vector_p res;
 
-      CLAN_debug("rule affine_condition.5: <affex> == <affex>");
+      CLAN_debug("rule affine_relation.5: <affex> == <affex>");
       // Warning: cases like ceild(M,32) == ceild(N,32) are not handled.
       // Assert if we encounter such a case.
       assert ((osl_int_zero(CLAN_PRECISION, $1->v, 0) ||
@@ -499,23 +538,59 @@ affine_condition:
       CLAN_debug_call(osl_relation_dump(stderr, $$));
     }
 //
-// Rule affine_condition.6: ( afine_condition )
+// Rule affine_relation.6: ( affine_relation )
 //
   | '(' affine_condition ')'
     {
-      CLAN_debug("rule affine_condition.6: ( condition )");
+      CLAN_debug("rule affine_relation.6: ( condition )");
       $$ = $2;
       CLAN_debug_call(osl_relation_dump(stderr, $$));
     }
 //
-// Rule affine_condition.7: affine_condition && affine_condition
+// Rule affine_relation.7: ! ( affine_condition )
 //
-  | affine_condition AND_OP affine_condition
+  | '!' '(' affine_condition ')'
     {
-      CLAN_debug("rule affine_condition.7: condition && condition");
-      $$ = osl_relation_concat_constraints($1, $3);
-      osl_relation_free($1);
+      CLAN_debug("rule affine_relation.7: ! ( condition )");
+      $$ = clan_relation_not($3);
       osl_relation_free($3);
+      CLAN_debug_call(osl_relation_dump(stderr, $$));
+    }
+  ;
+
+
+affine_logical_and_expression:
+    affine_relation
+    {
+      CLAN_debug("rule affine_logical_and_expression.1: affine_relation");
+      $$ = $1;
+      CLAN_debug_call(osl_relation_dump(stderr, $$));
+    }
+  | affine_logical_and_expression AND_OP affine_relation
+    {
+      CLAN_debug("rule affine_logical_and_expression.2: "
+	         "affine_logical_and_expression && affine_relation");
+      clan_relation_and($1, $3);
+      $$ = $1;
+      osl_relation_free($3);
+      CLAN_debug_call(osl_relation_dump(stderr, $$));
+    }
+  ;
+
+
+affine_condition:
+    affine_logical_and_expression
+    {
+      CLAN_debug("rule affine_condition.1: affine_logical_and_expression");
+      $$ = $1;
+      CLAN_debug_call(osl_relation_dump(stderr, $$));
+    }
+  | affine_condition OR_OP affine_logical_and_expression
+    {
+      CLAN_debug("rule affine_condition.2: "
+	         "affine_condition || affine_logical_and_expression");
+      osl_relation_add(&$1, $3);
+      $$ = $1;
       CLAN_debug_call(osl_relation_dump(stderr, $$));
     }
   ;
@@ -1373,8 +1448,15 @@ osl_scop_p clan_parse(FILE * input, clan_options_p options) {
       parser_variables_liveout);
     */
     scop = parser_scop;
+    if (CLAN_DEBUG) {
+      CLAN_debug("SCoP before compaction:");
+      osl_scop_dump(stderr, scop);
+    }
     clan_scop_compact(scop);
-    CLAN_debug("compaction successful");
+    if (CLAN_DEBUG) {
+      CLAN_debug("SCoP after compaction:");
+      osl_scop_dump(stderr, scop);
+    }
 
     // Add extensions.
     scop->registry = osl_interface_get_default_registry();

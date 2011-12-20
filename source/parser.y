@@ -1083,7 +1083,7 @@ assignment_expression:
     {
       CLAN_debug("rule assignment_expression.1: conditional_expression;");
       $$ = $1;
-      osl_relation_list_set_type($$, OSL_TYPE_READ);
+      clan_relation_list_define_type($$, OSL_TYPE_READ);
       CLAN_debug_call(osl_relation_list_dump(stderr, $$));
     }
   | unary_expression assignment_operator assignment_expression
@@ -1094,7 +1094,7 @@ assignment_expression:
 	         "assignment_operator assignment_expression;");
       $$ = $1;
       // Accesses of $1 are READ except the last one which is a WRITE.
-      osl_relation_list_set_type($$, OSL_TYPE_READ);
+      clan_relation_list_define_type($$, OSL_TYPE_READ);
       list = $$;
       while (list->next != NULL)
 	list = list->next;

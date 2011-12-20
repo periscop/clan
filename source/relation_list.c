@@ -41,6 +41,7 @@
 #include <string.h>
 #include <ctype.h>
 
+#include <osl/macros.h>
 #include <osl/relation_list.h>
 #include <clan/relation.h>
 #include <clan/relation_list.h>
@@ -65,5 +66,29 @@ void clan_relation_list_compact(osl_relation_list_p list, int nb_parameters) {
   while (list != NULL) {
      clan_relation_compact(list->elt, nb_parameters);
      list = list->next;
+  }
+}
+
+
+/** 
+ * clan_relation_list_define_type function:
+ * this function sets the type of each relation in the relation list to the
+ * one provided as parameter, only if it is undefined.
+ * \param list The list of relations to set the type.
+ * \param type The type.
+ */
+void clan_relation_list_define_type(osl_relation_list_p list, int type) {
+  osl_relation_p relation;
+
+  while (list != NULL) {
+    if (list->elt != NULL) {
+      relation = list->elt;
+      while (relation != NULL) {
+        if (relation->type == OSL_UNDEFINED)
+          relation->type = type;
+        relation = relation->next;
+      }
+    }
+    list = list->next;
   }
 }

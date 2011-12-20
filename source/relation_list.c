@@ -55,16 +55,15 @@
  * clan_relation_lit_compact function:
  * This function compacts a relation list such that each relation inside
  * uses the right number of columns (during construction we used
- * CLAN_MAX_DEPTH and CLAN_MAX_PARAMETERS to define relation and vector sizes).
- * It modifies directly the relation list provided as parameter.
+ * CLAN_MAX_DEPTH, CLAN_MAX_LOCAL_DIMS and CLAN_MAX_PARAMETERS to define
+ * relation and vector sizes). It modifies directly the relation list
+ * provided as parameter.
  * \param list          The relation list to compact.
- * \param nb_iterators  The true number of iterators for this relation.
  * \param nb_parameters The true number of parameters in the SCoP.
  */
-void clan_relation_list_compact(osl_relation_list_p list, int nb_iterators, 
-		                int nb_parameters) {
+void clan_relation_list_compact(osl_relation_list_p list, int nb_parameters) {
   while (list != NULL) {
-     clan_relation_compact(list->elt, nb_iterators, nb_parameters);
+     clan_relation_compact(list->elt, nb_parameters);
      list = list->next;
   }
 }

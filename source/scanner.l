@@ -297,7 +297,7 @@ void clan_scanner_free() {
  */
 int clan_scanner(int token, char * message) {
   if (CLAN_DEBUG)
-    fprintf(stderr, "[Clan] Info: Lex yytext = %s (%s)\n",message, yytext);
+    fprintf(stderr, "[Clan] Debug: Lex yytext = %s (%s)\n",message, yytext);
   clan_scanner_count();
   
   free(scanner_latest_text);

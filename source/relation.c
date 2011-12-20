@@ -222,37 +222,44 @@ void clan_relation_new_output_scalar(osl_relation_p relation, int scalar) {
 /**
  * clan_relation_compact function:
  * This function compacts a relation such that it uses the right number
- * of columns (during construction we used CLAN_MAX_DEPTH and
- * CLAN_MAX_PARAMETERS to define relation and vector sizes). It modifies
+ * of columns (during construction we used CLAN_MAX_DEPTH, CLAN_MAX_LOCAL_DIMS
+ * and CLAN_MAX_PARAMETERS to define relation and vector sizes). It modifies
  * directly the relation provided as parameter.
  * \param relation      The relation to compact.
- * \param nb_iterators  The true number of iterators for this relation.
  * \param nb_parameters The true number of parameters in the SCoP.
  */
-void clan_relation_compact(osl_relation_p relation, int nb_iterators, 
+void clan_relation_compact(osl_relation_p relation, 
                            int nb_parameters) {
-  int i, j, nb_columns, nb_output_dims, nb_input_dims;
+  int i, j, nb_columns;
+  int nb_output_dims, nb_input_dims, nb_local_dims, nb_out_in_loc;
   osl_relation_p compacted;
 
   while (relation != NULL) {
     nb_output_dims = relation->nb_output_dims;
     nb_input_dims  = relation->nb_input_dims;
+    nb_local_dims  = relation->nb_local_dims;
+    nb_out_in_loc  = nb_output_dims + nb_input_dims + nb_local_dims;
 
-    nb_columns = nb_output_dims + nb_input_dims + nb_parameters + 2;
+    nb_columns = nb_out_in_loc  + nb_parameters + 2;
     compacted = osl_relation_pmalloc(CLAN_PRECISION,
-        relation->nb_rows, nb_columns);
+                                     relation->nb_rows, nb_columns);
 
     for (i = 0; i < relation->nb_rows; i++) {
-      // We copy the equality/inequality tag, the output and the input
-      // coefficients.
+      // We copy the equ/inequ tag, the output and input coefficients.
       for (j = 0; j <= nb_output_dims + nb_input_dims; j++)
         osl_int_assign(CLAN_PRECISION, compacted->m[i], j, relation->m[i], j);
+
+      // Then we copy the local dimension coefficients.
+      for (j = 0; j < nb_local_dims; j++)
+        osl_int_assign(CLAN_PRECISION,
+            compacted->m[i], nb_output_dims + nb_input_dims + 1 + j,
+            relation->m[i], CLAN_MAX_DEPTH + 1 + j);
 
       // Then we copy the parameter coefficients.
       for (j = 0; j < nb_parameters; j++)
         osl_int_assign(CLAN_PRECISION,
-            compacted->m[i], j + nb_output_dims + nb_input_dims + 1,
-            relation->m[i], relation->nb_columns - CLAN_MAX_PARAMETERS -1 +j);
+            compacted->m[i], j + nb_out_in_loc + 1,
+            relation->m[i], relation->nb_columns - CLAN_MAX_PARAMETERS -1 + j);
 
       // Lastly the scalar coefficient.
       osl_int_assign(CLAN_PRECISION,
@@ -517,7 +524,7 @@ osl_relation_p clan_relation_not(osl_relation_p relation) {
   int i;
   osl_relation_p not_constraint;
   osl_relation_p not = NULL, part;
-
+  
   while (relation != NULL) {
     // Build the negation of one relation union part.
     part = NULL;
@@ -585,4 +592,30 @@ void clan_relation_and(osl_relation_p dest, osl_relation_p src) {
     next_dest = next_mem->next;
   }
   osl_relation_free(dup_dest);
+}
+
+
+/**
+ * clan_relation_existential function:
+ * this function returns 1 if the relation involves an existential
+ * quantifier (its coefficient is not zero), 0 otherwise.
+ * \param[in] relation The relation to check.
+ * \return 1 if the relation uses an existential quantifier, 0 otherwise.
+ */
+int clan_relation_existential(osl_relation_p relation) {
+  int i, j;
+
+  while (relation != NULL) {
+    for (i = 0; i < relation->nb_rows; i++) {
+      for (j = CLAN_MAX_DEPTH + 1;
+           j < CLAN_MAX_DEPTH + CLAN_MAX_LOCAL_DIMS + 1;
+           j++) {
+        if (!osl_int_zero(CLAN_PRECISION, relation->m[i], j))
+          return 1;
+      }
+    }
+    relation = relation->next;
+  }
+
+  return 0;
 }

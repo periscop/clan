@@ -51,7 +51,7 @@
 # define CLAN_FALSE			0
 # define CLAN_MAX_LOCAL_VARIABLES     100
 # define CLAN_MAX_STRING             2048
-# define CLAN_MAX_DEPTH                5 // Max loop depth
+# define CLAN_MAX_DEPTH                5 // Max loop + if depth
 # define CLAN_MAX_PARAMETERS           5 // Max parameter number
 # define CLAN_MAX_LOCAL_DIMS           5 // Max local dims number
 # define CLAN_MAX_CONSTRAINTS          5 // Max contraint number for a domain
@@ -80,7 +80,7 @@
 # define CLAN_debug(msg)                                                   \
          do {                                                              \
            if (CLAN_DEBUG)                                                 \
-             fprintf(stderr,"[Clan] Info: "msg" (%s).\n", __func__);       \
+             fprintf(stderr,"[Clan] Debug: "msg" (%s).\n", __func__);      \
          } while (0)
 
 # define CLAN_debug_call(function_call)                                    \

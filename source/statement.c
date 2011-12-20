@@ -58,17 +58,13 @@
  * CLAN_MAX_PARAMETERS to define relation and vector sizes).
  * \param statement     The first statement to scan to compact matrices.
  * \param nb_parameters The true number of parameters in the SCoP.
- **
- * - 02/05/2008: first version.
  */
 void clan_statement_compact(osl_statement_p statement, int nb_parameters) {
-  int nb_iterators;
 
   while (statement != NULL) {
-    nb_iterators = osl_statement_get_nb_iterators(statement);
-    clan_relation_compact(statement->domain,      nb_iterators, nb_parameters);
-    clan_relation_compact(statement->scattering,  nb_iterators, nb_parameters);
-    clan_relation_list_compact(statement->access, nb_iterators, nb_parameters);
+    clan_relation_compact(statement->domain,      nb_parameters);
+    clan_relation_compact(statement->scattering,  nb_parameters);
+    clan_relation_list_compact(statement->access, nb_parameters);
     statement = statement->next;
   }
 }

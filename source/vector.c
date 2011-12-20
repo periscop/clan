@@ -55,7 +55,7 @@
 /**
  * clan_vector_term function:
  * This function generates the vector representation of a term. It allocates
- * a vector with maximal size and put the term value at the right place
+ * a vector with maximal size and puts the term value at the right place
  * depending if the term is a constant, an iterator coefficient or a
  * parameter coefficient (see the structure of an OpenScop row if unsure!).
  * \param symbol      The first node of the list of symbols.
@@ -67,20 +67,22 @@ osl_vector_p clan_vector_term(clan_symbol_p symbol, int coefficient,
   int rank, size;
   osl_vector_p vector;
 
-  size = CLAN_MAX_DEPTH + CLAN_MAX_PARAMETERS + 2 ;
+  size = CLAN_MAX_DEPTH + CLAN_MAX_LOCAL_DIMS + CLAN_MAX_PARAMETERS + 2 ;
   vector = osl_vector_pmalloc(CLAN_PRECISION, size);
 
   if (identifier == NULL) {
+    // The term is a constant.
     osl_int_set_si(CLAN_PRECISION, vector->v, size - 1, coefficient);
   }
   else {
-    rank = clan_symbol_get_rank(symbol,identifier);
+    // The term is an iterator or a parameter coefficient
+    rank = clan_symbol_get_rank(symbol, identifier);
 
-    if (clan_symbol_get_type(symbol,identifier) == CLAN_TYPE_ITERATOR)
+    if (clan_symbol_get_type(symbol, identifier) == CLAN_TYPE_ITERATOR)
       osl_int_set_si(CLAN_PRECISION, vector->v, rank, coefficient);
     else
-      osl_int_set_si(CLAN_PRECISION,
-                     vector->v, CLAN_MAX_DEPTH + rank, coefficient);
+      osl_int_set_si(CLAN_PRECISION, vector->v,
+                     CLAN_MAX_DEPTH + CLAN_MAX_LOCAL_DIMS + rank, coefficient);
   }
   return vector;
 }

@@ -71,31 +71,36 @@
    void yyerror(char *);
    void clan_scanner_free();
 
-   int clan_parse_error = 0;           /**< Set to 1 during parsing if
-                                            encountered an error */
+   int clan_parse_error = 0;             /**< Set to 1 during parsing if
+                                              encountered an error */
+   void clan_parser_add_ld();
+   int  clan_parser_nb_ld();
    void clan_parser_log(char *);
    osl_scop_p clan_parse(FILE *, clan_options_p);
 
-   extern FILE * yyin;                 /**< File to be read by Lex */
-   extern char * scanner_latest_text;  /**< Latest text read by Lex */
-   extern int    scanner_line;         /**< Current scanned line */
-   extern int    scanner_column;       /**< Current scanned column */
-   extern int    symbol_nb_arrays;     /**< Number of array symbols */
-   extern int    symbol_nb_iterators;  /**< Number of iterator symbols */
-   extern int    symbol_nb_parameters; /**< Number of parameter symbols */
-   extern int    symbol_nb_functions;  /**< Number of function symbols */
+   extern FILE *   yyin;                 /**< File to be read by Lex */
+   extern char *   scanner_latest_text;  /**< Latest text read by Lex */
+   extern int      scanner_line;         /**< Current scanned line */
+   extern int      scanner_column;       /**< Current scanned column */
+   extern int      symbol_nb_arrays;     /**< Number of array symbols */
+   extern int      symbol_nb_iterators;  /**< Number of iterator symbols */
+   extern int      symbol_nb_parameters; /**< Number of parameter symbols */
+   extern int      symbol_nb_functions;  /**< Number of function symbols */
 
    /* This is the "parser state", a collection of variables that vary
     * during the parsing and thanks to we can extract all SCoP informations.
     */
-   osl_scop_p      parser_scop;        /**< SCoP in construction */
-   clan_symbol_p   parser_symbol;      /**< Top of the symbol table */
-   int             parser_recording;   /**< Boolean: do we record or not? */
-   char *          parser_record;      /**< What we record (statement body) */
-   int             parser_depth = 0;   /**< Current loop depth */
-   int *           parser_scattering;  /**< Current statement scattering */
-   clan_symbol_p * parser_iterators;   /**< Current iterator list */
-   osl_relation_list_p parser_stack;   /**< Iteration domain stack */
+   osl_scop_p      parser_scop;          /**< SCoP in construction */
+   clan_symbol_p   parser_symbol;        /**< Top of the symbol table */
+   int             parser_recording;     /**< Boolean: do we record or not? */
+   char *          parser_record;        /**< What we record (statement body)*/
+   int             parser_loop_depth;    /**< Current loop depth */
+   int             parser_if_depth;      /**< Current if depth */
+   int *           parser_scattering;    /**< Current statement scattering */
+   clan_symbol_p * parser_iterators;     /**< Current iterator list */
+   osl_relation_list_p parser_stack;     /**< Iteration domain stack */
+   int *           parser_nb_local_dims; /**< Nb of local dims per depth */
+   int *           parser_valid_else;    /**< Boolean: OK for else per depth */
 
 #if 0   
    int *           parser_variables_localvars; /**< List of variables
@@ -111,13 +116,13 @@
 /* We expect the if-then-else shift/reduce to be there, nothing else. */
 %expect 1
 
-%union { int value;                    /**< An integer value for integers */
-         char * symbol;                /**< A string for identifiers */
-         osl_vector_p affex;           /**< An affine expression */
-         osl_relation_p setex;         /**< A set of affine expressions */
-         osl_relation_list_p list;     /**< List of array accesses */
-         osl_statement_p stmt;         /**< List of statements */
-         osl_scop_p scop;              /**< SCoP */
+%union { int value;                      /**< An integer value for integers */
+         char * symbol;                  /**< A string for identifiers */
+         osl_vector_p affex;             /**< An affine expression */
+         osl_relation_p setex;           /**< A set of affine expressions */
+         osl_relation_list_p list;       /**< List of array accesses */
+         osl_statement_p stmt;           /**< List of statements */
+         osl_scop_p scop;                /**< SCoP */
        }
 
 
@@ -250,10 +255,15 @@ compound_statement:
 
 
 selection_else_statement:
-    ELSE statement
+    ELSE 
+    {
+      if (!parser_valid_else[parser_if_depth])
+	yyerror("unsupported negation of a condition involving a modulo");
+    }
+    statement
     {
       CLAN_debug("rule selection_else_statement.1: else <stmt>");
-      $$ = $2;
+      $$ = $3;
       CLAN_debug_call(osl_statement_dump(stderr, $$));
     }
   |
@@ -270,6 +280,9 @@ selection_statement:
       CLAN_debug("rule selection_statement.1.1: if ( condition ) ...");
       osl_relation_list_dup(&parser_stack);
       clan_relation_and(parser_stack->elt, $3);
+      parser_if_depth++;
+      if ((parser_loop_depth + parser_if_depth) > CLAN_MAX_DEPTH)
+	CLAN_error("CLAN_MAX_DEPTH reached, recompile with a higher value");
     }
     statement
     {
@@ -278,9 +291,15 @@ selection_statement:
       CLAN_debug("rule selection_statement.1.2: if ( condition ) <stmt> ...");
       osl_relation_list_drop(&parser_stack);
       osl_relation_list_dup(&parser_stack);
-      not_if = clan_relation_not($3);
-      clan_relation_and(parser_stack->elt, not_if);
-      osl_relation_free(not_if);
+      if (!clan_relation_existential($3)) {
+	not_if = clan_relation_not($3);
+	clan_relation_and(parser_stack->elt, not_if);
+	osl_relation_free(not_if);
+	parser_valid_else[parser_if_depth] = 1;
+      }
+      else {
+	parser_valid_else[parser_if_depth] = 0;
+      }
       osl_relation_free($3);
     }
     selection_else_statement
@@ -290,6 +309,8 @@ selection_statement:
       osl_relation_list_drop(&parser_stack);
       $$ = $6;
       osl_statement_add(&$$, $8);
+      parser_if_depth--;
+      parser_nb_local_dims[parser_loop_depth + parser_if_depth] = 0;
       CLAN_debug_call(osl_statement_dump(stderr, $$));
     }
   ;
@@ -303,17 +324,20 @@ iteration_statement:
       clan_relation_and(parser_stack->elt, $4);
       osl_relation_free($3);
       osl_relation_free($4);
-      parser_depth++;
-      parser_scattering[parser_depth] = 0;
+      parser_loop_depth++;
+      if ((parser_loop_depth + parser_if_depth) > CLAN_MAX_DEPTH)
+	CLAN_error("CLAN_MAX_DEPTH reached, recompile with a higher value");
+      parser_scattering[parser_loop_depth] = 0;
     }
     statement
     {
       CLAN_debug("rule iteration_statement.1: for ( lb ub step ) <stmt>");
-      parser_depth--;
-      clan_symbol_free(parser_iterators[parser_depth]);
+      parser_loop_depth--;
+      clan_symbol_free(parser_iterators[parser_loop_depth]);
       osl_relation_list_drop(&parser_stack);
       $$ = $8;
-      parser_scattering[parser_depth]++;
+      parser_scattering[parser_loop_depth]++;
+      parser_nb_local_dims[parser_loop_depth + parser_if_depth] = 0;
       CLAN_debug_call(osl_statement_dump(stderr, $$));
     }
   ;
@@ -324,7 +348,7 @@ lower_bound:
     {
       clan_symbol_p symbol;
       symbol = clan_symbol_add(&parser_symbol, $1,
-	                       CLAN_TYPE_ITERATOR, parser_depth + 1);
+	                       CLAN_TYPE_ITERATOR, parser_loop_depth + 1);
       // Ensure that the returned symbol was either a new one,
       // either from the same type.
       if (symbol->type != CLAN_TYPE_ITERATOR) {
@@ -332,9 +356,9 @@ lower_bound:
 	return 0;
       }
       // Update the rank, in case the symbol already exists.
-      if (symbol->rank != parser_depth + 1)
-        symbol->rank = parser_depth + 1;
-      parser_iterators[parser_depth] = clan_symbol_clone_one(symbol);
+      if (symbol->rank != parser_loop_depth + 1)
+        symbol->rank = parser_loop_depth + 1;
+      parser_iterators[parser_loop_depth] = clan_symbol_clone_one(symbol);
     }
     '=' affine_max_expression ';'
     {
@@ -552,8 +576,26 @@ affine_relation:
   | '!' '(' affine_condition ')'
     {
       CLAN_debug("rule affine_relation.7: ! ( condition )");
+      if (clan_relation_existential($3))
+	yyerror("unsupported negation of a condition involving a modulo");
       $$ = clan_relation_not($3);
       osl_relation_free($3);
+      CLAN_debug_call(osl_relation_dump(stderr, $$));
+    }
+//
+// Rule affine_relation.8: affine_expression % INTEGER == INTEGER
+//
+  | affine_expression '%' INTEGER EQ_OP INTEGER
+    {
+      CLAN_debug("rule affine_relation.8: "
+	         "affine_expression %% INTEGER == INTEGER");
+      osl_int_set_si(CLAN_PRECISION, $1->v,
+	             CLAN_MAX_DEPTH + 1 + clan_parser_nb_ld(), -$3);
+      osl_int_add_si(CLAN_PRECISION,
+	             $1->v, $1->size - 1, $1->v, $1->size - 1, -$5);
+      clan_parser_add_ld();
+      $$ = osl_relation_from_vector($1);
+      osl_vector_free($1);
       CLAN_debug_call(osl_relation_dump(stderr, $$));
     }
   ;
@@ -600,7 +642,7 @@ affine_primary_expression:
     ID
     {
       CLAN_debug("rule affine_primary_expression.1: id");
-      clan_symbol_add(&parser_symbol, $1, CLAN_TYPE_UNKNOWN, parser_depth);
+      clan_symbol_add(&parser_symbol, $1, CLAN_TYPE_UNKNOWN, parser_loop_depth);
       $$ = clan_vector_term(parser_symbol, 1, $1);
       free($1);
       CLAN_debug_call(osl_vector_dump(stderr, $$));
@@ -769,11 +811,12 @@ primary_expression:
       osl_relation_list_p list;
 
       CLAN_debug("rule primary_expression.1: ID");
-      clan_symbol_add(&parser_symbol, $1, CLAN_TYPE_ARRAY, parser_depth);
+      clan_symbol_add(&parser_symbol, $1, CLAN_TYPE_ARRAY, parser_loop_depth);
       rank = clan_symbol_get_rank(parser_symbol, $1);
-      nb_columns = CLAN_MAX_DEPTH + CLAN_MAX_PARAMETERS + 2;
+      nb_columns = CLAN_MAX_DEPTH + CLAN_MAX_LOCAL_DIMS +
+	           CLAN_MAX_PARAMETERS + 2;
       id = osl_relation_pmalloc(CLAN_PRECISION, 0, nb_columns);
-      osl_relation_set_attributes(id, 0, parser_depth, 0, CLAN_MAX_PARAMETERS);
+      osl_relation_set_attributes(id, 0, parser_loop_depth, 0, CLAN_MAX_PARAMETERS);
       clan_relation_tag_array(id, rank);
       list = osl_relation_list_malloc();
       list->elt = id;
@@ -818,7 +861,7 @@ postfix_expression:
       int rank;
 
       CLAN_debug("rule postfix_expression.4: postfix_expression . ID");
-      clan_symbol_add(&parser_symbol, $3, CLAN_TYPE_ARRAY, parser_depth);
+      clan_symbol_add(&parser_symbol, $3, CLAN_TYPE_ARRAY, parser_loop_depth);
       rank = clan_symbol_get_rank(parser_symbol, $3);
       clan_relation_new_output_scalar($1->elt, rank);
       free($3);
@@ -830,7 +873,7 @@ postfix_expression:
       int rank;
 
       CLAN_debug("rule postfix_expression.5: postfix_expression -> ID");
-      clan_symbol_add(&parser_symbol, $3, CLAN_TYPE_ARRAY, parser_depth);
+      clan_symbol_add(&parser_symbol, $3, CLAN_TYPE_ARRAY, parser_loop_depth);
       rank = clan_symbol_get_rank(parser_symbol, $3);
       clan_relation_new_output_scalar($1->elt, rank);
       free($3);
@@ -1108,26 +1151,27 @@ expression_statement:
       // - 1. Domain
       statement->domain = osl_relation_clone(parser_stack->elt);
       osl_relation_set_type(statement->domain, OSL_TYPE_DOMAIN);
-      osl_relation_set_attributes(statement->domain, parser_depth, 0, 0,
-	                          CLAN_MAX_PARAMETERS);
+      osl_relation_set_attributes(statement->domain, parser_loop_depth, 0,
+	                          clan_parser_nb_ld(), CLAN_MAX_PARAMETERS);
 
       // - 2. Scattering
       statement->scattering = clan_relation_scattering(parser_scattering,
-	                                               parser_depth);
+	                                               parser_loop_depth);
 
       // - 3. Array accesses
       statement->access = $2;
 
       // - 4. Body.
       body = osl_body_malloc();
-      body->iterators = clan_symbol_array_to_strings(parser_iterators, parser_depth);
+      body->iterators = clan_symbol_array_to_strings(parser_iterators,
+	                                             parser_loop_depth);
       body->expression = osl_strings_encapsulate(parser_record);
       statement->body = osl_generic_malloc();
       statement->body->interface = osl_body_interface();
       statement->body->data = body;
       parser_recording = CLAN_FALSE;
       
-      parser_scattering[parser_depth]++;
+      parser_scattering[parser_loop_depth]++;
 
       $$ = statement;
       CLAN_debug_call(osl_statement_dump(stderr, $$));
@@ -1357,6 +1401,31 @@ void yyerror(char *s) {
 }
 
 
+void clan_parser_add_ld() {
+  parser_nb_local_dims[parser_loop_depth + parser_if_depth]++;
+
+  if (CLAN_DEBUG) {
+    int i;
+    CLAN_debug("parser_nb_local_dims updated");
+    for (i = 0; i <= parser_loop_depth + parser_if_depth; i++)
+      fprintf(stderr, "%d:%d ", i, parser_nb_local_dims[i]);
+    fprintf(stderr, "\n");
+  }
+  
+  if (clan_parser_nb_ld() > CLAN_MAX_LOCAL_DIMS)
+    CLAN_error("CLAN_MAX_LOCAL_DIMS reached, recompile with a higher value");
+}
+
+
+int clan_parser_nb_ld() {
+  int i, nb_ld = 0;
+
+  for (i = 0; i <= parser_loop_depth + parser_if_depth; i++)
+    nb_ld += parser_nb_local_dims[i]; 
+  return nb_ld;
+}
+
+
 /**
  * clan_parser_initialize_state function:
  * this function achieves the initialization of the "parser state": a
@@ -1364,23 +1433,30 @@ void yyerror(char *s) {
  * can extract all SCoP informations.
  */
 void clan_parser_initialize_state(clan_options_p options) {
-  int i, nb_rows, nb_columns, depth;
+  int i, nb_columns, depth;
 
-  nb_rows           = CLAN_MAX_CONSTRAINTS;
-  nb_columns        = CLAN_MAX_DEPTH + CLAN_MAX_PARAMETERS + 2;
+  nb_columns        = CLAN_MAX_DEPTH + CLAN_MAX_LOCAL_DIMS +
+                      CLAN_MAX_PARAMETERS + 2;
   depth             = CLAN_MAX_DEPTH;
   parser_symbol     = NULL;
   parser_scop       = NULL;
   parser_stack      = osl_relation_list_malloc();
   parser_stack->elt = osl_relation_pmalloc(CLAN_PRECISION, 0, nb_columns);
-  parser_depth      = 0;
+  parser_loop_depth = 0;
   parser_options    = options;
   parser_record     = NULL;
+  parser_if_depth   = 0;
 
-  CLAN_malloc(parser_scattering, int *, depth * sizeof(int));
-  for (i = 0; i < depth; i++)
+  CLAN_malloc(parser_scattering,    int *, depth * sizeof(int));
+  CLAN_malloc(parser_nb_local_dims, int *, depth * sizeof(int));
+  CLAN_malloc(parser_valid_else,    int *, depth * sizeof(int));
+  for (i = 0; i < depth; i++) {
     parser_scattering[i] = 0;
-  CLAN_malloc(parser_iterators, clan_symbol_p *, depth * sizeof(clan_symbol_p));
+    parser_nb_local_dims[i] = 0;
+    parser_valid_else[i] = 0;
+  }
+
+  CLAN_malloc(parser_iterators, clan_symbol_p *, depth*sizeof(clan_symbol_p));
 
 #if 0
   parser_variables_localvars =
@@ -1412,6 +1488,8 @@ void clan_parser_free_state() {
   clan_symbol_free(parser_symbol);
   free(parser_scattering);
   free(parser_iterators);
+  free(parser_nb_local_dims);
+  free(parser_valid_else);
   osl_relation_list_drop(&parser_stack);
 #if 0
   free(parser_variables_localvars);
@@ -1452,7 +1530,9 @@ osl_scop_p clan_parse(FILE * input, clan_options_p options) {
       CLAN_debug("SCoP before compaction:");
       osl_scop_dump(stderr, scop);
     }
+    
     clan_scop_compact(scop);
+    
     if (CLAN_DEBUG) {
       CLAN_debug("SCoP after compaction:");
       osl_scop_dump(stderr, scop);

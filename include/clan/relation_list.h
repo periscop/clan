@@ -49,7 +49,7 @@ extern "C"
 /*+****************************************************************************
  *                            Processing functions                            *
  ******************************************************************************/
-void clan_relation_list_compact(osl_relation_list_p, int, int);
+void clan_relation_list_compact(osl_relation_list_p, int);
 
 # if defined(__cplusplus)
   }

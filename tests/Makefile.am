@@ -77,6 +77,9 @@ UNITARY_TEST_FILES             	= \
 	$(top_srcdir)/tests/unitary/condition_or_else.c \
 	$(top_srcdir)/tests/unitary/condition_not.c \
 	$(top_srcdir)/tests/unitary/condition_not_else.c \
+	$(top_srcdir)/tests/unitary/modulo1.c \
+	$(top_srcdir)/tests/unitary/modulo2.c \
+	$(top_srcdir)/tests/unitary/modulo3.c \
 	$(top_srcdir)/tests/unitary/empty.c \
 	$(top_srcdir)/tests/unitary/simplecond.c \
 	$(top_srcdir)/tests/unitary/twoconds.c \

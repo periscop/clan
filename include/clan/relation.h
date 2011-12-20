@@ -61,7 +61,8 @@ osl_relation_p clan_relation_not(osl_relation_p);
 void           clan_relation_and(osl_relation_p, osl_relation_p);
 osl_relation_p clan_relation_inverse_unions(osl_relation_p src);
 int            clan_relation_existential(osl_relation_p);
-
+osl_relation_p clan_lower_bound_contribution(int, osl_relation_p, int);
+ 
 # if defined(__cplusplus)
   }
 # endif

@@ -303,7 +303,7 @@ void clan_relation_compact(osl_relation_p relation,
  *                   to the minimum of the (ceild) linear expressions.
  * \param[in] max    Set of (floord) linear expressions corresponding
  *                   to the maximum of the (floord) linear expressions.
- * \param[in] strict 1 if the condition is min > max, 1 if it is min >= max.
+ * \param[in] strict 1 if the condition is min > max, 0 if it is min >= max.
  * \return A set of linear constraints corresponding to min > (or >=) max.
  */
 osl_relation_p clan_relation_greater(osl_relation_p min, osl_relation_p max,
@@ -618,4 +618,96 @@ int clan_relation_existential(osl_relation_p relation) {
   }
 
   return 0;
+}
+
+
+int clan_parser_nb_ld(void);
+void clan_parser_add_ld(void);
+
+
+/**
+ * clan_lower_bound_contribution function:
+ * this function computes and returns the contribution of the lower bound
+ * and the stride of a loop to the iteration domain. The lower bound is
+ * represented as a set of linear expressions, such that the lower bound
+ * is the maximum of those expressions. Each expression contributes.
+ * Let us consider the loop iterator is "i", an expression
+ * "lower" and a stride "s". The contribution of "lower" is:
+ * exists ld | i = lower + s*ld && i > lower. The complete contribution
+ * is the set of disjoint contributions from all the expressions.
+ * \param[in] depth  The loop depth to compute the contribution for.
+ * \param[in] lb     The set of linear expressions describing the lower bound.
+ * \param[in] stride The loop stride.
+ */
+osl_relation_p clan_lower_bound_contribution(int depth,
+                                             osl_relation_p lb, int stride) {
+  int i, j;
+  osl_relation_p contribution;
+  osl_relation_p constraint;
+  osl_relation_p full = NULL;
+
+  if (depth < 1)
+    CLAN_error("invalid loop depth");
+  else if (stride < 1)
+    CLAN_error("invalid stride (must be >= 1)");
+
+  if (lb == NULL)
+    return full;
+
+  // Let's work on a clone of the lower bound (this function will alter it).
+  lb = osl_relation_clone(lb);
+
+  // Each constraint of the maximum contributes along with the stride.
+  for (i = 0; i < lb->nb_rows; i++) {
+    // -1. Extract the contributing constraint c.
+    constraint = clan_relation_extract_constraint(lb, i);
+
+    // -2. For every constaint before c, ensure the comparison at step 3
+    //     will be strictly greater, by adding 1: since the different
+    //     sets must be disjoint, we don't want a >= b then b >= a but
+    //     a >= b then b > a to avoid a == b to be in both sets.
+    if (i > 0)
+      osl_int_add_si(CLAN_PRECISION,
+                     lb->m[i - 1], lb->nb_columns - 1,
+                     lb->m[i - 1], lb->nb_columns - 1, 1);
+
+    // -3. Compute c > a && c > b && c >= c && c >= d ...
+    //     We remove the c >= c row which corresponds to a trivial 0 >= 0.
+    contribution = clan_relation_greater(constraint, lb, 0);
+    osl_relation_remove_row(contribution, i);
+
+    // -4. Add the contribution of the stride
+    //     * 4.1 Put c at the end of the constraint set.
+    osl_relation_insert_constraints(contribution, constraint, -1);
+    //     * 4.2 Put the opposed loop iterator so we have -i + c.
+    osl_int_set_si(CLAN_PRECISION,
+                   contribution->m[contribution->nb_rows - 1], depth, -1);
+    //     * 4.3 Put stride * local dimension so we have -i + c + stride*ld.
+    //           The equality marker is set so we have i == c + stride*ld.
+    osl_int_set_si(CLAN_PRECISION,
+                   contribution->m[contribution->nb_rows - 1],
+                   CLAN_MAX_DEPTH + 1 + clan_parser_nb_ld(), stride);
+    
+    // -5. Add the contribution that the iterator of the current depth is >= c.
+    //     * 5.1 Put c at the end of the constraint set.
+    osl_relation_insert_constraints(contribution, constraint, -1);
+    //     * 5.2 Oppose so we have -c.
+    for (j = 1; j < constraint->nb_columns; j++)
+      osl_int_oppose(CLAN_PRECISION,
+                     contribution->m[contribution->nb_rows - 1], j,
+                     contribution->m[contribution->nb_rows - 1], j);
+    //     * 5.3 Put the loop iterator so we have i - c.
+    osl_int_set_si(CLAN_PRECISION,
+                   contribution->m[contribution->nb_rows - 1], depth, 1);
+    //     * 5.4 Set the inequality marker so we have i - c >= 0.
+    osl_int_set_si(CLAN_PRECISION,
+                   contribution->m[contribution->nb_rows - 1], 0, 1);
+    
+    osl_relation_free(constraint);
+    osl_relation_add(&full, contribution);
+  }
+  clan_parser_add_ld();
+  osl_relation_free(lb);  
+
+  return full;
 }

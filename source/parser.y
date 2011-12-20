@@ -154,6 +154,7 @@
 %type <stmt>   iteration_statement
 %type <setex>  lower_bound
 %type <setex>  upper_bound
+%type <value>  stride
 
 %type <setex>  affine_min_expression
 %type <setex>  affine_max_expression
@@ -317,21 +318,48 @@ selection_statement:
 
 
 iteration_statement:
-    FOR '(' lower_bound upper_bound step ')'
+    FOR '(' lower_bound upper_bound stride ')'
     {
-      osl_relation_list_dup(&parser_stack);
-      clan_relation_and(parser_stack->elt, $3);
-      clan_relation_and(parser_stack->elt, $4);
-      osl_relation_free($3);
-      osl_relation_free($4);
+      osl_vector_p   iterator_term;
+      osl_relation_p iterator_relation;
+      osl_relation_p lower_constraints = NULL;
+      
+      CLAN_debug("rule iteration_statement.1.1: for ( lb ub step ) ...");
       parser_loop_depth++;
       if ((parser_loop_depth + parser_if_depth) > CLAN_MAX_DEPTH)
 	CLAN_error("CLAN_MAX_DEPTH reached, recompile with a higher value");
+     
+      if ($5 == 1) {
+	// Stride 1 case, lower constraints:
+	// iterator >= lower_bound
+        iterator_term = clan_vector_term(parser_symbol, 0, NULL);
+	osl_int_set_si(CLAN_PRECISION, iterator_term->v, parser_loop_depth, 1); 
+ 	iterator_relation = osl_relation_from_vector(iterator_term);
+	lower_constraints = clan_relation_greater(iterator_relation, $3, 0);
+	osl_vector_free(iterator_term);
+	osl_relation_free(iterator_relation);
+      }
+      else if ($5 > 1) {
+	// Stride general case, lower constraints:
+	// exists ld | iterator = lower_bound + ld * stride
+        lower_constraints = clan_lower_bound_contribution(parser_loop_depth,
+	                                                  $3, $5);
+      }
+      else {
+	yyerror("unsupported negative stride");
+      }
+      
+      osl_relation_list_dup(&parser_stack);
+      clan_relation_and(parser_stack->elt, lower_constraints);
+      clan_relation_and(parser_stack->elt, $4);
+      osl_relation_free(lower_constraints);
+      osl_relation_free($3);
+      osl_relation_free($4);
       parser_scattering[parser_loop_depth] = 0;
     }
     statement
     {
-      CLAN_debug("rule iteration_statement.1: for ( lb ub step ) <stmt>");
+      CLAN_debug("rule iteration_statement.1.2: for ( lb ub step ) <stmt>");
       parser_loop_depth--;
       clan_symbol_free(parser_iterators[parser_loop_depth]);
       osl_relation_list_drop(&parser_stack);
@@ -362,17 +390,9 @@ lower_bound:
     }
     '=' affine_max_expression ';'
     {
-      osl_vector_p id_term;
-      osl_relation_p id_relation;
-
       CLAN_debug("rule lower_bound.1: ID = max_affex ;");
-      id_term = clan_vector_term(parser_symbol, 1, $1);
-      id_relation = osl_relation_from_vector(id_term);
-      $$ = clan_relation_greater(id_relation, $4, 0);
-      osl_vector_free(id_term);
-      osl_relation_free(id_relation);
-      osl_relation_free($4);
       free($1);
+      $$ = $4;
       CLAN_debug_call(osl_relation_dump(stderr, $$));
     }
   ;
@@ -387,37 +407,22 @@ upper_bound:
     }
   ;
 
+
 //
 // Rules for the for loop increment.
-// Handled cases:
-// i++, ++i, i = i + 1, i += 1
+// Handled cases (with s an integer):
+// i++, i--; ++i, --i, i = i + v, i = i - s, i += s, i -= s
+// return <value>
 //
-step:
-  ID INC_OP
-    {
-      free($1);
-    }
-  | INC_OP ID
-    {
-      free($2);
-    }
-  | ID '=' ID '+' INTEGER
-    {
-      if ($5 != 1) {
-	yyerror("loop increment is not 1\n");
-	return 0;
-      }
-      free ($1);
-      free ($3);
-    }
-  | ID ADD_ASSIGN INTEGER
-    {
-      if ($3 != 1) {
-	yyerror("loop increment is not 1\n");
-	return 0;
-      }
-      free ($1);
-    }
+stride:
+    ID INC_OP             { $$ =  1;  free($1); }
+  | ID DEC_OP             { $$ = -1;  free($1); }
+  | INC_OP ID             { $$ =  1;  free($2); }
+  | DEC_OP ID             { $$ = -1;  free($2); }
+  | ID '=' ID '+' INTEGER { $$ =  $5; free($1); free($3); }
+  | ID '=' ID '-' INTEGER { $$ = -$5; free($1); free($3); }
+  | ID ADD_ASSIGN INTEGER { $$ =  $3; free($1); }
+  | ID SUB_ASSIGN INTEGER { $$ = -$3; free($1); }
   ;
 
 

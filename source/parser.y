@@ -102,6 +102,10 @@
    int *           parser_nb_local_dims; /**< Nb of local dims per depth */
    int *           parser_valid_else;    /**< Boolean: OK for else per depth */
 
+   int             parser_ceild;         /**< Boolean: ceild used */
+   int             parser_floord;        /**< Boolean: floord used */
+   int             parser_min;           /**< Boolean: min used */
+   int             parser_max;           /**< Boolean: max used */
 #if 0   
    int *           parser_variables_localvars; /**< List of variables
                                                     in #pragma local-vars */
@@ -152,10 +156,11 @@
 %type <stmt>   selection_else_statement
 %type <stmt>   selection_statement
 %type <stmt>   iteration_statement
-%type <setex>  lower_bound
-%type <setex>  upper_bound
-%type <value>  stride
+%type <setex>  loop_initialization
+%type <setex>  loop_condition
+%type <value>  loop_stride
 
+%type <setex>  affine_minmax_expression
 %type <setex>  affine_min_expression
 %type <setex>  affine_max_expression
 %type <setex>  affine_relation
@@ -164,6 +169,7 @@
 %type <affex>  affine_primary_expression
 %type <affex>  affine_unary_expression
 %type <affex>  affine_multiplicative_expression
+%type <affex>  affine_ceildfloord_expression
 %type <affex>  affine_ceild_expression
 %type <affex>  affine_floord_expression
 %type <affex>  affine_expression
@@ -318,60 +324,78 @@ selection_statement:
 
 
 iteration_statement:
-    FOR '(' lower_bound upper_bound stride ')'
+    FOR '(' loop_initialization loop_condition loop_stride ')'
     {
       osl_vector_p   iterator_term;
       osl_relation_p iterator_relation;
-      osl_relation_p lower_constraints = NULL;
+      osl_relation_p init_constraints;
+      osl_relation_p stride_constraints;
       
-      CLAN_debug("rule iteration_statement.1.1: for ( lb ub step ) ...");
+      CLAN_debug("rule iteration_statement.1.1: for ( init cond stride ) ...");
       parser_loop_depth++;
       if ((parser_loop_depth + parser_if_depth) > CLAN_MAX_DEPTH)
 	CLAN_error("CLAN_MAX_DEPTH reached, recompile with a higher value");
-     
-      if ($5 == 1) {
-	// Stride 1 case, lower constraints:
-	// iterator >= lower_bound
-        iterator_term = clan_vector_term(parser_symbol, 0, NULL);
-	osl_int_set_si(CLAN_PRECISION, iterator_term->v, parser_loop_depth, 1); 
- 	iterator_relation = osl_relation_from_vector(iterator_term);
-	lower_constraints = clan_relation_greater(iterator_relation, $3, 0);
-	osl_vector_free(iterator_term);
-	osl_relation_free(iterator_relation);
-      }
-      else if ($5 > 1) {
-	// Stride general case, lower constraints:
-	// exists ld | iterator = lower_bound + ld * stride
-        lower_constraints = clan_lower_bound_contribution(parser_loop_depth,
-	                                                  $3, $5);
-      }
-      else {
-	yyerror("unsupported negative stride");
+
+      // Check the stride and the initialization are correct.
+      if ($5 == 0)
+	yyerror("unsupported zero loop stride");
+      if (($5 > 0) && (parser_min || parser_floord))
+	yyerror("illegal min or floord in positive stride loop initialization");
+      if (($5 < 0) && (parser_max || parser_ceild))
+	yyerror("illegal max or ceild in positive stride loop initialization");
+      parser_ceild  = 0;
+      parser_floord = 0;
+      parser_min    = 0;
+      parser_max    = 0;
+
+      // Generate the set of constraints contributed by the initialization.
+      iterator_term = clan_vector_term(parser_symbol, 0, NULL);
+      osl_int_set_si(CLAN_PRECISION, iterator_term->v, parser_loop_depth, 1); 
+      iterator_relation = osl_relation_from_vector(iterator_term);
+      if ($5 > 0)
+	init_constraints = clan_relation_greater(iterator_relation, $3, 0);
+      else
+	init_constraints = clan_relation_greater($3, iterator_relation, 0);
+      osl_vector_free(iterator_term);
+      osl_relation_free(iterator_relation);
+
+      // Add the contribution of the initialization to the current domain.
+      osl_relation_list_dup(&parser_stack);
+      clan_relation_and(parser_stack->elt, init_constraints);
+      
+      // Add the contribution of the condition to the current domain.
+      clan_relation_and(parser_stack->elt, $4);
+
+      // Add the contribution of the stride to the current domain.
+      if (($5 != 1) && ($5 != -1)) {
+	stride_constraints = clan_relation_stride(parser_stack->elt,
+	                                          parser_loop_depth, $5);
+	osl_relation_free(parser_stack->elt);
+        parser_stack->elt = stride_constraints;
       }
       
-      osl_relation_list_dup(&parser_stack);
-      clan_relation_and(parser_stack->elt, lower_constraints);
-      clan_relation_and(parser_stack->elt, $4);
-      osl_relation_free(lower_constraints);
+      osl_relation_free(init_constraints);
       osl_relation_free($3);
       osl_relation_free($4);
-      parser_scattering[parser_loop_depth] = 0;
+      parser_scattering[2*parser_loop_depth-1] = ($5 > 0) ? 1 : -1;
+      parser_scattering[2*parser_loop_depth] = 0;
     }
     statement
     {
-      CLAN_debug("rule iteration_statement.1.2: for ( lb ub step ) <stmt>");
+      CLAN_debug("rule iteration_statement.1.2: for ( init cond stride ) "
+	         "<stmt>");
       parser_loop_depth--;
       clan_symbol_free(parser_iterators[parser_loop_depth]);
       osl_relation_list_drop(&parser_stack);
       $$ = $8;
-      parser_scattering[parser_loop_depth]++;
+      parser_scattering[2*parser_loop_depth]++;
       parser_nb_local_dims[parser_loop_depth + parser_if_depth] = 0;
       CLAN_debug_call(osl_statement_dump(stderr, $$));
     }
   ;
 
 
-lower_bound:
+loop_initialization:
     ID
     {
       clan_symbol_p symbol;
@@ -388,7 +412,7 @@ lower_bound:
         symbol->rank = parser_loop_depth + 1;
       parser_iterators[parser_loop_depth] = clan_symbol_clone_one(symbol);
     }
-    '=' affine_max_expression ';'
+    '=' affine_minmax_expression ';'
     {
       CLAN_debug("rule lower_bound.1: ID = max_affex ;");
       free($1);
@@ -398,7 +422,7 @@ lower_bound:
   ;
 
 
-upper_bound:
+loop_condition:
     affine_condition ';'
     {
       CLAN_debug("rule upper_bound.1: <affex> ;");
@@ -414,7 +438,7 @@ upper_bound:
 // i++, i--; ++i, --i, i = i + v, i = i - s, i += s, i -= s
 // return <value>
 //
-stride:
+loop_stride:
     ID INC_OP             { $$ =  1;  free($1); }
   | ID DEC_OP             { $$ = -1;  free($1); }
   | INC_OP ID             { $$ =  1;  free($2); }
@@ -431,6 +455,32 @@ stride:
 // +--------------------------------------------------------------------------+
 
 
+affine_minmax_expression:
+    affine_ceildfloord_expression
+    {
+      CLAN_debug("rule affine_minmax_expression.1: <affex>");
+      $$ = osl_relation_from_vector($1);
+      osl_vector_free($1);
+      CLAN_debug_call(osl_relation_dump(stderr, $$));
+    }
+  | minmax '(' affine_minmax_expression ',' affine_minmax_expression ')'
+    {
+      CLAN_debug("rule affine_minmax_expression.2: "
+                 "MAX (affine_minmaxexpression , affine_minmax_expression )");
+      $$ = osl_relation_concat_constraints($3, $5);
+      osl_relation_free($3);
+      osl_relation_free($5);
+      CLAN_debug_call(osl_relation_dump(stderr, $$));
+    }
+  ;
+
+
+minmax:
+    MIN { parser_min = 1; }
+  | MAX { parser_max = 1; }
+  ;
+
+
 //
 // Rules for min(... operators.
 // return <setex>
@@ -441,7 +491,7 @@ affine_min_expression:
 //
     affine_floord_expression
     {
-      CLAN_debug("rule min_affine_expression.1: <affex>");
+      CLAN_debug("rule affine_min_expression.1: <affex>");
       $$ = osl_relation_from_vector($1);
       osl_vector_free($1);
       CLAN_debug_call(osl_relation_dump(stderr, $$));
@@ -451,8 +501,8 @@ affine_min_expression:
 //
   | MIN '(' affine_min_expression ',' affine_min_expression ')'
     {
-      CLAN_debug("rule min_affine_expression.2: "
-                 "MIN ( min_affine_expression , min_affine_expresssion");
+      CLAN_debug("rule affine_min_expression.2: "
+                 "MIN ( affine_min_expression , affine_min_expresssion");
       $$ = osl_relation_concat_constraints($3, $5);
       osl_relation_free($3);
       osl_relation_free($5);
@@ -471,7 +521,7 @@ affine_max_expression:
 //
     affine_ceild_expression
     {
-      CLAN_debug("rule max_affine_expression.1: <affex>");
+      CLAN_debug("rule affine_max_expression.1: <affex>");
       $$ = osl_relation_from_vector($1);
       osl_vector_free($1);
       CLAN_debug_call(osl_relation_dump(stderr, $$));
@@ -481,8 +531,8 @@ affine_max_expression:
 //
   | MAX '(' affine_max_expression ',' affine_max_expression ')'
     {
-      CLAN_debug("rule max_affine_expression.2: "
-                 "MAX ( max_affine_expression , max_affine_expression )");
+      CLAN_debug("rule affine_max_expression.2: "
+                 "MAX ( affine_max_expression , affine_max_expression )");
       $$ = osl_relation_concat_constraints($3, $5);
       osl_relation_free($3);
       osl_relation_free($5);
@@ -764,6 +814,30 @@ affine_expression:
       osl_vector_free($3);
       CLAN_debug_call(osl_vector_dump(stderr, $$));
     }
+  ;
+
+
+affine_ceildfloord_expression:
+    affine_expression
+    {
+      CLAN_debug("affine_ceildloord_expression.1: affine_expression");
+      $$ = $1;
+      CLAN_debug_call(osl_vector_dump(stderr, $$));
+    }
+  | ceildfloord '(' affine_expression ',' INTEGER ')'
+    {
+      CLAN_debug("affine_ceildfloord_expression.2: "
+                 "ceildfloord ( affine_expression , INTEGER )");
+      osl_int_set_si(CLAN_PRECISION, $3->v, 0, $5);
+      $$ = $3;
+      CLAN_debug_call(osl_vector_dump(stderr, $$));
+    }
+  ;
+
+
+ceildfloord:
+    CEILD  { parser_ceild = 1; }
+  | FLOORD { parser_floord = 1; }
   ;
 
 
@@ -1176,7 +1250,7 @@ expression_statement:
       statement->body->data = body;
       parser_recording = CLAN_FALSE;
       
-      parser_scattering[parser_loop_depth]++;
+      parser_scattering[2*parser_loop_depth]++;
 
       $$ = statement;
       CLAN_debug_call(osl_statement_dump(stderr, $$));
@@ -1451,15 +1525,21 @@ void clan_parser_initialize_state(clan_options_p options) {
   parser_options    = options;
   parser_record     = NULL;
   parser_if_depth   = 0;
+  parser_ceild      = 0;
+  parser_floord     = 0;
+  parser_min        = 0;
+  parser_max        = 0;
 
-  CLAN_malloc(parser_scattering,    int *, depth * sizeof(int));
   CLAN_malloc(parser_nb_local_dims, int *, depth * sizeof(int));
   CLAN_malloc(parser_valid_else,    int *, depth * sizeof(int));
   for (i = 0; i < depth; i++) {
-    parser_scattering[i] = 0;
     parser_nb_local_dims[i] = 0;
     parser_valid_else[i] = 0;
   }
+  
+  CLAN_malloc(parser_scattering, int *, (2 * depth + 1) * sizeof(int));
+  for (i = 0; i < 2 * depth + 1; i++)
+    parser_scattering[i] = 0;
 
   CLAN_malloc(parser_iterators, clan_symbol_p *, depth*sizeof(clan_symbol_p));
 

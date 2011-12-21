@@ -84,6 +84,9 @@ UNITARY_TEST_FILES             	= \
 	$(top_srcdir)/tests/unitary/stride1.c \
 	$(top_srcdir)/tests/unitary/stride2.c \
 	$(top_srcdir)/tests/unitary/stride3.c \
+	$(top_srcdir)/tests/unitary/stride_neg1.c \
+	$(top_srcdir)/tests/unitary/stride_neg2.c \
+	$(top_srcdir)/tests/unitary/stride_neg3.c \
 	$(top_srcdir)/tests/unitary/empty.c \
 	$(top_srcdir)/tests/unitary/simplecond.c \
 	$(top_srcdir)/tests/unitary/twoconds.c \

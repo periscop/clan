@@ -56,12 +56,11 @@ void           clan_relation_new_output_vector(osl_relation_p, osl_vector_p);
 void           clan_relation_new_output_scalar(osl_relation_p, int);
 void           clan_relation_compact(osl_relation_p, int);
 osl_relation_p clan_relation_greater(osl_relation_p, osl_relation_p, int);
-osl_relation_p clan_relation_negative_relation(osl_relation_p source);
 osl_relation_p clan_relation_not(osl_relation_p);
 void           clan_relation_and(osl_relation_p, osl_relation_p);
-osl_relation_p clan_relation_inverse_unions(osl_relation_p src);
 int            clan_relation_existential(osl_relation_p);
-osl_relation_p clan_lower_bound_contribution(int, osl_relation_p, int);
+void           clan_relation_oppose_row(osl_relation_p, int);
+osl_relation_p clan_relation_stride(osl_relation_p, int, int);
  
 # if defined(__cplusplus)
   }

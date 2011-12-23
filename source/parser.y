@@ -76,6 +76,7 @@
    void clan_parser_add_ld();
    int  clan_parser_nb_ld();
    void clan_parser_log(char *);
+   void clan_parser_increment_loop_depth();
    osl_scop_p clan_parse(FILE *, clan_options_p);
 
    extern FILE *   yyin;                 /**< File to be read by Lex */
@@ -156,6 +157,7 @@
 %type <stmt>   selection_else_statement
 %type <stmt>   selection_statement
 %type <stmt>   iteration_statement
+%type <stmt>   loop_body
 %type <setex>  loop_initialization
 %type <setex>  loop_condition
 %type <value>  loop_stride
@@ -332,9 +334,7 @@ iteration_statement:
       osl_relation_p stride_constraints;
       
       CLAN_debug("rule iteration_statement.1.1: for ( init cond stride ) ...");
-      parser_loop_depth++;
-      if ((parser_loop_depth + parser_if_depth) > CLAN_MAX_DEPTH)
-	CLAN_error("CLAN_MAX_DEPTH reached, recompile with a higher value");
+      clan_parser_increment_loop_depth();
 
       // Check the stride and the initialization are correct.
       if ($5 == 0)
@@ -380,16 +380,41 @@ iteration_statement:
       parser_scattering[2*parser_loop_depth-1] = ($5 > 0) ? 1 : -1;
       parser_scattering[2*parser_loop_depth] = 0;
     }
-    statement
+    loop_body
     {
       CLAN_debug("rule iteration_statement.1.2: for ( init cond stride ) "
-	         "<stmt>");
-      parser_loop_depth--;
-      clan_symbol_free(parser_iterators[parser_loop_depth]);
-      osl_relation_list_drop(&parser_stack);
+	         "body");
       $$ = $8;
-      parser_scattering[2*parser_loop_depth]++;
-      parser_nb_local_dims[parser_loop_depth + parser_if_depth] = 0;
+      CLAN_debug_call(osl_statement_dump(stderr, $$));
+    }
+  | loop_infinite
+    {
+      osl_vector_p   iterator_term;
+      osl_relation_p iterator_relation;
+
+      CLAN_debug("rule iteration_statement.2.1: loop_infinite ...");
+      clan_symbol_new_iterator(&parser_symbol, parser_iterators,
+	                       "clan_infinite_loop", parser_loop_depth);
+      clan_parser_increment_loop_depth();
+      
+      // Generate the constraint clan_infinite_loop >= 0.
+      iterator_term = clan_vector_term(parser_symbol, 0, NULL);
+      osl_int_set_si(CLAN_PRECISION, iterator_term->v, parser_loop_depth, 1); 
+      osl_int_set_si(CLAN_PRECISION, iterator_term->v, 0, 1); 
+      iterator_relation = osl_relation_from_vector(iterator_term);
+      
+      // Add it to the domain stack.
+      osl_relation_list_dup(&parser_stack);
+      clan_relation_and(parser_stack->elt, iterator_relation);
+      osl_vector_free(iterator_term);
+      osl_relation_free(iterator_relation);
+      parser_scattering[2*parser_loop_depth-1] = 1;
+      parser_scattering[2*parser_loop_depth] = 0;
+    }
+    loop_body
+    {
+      CLAN_debug("rule iteration_statement.2.2: loop_infinite body");
+      $$ = $3;
       CLAN_debug_call(osl_statement_dump(stderr, $$));
     }
   ;
@@ -398,19 +423,8 @@ iteration_statement:
 loop_initialization:
     ID
     {
-      clan_symbol_p symbol;
-      symbol = clan_symbol_add(&parser_symbol, $1,
-	                       CLAN_TYPE_ITERATOR, parser_loop_depth + 1);
-      // Ensure that the returned symbol was either a new one,
-      // either from the same type.
-      if (symbol->type != CLAN_TYPE_ITERATOR) {
-	yyerror("a loop iterator was previously used as a parameter");
-	return 0;
-      }
-      // Update the rank, in case the symbol already exists.
-      if (symbol->rank != parser_loop_depth + 1)
-        symbol->rank = parser_loop_depth + 1;
-      parser_iterators[parser_loop_depth] = clan_symbol_clone_one(symbol);
+      clan_symbol_new_iterator(&parser_symbol, parser_iterators, $1,
+	                       parser_loop_depth);
     }
     '=' affine_minmax_expression ';'
     {
@@ -447,6 +461,27 @@ loop_stride:
   | ID '=' ID '-' INTEGER { $$ = -$5; free($1); free($3); }
   | ID ADD_ASSIGN INTEGER { $$ =  $3; free($1); }
   | ID SUB_ASSIGN INTEGER { $$ = -$3; free($1); }
+  ;
+
+
+loop_infinite:
+    WHILE '(' INTEGER ')'
+  | FOR '(' ';' ';' ')'
+  ;
+
+
+loop_body:
+    statement
+    {
+      CLAN_debug("rule loop_body.1: <stmt>");
+      parser_loop_depth--;
+      clan_symbol_free(parser_iterators[parser_loop_depth]);
+      osl_relation_list_drop(&parser_stack);
+      $$ = $1;
+      parser_scattering[2*parser_loop_depth]++;
+      parser_nb_local_dims[parser_loop_depth + parser_if_depth] = 0;
+      CLAN_debug_call(osl_statement_dump(stderr, $$));
+    }
   ;
 
 
@@ -1502,6 +1537,13 @@ int clan_parser_nb_ld() {
   for (i = 0; i <= parser_loop_depth + parser_if_depth; i++)
     nb_ld += parser_nb_local_dims[i]; 
   return nb_ld;
+}
+
+
+void clan_parser_increment_loop_depth() {
+  parser_loop_depth++;
+  if ((parser_loop_depth + parser_if_depth) > CLAN_MAX_DEPTH)
+    CLAN_error("CLAN_MAX_DEPTH reached, recompile with a higher value");
 }
 
 

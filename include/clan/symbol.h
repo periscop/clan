@@ -90,7 +90,8 @@ int           clan_symbol_nb_of_type(clan_symbol_p, int);
 osl_generic_p clan_symbol_to_strings(clan_symbol_p, int);
 clan_symbol_p clan_symbol_clone_one(clan_symbol_p);
 osl_generic_p clan_symbol_to_arrays(clan_symbol_p);
-
+void          clan_symbol_new_iterator(clan_symbol_p *, clan_symbol_p *,
+                                       char *, int); 
 # if defined(__cplusplus)
   }
 # endif

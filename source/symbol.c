@@ -526,4 +526,30 @@ osl_generic_p clan_symbol_to_arrays(clan_symbol_p symbol) {
 }
 
 
+/**
+ * clan_symbol_new_iterator function:
+ * this function registers (or updates) an iterator in the symbol
+ * table and adds it to the iterator array.
+ * \param[in,out] table The symbol table.
+ * \param[in,out] array The iterator array.
+ * \param[in]     id    The textual name of the iterator.
+ * \param[in]     depth The current loop depth.
+ */
+void clan_symbol_new_iterator(clan_symbol_p * table, clan_symbol_p * array,
+                              char * id, int depth) {
+  clan_symbol_p symbol;
+  symbol = clan_symbol_add(table, id, CLAN_TYPE_ITERATOR, depth + 1);
+
+  // Ensure that the returned symbol was either a new one,
+  // either from the same type.
+  if (symbol->type != CLAN_TYPE_ITERATOR) {
+    yyerror("a loop iterator was previously used as a parameter");
+    return 0;
+  }
+  // Update the rank, in case the symbol already exists.
+  if (symbol->rank != depth + 1)
+    symbol->rank = depth + 1;
+  array[depth] = clan_symbol_clone_one(symbol);
+}
+
 

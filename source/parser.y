@@ -82,7 +82,8 @@
    extern FILE *   yyin;                 /**< File to be read by Lex */
    extern char *   scanner_latest_text;  /**< Latest text read by Lex */
    extern int      scanner_line;         /**< Current scanned line */
-   extern int      scanner_column;       /**< Current scanned column */
+   extern int      scanner_column;       /**< Scanned column (current) */
+   extern int      scanner_column_LALR;  /**< Scanned column (before token) */
    extern int      symbol_nb_arrays;     /**< Number of array symbols */
    extern int      symbol_nb_iterators;  /**< Number of iterator symbols */
    extern int      symbol_nb_parameters; /**< Number of parameter symbols */
@@ -102,6 +103,7 @@
    osl_relation_list_p parser_stack;     /**< Iteration domain stack */
    int *           parser_nb_local_dims; /**< Nb of local dims per depth */
    int *           parser_valid_else;    /**< Boolean: OK for else per depth */
+   int             parser_indent;        /**< SCoP indentation */
 
    int             parser_ceild;         /**< Boolean: ceild used */
    int             parser_floord;        /**< Boolean: floord used */
@@ -151,6 +153,7 @@
 %token <value>  INTEGER
 
 %type <stmt>   statement_list
+%type <stmt>   statement_or_ignore
 %type <stmt>   statement
 %type <stmt>   compound_statement
 %type <stmt>   expression_statement
@@ -234,9 +237,22 @@ scop:
 // Rules for a statement list
 // Return <stmt>
 statement_list:
-    statement                { $$ = $1; }
-  | statement_list statement { $$ = $1; osl_statement_add(&$$, $2); }
+    statement_or_ignore      { $$ = $1; }
+  | statement_list
+    statement_or_ignore      { $$ = $1; osl_statement_add(&$$, $2); }
   ;
+
+
+// Rules for a statement or ignore
+// Return <stmt>
+statement_or_ignore:
+    { 
+      if (parser_indent == CLAN_UNDEFINED)
+        parser_indent = scanner_column_LALR - 1;
+    }
+    statement                { $$ = $2; }
+  | IGNORE                   { $$ = NULL; }
+  ; 
 
 
 // Rules for a statement
@@ -246,7 +262,6 @@ statement:
   | expression_statement     { $$ = $1; }
   | selection_statement      { $$ = $1; }
   | iteration_statement      { $$ = $1; }
-  | IGNORE                   { $$ = NULL; }
   ;
 
 
@@ -1571,6 +1586,7 @@ void clan_parser_initialize_state(clan_options_p options) {
   parser_floord     = 0;
   parser_min        = 0;
   parser_max        = 0;
+  parser_indent     = CLAN_UNDEFINED;
 
   CLAN_malloc(parser_nb_local_dims, int *, depth * sizeof(int));
   CLAN_malloc(parser_valid_else,    int *, depth * sizeof(int));
@@ -1659,7 +1675,7 @@ osl_scop_p clan_parse(FILE * input, clan_options_p options) {
     }
     
     clan_scop_compact(scop);
-    
+
     if (CLAN_DEBUG) {
       CLAN_debug("SCoP after compaction:");
       osl_scop_dump(stderr, scop);
@@ -1670,6 +1686,7 @@ osl_scop_p clan_parse(FILE * input, clan_options_p options) {
     clan_scop_generate_scatnames(scop);
     arrays = clan_symbol_to_arrays(parser_symbol);
     osl_generic_add(&scop->extension, arrays);
+    clan_scop_generate_coordinates(scop, options->name);
 
     // OpenScop wants an empty context rather than a NULL context.
     if (scop->context == NULL) {

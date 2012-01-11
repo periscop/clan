@@ -68,7 +68,10 @@ IS                          ((u|U)|(u|U)?(l|L|ll|LL)|(l|L|ll|LL)(u|U))
    int    scanner_comment = 0;            /**< Comment nesting depth */
    char * scanner_latest_text = NULL;     /**< Latest text read */
    int    scanner_line = 1;               /**< Current line number */
-   int    scanner_column = 1;             /**< Current column number*/
+   int    scanner_column = 1;             /**< Current column number */
+   int    scanner_column_LALR = 1;        /**< Column number before token */
+   int    scanner_start;                  /**< SCoP starting line */
+   int    scanner_end;                    /**< SCoP ending line */
 %}
 
 %option noyywrap
@@ -153,11 +156,13 @@ IS                          ((u|U)|(u|U)?(l|L|ll|LL)|(l|L|ll|LL)(u|U))
 
 "#pragma"[ ]+"scop"         { 
                               clan_scanner_count();
+                              scanner_start = scanner_line;
                               scanner_parsing = CLAN_TRUE;
                               CLAN_debug("start parsing");
                             }
 "#pragma"[ ]+"endscop"      {
                               clan_scanner_count();
+                              scanner_end = scanner_line;
                               scanner_parsing = CLAN_FALSE;
                               CLAN_debug("stop parsing");
                               return IGNORE;
@@ -257,6 +262,7 @@ L?\"(\\.|[^\\"\n])*\"       { return clan_scanner(STRING_LITERAL, "STRING"); }
 void clan_scanner_count() {
   int i;
 
+  scanner_column_LALR = scanner_column;
   for (i = 0; yytext[i] != '\0'; i++) {
     if (yytext[i] == '\n') {
       scanner_line++;

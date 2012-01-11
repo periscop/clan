@@ -525,6 +525,7 @@ osl_generic_p clan_symbol_to_arrays(clan_symbol_p symbol) {
   return generic;
 }
 
+void yyerror(char *);
 
 /**
  * clan_symbol_new_iterator function:
@@ -544,7 +545,7 @@ void clan_symbol_new_iterator(clan_symbol_p * table, clan_symbol_p * array,
   // either from the same type.
   if (symbol->type != CLAN_TYPE_ITERATOR) {
     yyerror("a loop iterator was previously used as a parameter");
-    return 0;
+    return;
   }
   // Update the rank, in case the symbol already exists.
   if (symbol->rank != depth + 1)

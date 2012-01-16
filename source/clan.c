@@ -46,25 +46,25 @@ int main(int argc, char * argv[]) {
   FILE * input;
   FILE * output;
 
-  /* Options and input/output file setting. */
+  // Options and input/output file setting.
   options = clan_options_read(argc, argv, &input, &output);
 
-  /* Extraction of the polyhedral representation of the SCoP from the input. */
+  // Extraction of the polyhedral representation of the SCoP from the input.
   if (options->inputscop)
-    /* Input is a .scop file. */
+    // Input is a .scop file.
     scop = osl_scop_read(input);
   else
-    /* Input is a source code. */
+    // Input is a source code.
     scop = clan_scop_extract(input, options);
 
-  /* Printing of the internal data structure of the SCoP if asked. */
+  // Printing of the internal data structure of the SCoP if asked.
   if (options->structure)
     osl_scop_dump(stdout, scop);
 
-  /* Generation of the .scop output file. */
+  // Generation of the .scop output file.
   clan_scop_print(output, scop);
 
-  /* Save the planet. */
+  // Save the planet.
   clan_options_free(options);
   osl_scop_free(scop);
 

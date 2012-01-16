@@ -80,13 +80,13 @@ void clan_symbol_print_structure(FILE * file, clan_symbol_p symbol,
   int i, j, first = 1, number = 1;
 
   if (symbol != NULL) {
-    /* Go to the right level. */
+    // Go to the right level.
     for(j = 0; j < level; j++)
       fprintf(file, "|\t");
     fprintf(file, "+-- clan_symbol_t (node %d)\n", number);
   }
   else {
-    /* Go to the right level. */
+    // Go to the right level.
     for(j = 0; j < level; j++)
       fprintf(file, "|\t");
     fprintf(file, "+-- NULL symbol\n");
@@ -94,7 +94,7 @@ void clan_symbol_print_structure(FILE * file, clan_symbol_p symbol,
 
   while (symbol != NULL) {
     if (!first) {
-      /* Go to the right level. */
+      // Go to the right level.
       for (j = 0; j < level; j++)
         fprintf(file, "|\t");
       fprintf(file, "|   clan_symbol_t (node %d)\n", number);
@@ -102,12 +102,12 @@ void clan_symbol_print_structure(FILE * file, clan_symbol_p symbol,
     else
       first = 0;
 
-    /* A blank line. */
+    // A blank line.
     for (j = 0; j <= level+1; j++)
       fprintf(file, "|\t");
     fprintf(file, "\n");
 
-    /* Print the identifier. */
+    // Print the identifier.
     for (i = 0; i <= level; i++)
       fprintf(file, "|\t");
     if (symbol->identifier != NULL)
@@ -115,12 +115,12 @@ void clan_symbol_print_structure(FILE * file, clan_symbol_p symbol,
     else
       fprintf(file, "+-- No identifier\n");
 
-    /* A blank line. */
+    // A blank line.
     for(j = 0; j <= level + 1; j++)
       fprintf(file, "|\t") ;
     fprintf(file, "\n") ;
 
-    /* Go to the right level and print the type. */
+    // Go to the right level and print the type.
     for (j = 0; j <= level; j++)
       fprintf(file, "|\t") ;
     fprintf(file, "Type: ") ;
@@ -132,17 +132,17 @@ void clan_symbol_print_structure(FILE * file, clan_symbol_p symbol,
       default : fprintf(file, "Unknown\n") ;
     }
 
-    /* A blank line. */
+    // A blank line.
     for (j = 0; j <= level + 1; j++)
       fprintf(file, "|\t");
     fprintf(file, "\n");
 
-    /* Go to the right level and print the rank. */
+    // Go to the right level and print the rank.
     for (j = 0; j <= level; j++)
       fprintf(file, "|\t");
     fprintf(file, "Rank: %d\n", symbol->rank);
 
-    /* A blank line. */
+    // A blank line.
     for (j = 0; j <= level + 1; j++)
       fprintf(file, "|\t");
     fprintf(file, "\n");
@@ -150,7 +150,7 @@ void clan_symbol_print_structure(FILE * file, clan_symbol_p symbol,
     symbol = symbol->next;
     number++;
 
-    /* Next line. */
+    // Next line.
     if (symbol != NULL) {
       for (j = 0; j <= level; j++)
         fprintf(file, "|\t");
@@ -158,7 +158,7 @@ void clan_symbol_print_structure(FILE * file, clan_symbol_p symbol,
     }
   }
 
-  /* The last line. */
+  // The last line.
   for(j = 0; j <= level; j++)
     fprintf(file, "|\t");
   fprintf(file, "\n");
@@ -277,19 +277,18 @@ clan_symbol_p clan_symbol_add(clan_symbol_p * table, char * identifier,
                               int type, int rank) {
   clan_symbol_p symbol;
 
-  /* If the identifier is already in the table, do nothing. */
+  // If the identifier is already in the table, do nothing.
   symbol = clan_symbol_lookup(*table, identifier);
   if (symbol != NULL)
     return symbol;
 
-  /* Else, we allocate and fill a new clan_symbol_t node. */
+  // Else, we allocate and fill a new clan_symbol_t node.
   symbol = clan_symbol_malloc();
 
   symbol->identifier = strdup(identifier);
 
-  /* If the type was unknown (iterator or parameter) we know now that it is
-   * a parameter, it would have been already in the table otherwise.
-   */
+  // If the type was unknown (iterator or parameter) we know now that it is
+  // a parameter, it would have been already in the table otherwise.
   if (type == CLAN_UNDEFINED)
     type = CLAN_TYPE_PARAMETER;
   symbol->type = type;
@@ -303,7 +302,7 @@ clan_symbol_p clan_symbol_add(clan_symbol_p * table, char * identifier,
     case CLAN_TYPE_FUNCTION : symbol->rank = ++symbol_nb_functions;  break;
   }
 
-  /* We put the new symbol at the beginning of the table (easier ;-) !). */
+  // We put the new symbol at the beginning of the table (easier ;-) !). */
   symbol->next = *table;
   *table = symbol;
 
@@ -552,5 +551,3 @@ void clan_symbol_new_iterator(clan_symbol_p * table, clan_symbol_p * array,
     symbol->rank = depth + 1;
   array[depth] = clan_symbol_clone_one(symbol);
 }
-
-

@@ -127,7 +127,7 @@ osl_relation_p clan_relation_scattering(int * vector, int depth) {
 
 /**
  * clan_relation_new_output_vector function:
- * this function adds a new output dimension to a relation and a new
+ * this function adds a new output dimension and a new
  * constraint corresponding to the new output dimension to an existing
  * relation. The new output dimension is added after the existing output
  * dimensions. It is supposed to be equal to the vector expression passed
@@ -172,7 +172,7 @@ void clan_relation_new_output_vector(osl_relation_p relation,
 
 /**
  * clan_relation_new_output_scalar function:
- * this function adds a new output dimension to a relation and a new
+ * this function adds a new output dimension and a new
  * constraint corresponding to the new output dimension to an existing
  * relation. The new output dimension is added after the existing output
  * dimensions. It is supposed to be equal to a scalar value passed

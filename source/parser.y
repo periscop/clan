@@ -207,11 +207,12 @@ scop:
     {
       int nb_parameters;
       osl_scop_p scop;
+      osl_generic_p arrays;
 
       CLAN_debug("rule scop.1: statement_list");
       scop = osl_scop_malloc();
       CLAN_strdup(scop->language, "C");
-      
+
       // Build the SCoP context.
       nb_parameters = clan_symbol_nb_of_type(parser_symbol, CLAN_TYPE_PARAMETER);
       scop->parameters = clan_symbol_to_strings(parser_symbol, CLAN_TYPE_PARAMETER);
@@ -221,7 +222,25 @@ scop:
 
       // Set the statements.
       scop->statement = $1;
-      
+
+      // Compact the SCoP relations.
+      if (CLAN_DEBUG) {
+        CLAN_debug("SCoP before compaction:");
+        osl_scop_dump(stderr, scop);
+      }
+      clan_scop_compact(scop);
+      if (CLAN_DEBUG) {
+        CLAN_debug("SCoP after compaction:");
+        osl_scop_dump(stderr, scop);
+      }
+
+      // Add extensions.
+      scop->registry = osl_interface_get_default_registry();
+      clan_scop_generate_scatnames(scop);
+      arrays = clan_symbol_to_arrays(parser_symbol);
+      osl_generic_add(&scop->extension, arrays);
+      clan_scop_generate_coordinates(scop, parser_options->name);
+
       parser_scop = scop;
       CLAN_debug_call(osl_scop_dump(stderr, scop));
     } 
@@ -1603,7 +1622,7 @@ void clan_parser_initialize_state(clan_options_p options) {
 
   CLAN_malloc(parser_iterators, clan_symbol_p *, depth*sizeof(clan_symbol_p));
 
-  /* Reset also the Symbol global variables. */
+  // Reset also the Symbol global variables.
   symbol_nb_iterators  = 0;
   symbol_nb_parameters = 0;
   symbol_nb_arrays     = 0;
@@ -1633,7 +1652,6 @@ void clan_parser_free_state() {
  * \param options Options for file parsing.
  */
 osl_scop_p clan_parse(FILE * input, clan_options_p options) {
-  osl_generic_p arrays;
   osl_scop_p scop;
   yyin = input;
 
@@ -1646,37 +1664,11 @@ osl_scop_p clan_parse(FILE * input, clan_options_p options) {
   fclose(yyin);
   clan_scanner_free();
 
-  if (!clan_parse_error) {
+  if (!clan_parse_error)
     scop = parser_scop;
-    if (CLAN_DEBUG) {
-      CLAN_debug("SCoP before compaction:");
-      osl_scop_dump(stderr, scop);
-    }
-    
-    clan_scop_compact(scop);
-
-    if (CLAN_DEBUG) {
-      CLAN_debug("SCoP after compaction:");
-      osl_scop_dump(stderr, scop);
-    }
-
-    // Add extensions.
-    scop->registry = osl_interface_get_default_registry();
-    clan_scop_generate_scatnames(scop);
-    arrays = clan_symbol_to_arrays(parser_symbol);
-    osl_generic_add(&scop->extension, arrays);
-    clan_scop_generate_coordinates(scop, options->name);
-
-    // OpenScop wants an empty context rather than a NULL context.
-    if (scop->context == NULL) {
-      scop->context = osl_relation_pmalloc(CLAN_PRECISION, 0, 2);
-      scop->context->type = OSL_TYPE_CONTEXT;
-      osl_relation_set_attributes(scop->context, 0, 0, 0, 0);
-    }
-  }
-  else {
+  else
     scop = NULL;
-  }
+
   clan_parser_free_state();
   CLAN_debug("parser state successfully freed");
 

@@ -57,17 +57,17 @@
  * \param options Option structure whose information have to be printed.
  */
 void clan_options_print(FILE * foo, clan_options_p options) {
-  fprintf(foo,"Options:\n");
+  fprintf(foo, "Options:\n");
 
   if (options->name != NULL)
-    fprintf(foo,"name            = %s,\n",options->name);
+    fprintf(foo, "name            = %s,\n", options->name);
   else
-    fprintf(foo,"name            = NULL,\n");
+    fprintf(foo, "name            = NULL,\n");
 
-  fprintf(foo,"castle          = %3d,\n",options->castle);
-  fprintf(foo,"structure       = %3d.\n",options->structure);
-  fprintf(foo,"inputscop       = %3d.\n",options->inputscop);
-  fprintf(foo,"bounded_context = %3d.\n",options->bounded_context);
+  fprintf(foo, "castle          = %3d,\n", options->castle);
+  fprintf(foo, "structure       = %3d.\n", options->structure);
+  fprintf(foo, "inputscop       = %3d.\n", options->inputscop);
+  fprintf(foo, "bounded_context = %3d.\n", options->bounded_context);
 }
 
 
@@ -169,16 +169,14 @@ void clan_options_version() {
 void clan_options_set(int * option, int argv, char ** argc, int * number) {
   char ** endptr;
 
-  if (*number+1 >= argv) {
-    fprintf(stderr, "[clan]ERROR: an option lacks of argument.\n");
-    exit(1);
-  }
+  if (*number+1 >= argv)
+    CLAN_error("an option lacks of argument");
 
   endptr = NULL;
-  *option = strtol(argc[*number+1],endptr,10);
+  *option = strtol(argc[*number+1], endptr, 10);
   if (endptr != NULL) {
-    fprintf(stderr, "[clan]ERROR: %s value for %s option is not valid.\n",
-            argc[*number+1],argc[*number]);
+    fprintf(stderr, "[Clan] Error: %s value for %s option is not valid.\n",
+            argc[*number + 1], argc[*number]);
     exit(1);
   }
   *number = *number + 1;
@@ -259,10 +257,8 @@ clan_options_p clan_options_read(int argv, char ** argc,
       }
       else
       if (strcmp(argc[i], "-o") == 0) {
-        if (i+1 >= argv) {
-	  fprintf(stderr, "[clan]ERROR: no output name for -o option.\n");
-          exit(1);
-        }
+        if (i+1 >= argv)
+          CLAN_error("no output name for -o option");
 
         /* stdout is a special value to set output to standard output. */
         if (strcmp(argc[i+1], "stdout") == 0) {
@@ -270,16 +266,13 @@ clan_options_p clan_options_read(int argv, char ** argc,
         }
         else {
 	  *output = fopen(argc[i+1], "w");
-          if (*output == NULL) {
-	    fprintf(stderr, "[clan]ERROR: can't create output file %s.\n",
-	            argc[i+1]);
-            exit(1);
-          }
+          if (*output == NULL)
+            CLAN_error("cannot open the output file");
         }
         i++;
       }
       else {
-        fprintf(stderr, "[clan]WARNING: unknown %s option.\n", argc[i]);
+        fprintf(stderr, "[Clan] Warning: unknown %s option.\n", argc[i]);
       }
     }
     else {
@@ -292,25 +285,18 @@ clan_options_p clan_options_read(int argv, char ** argc,
         }
         else {
 	  *input = fopen(argc[i], "r");
-          if (*input == NULL) {
-	    fprintf(stderr, "[clan]ERROR: %s file does not exist.\n", argc[i]);
-            exit(1);
-          }
+          if (*input == NULL)
+            CLAN_error("cannot open the input file");
         }
       }
       else {
-        fprintf(stderr, "[clan]ERROR: multiple input files.\n");
-        exit(1);
+        CLAN_error("multiple input files");
       }
     }
   }
 
-  if (!input_is_set) {
-    if (!infos)
-      fprintf(stderr, "[clan]ERROR: no input file (-h for help).\n");
-    clan_options_free(options);
-    exit(1);
-  }
+  if (!input_is_set && !infos)
+    CLAN_error("no input file (-h for help)");
 
   return options;
 }

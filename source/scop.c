@@ -72,7 +72,7 @@ osl_scop_p clan_parse(FILE *, clan_options_p);
 
 /**
  * clan_scop_extract function:
- * this function is a wrapper clan_parse function that parses a file to
+ * this function is a wrapper to the clan_parse function that parses a file to
  * extract a SCoP and returns, if successful, a pointer to the osl_scop_t
  * structure.
  * \param input   The file to parse (already open).
@@ -226,107 +226,3 @@ void clan_scop_generate_coordinates(osl_scop_p scop, char * name) {
   extension->data = coordinates;
   osl_generic_add(&scop->extension, extension);
 }
-
-
-//TODO: Put back the option support
-#if 0
-/**
- * clan_scop_fill_options:
- * This function stores the list of variables id in 'varlist' in the
- * option tag of the scop, enclosed by
- * <local-vars></local-vars>.
- *
- */
-void
-clan_scop_fill_options(osl_scop_p scop, int* localvars, int* liveoutvars)
-{
-  /* Build the string of ids. */
-  int i, size;
-  char* tag = NULL;
-  char* tag1 = NULL;
-  char* tag2 = NULL;
-  if (localvars && localvars[0] != -1)
-    {
-      /* localvars is a -1-terminated array. */
-      for (i = 0; localvars[i] != -1; ++i)
-	;
-      size = i;
-      char* ids = (char*)malloc(((size * 5) + 1) * sizeof(char));
-      ids[0] = '\0';
-      char buffer[16];
-      for (i = 0; i < size; ++i)
-	{
-	  if (i == 0)
-	    sprintf(buffer, "%d", localvars[i]);
-	  else
-	    sprintf(buffer, " %d", localvars[i]);
-	  strcat(ids, buffer);
-	}
-      size = strlen("<local-vars>\n") + strlen (ids) +
-	strlen ("</local-vars>\n");
-      tag1 = (char*)malloc((size + 1) * sizeof(char));
-      strcpy(tag1, "<local-vars>\n");
-      strcat(tag1, ids);
-      strcat(tag1, "\n");
-      strcat(tag1, "</local-vars>\n");
-      free(ids);
-    }
-
-  if (liveoutvars && liveoutvars[0] != -1)
-    {
-      /* liveoutvars is a -1-terminated array. */
-      for (i = 0; liveoutvars[i] != -1; ++i)
-	;
-      size = i;
-      char* ids = (char*)malloc(((size * 5) + 1) * sizeof(char));
-      ids[0] = '\0';
-      char buffer[16];
-      for (i = 0; i < size; ++i)
-	{
-	  if (i == 0)
-	    sprintf(buffer, "%d", liveoutvars[i]);
-	  else
-	    sprintf(buffer, " %d", liveoutvars[i]);
-	  strcat(ids, buffer);
-	}
-      size = strlen("<live-out-vars>\n") + strlen (ids) +
-	strlen ("</live-out-vars>\n") + 2;
-      tag2 = (char*)malloc((size + 1) * sizeof(char));
-      strcpy(tag2, "<live-out-vars>\n");
-      strcat(tag2, ids);
-      strcat(tag2, "\n");
-      strcat(tag2, "</live-out-vars>\n");
-      free(ids);
-    }
-
-  /* Concatenate the tags. */
-  if (tag1 || tag2)
-    {
-      if (tag1 == NULL)
-	tag = tag2;
-      else if (tag2 == NULL)
-	tag = tag1;
-      else
-	{
-	  tag = (char*)malloc((strlen(tag1) + strlen(tag2) + 1));
-	  strcpy(tag, tag1);
-	  strcat(tag, tag2);
-	  free(tag1);
-	  free(tag2);
-	}
-    }
-
-  if (scop->optiontags == NULL)
-    scop->optiontags = tag;
-  else
-    {
-      char* newtag = (char*)malloc((strlen(tag) + strlen(scop->optiontags) + 2)
-				   * sizeof(char));
-      strcpy(newtag, scop->optiontags);
-      strcat(newtag, "\n");
-      strcat(newtag, tag);
-      free(scop->optiontags);
-      scop->optiontags = newtag;
-    }
-}
-#endif

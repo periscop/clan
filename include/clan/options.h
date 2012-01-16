@@ -57,9 +57,7 @@ struct clan_options
   int castle;    /**< 1 to put the Clan castle in output, 0 otherwise. */
   int structure; /**< 1 to print the clan_scop structure, 0 otherwise. */
   int inputscop; /**< 1 to read a .scop on the input, 0 to read a
-		    source file (default). */
-  int arraystag; /**< 1 to dump the table of array names between the
-		    <arrays></arrays> tags, 0 otherwise (default). */
+                      source file (default). */
   int bounded_context; /**< 1 to force global parameters >= -1 (default 0) */
 };
 typedef struct clan_options   clan_options_t;

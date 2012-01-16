@@ -126,29 +126,6 @@ osl_relation_p clan_relation_scattering(int * vector, int depth) {
 
 
 /**
- * clan_relation_outputize function:
- * this function adds an output dimension to each row of an input
- * relation (they are all supposed to correspond to an output relation
- * expression). It amounts at adding a negative identity after the first
- * column of the constraint matrix and at updating the number of output
- * dimensions.
- * \param[in,out] relation The relation where to add output dimensions.
- */
-void clan_relation_outputize(osl_relation_p relation) {
-  int i;
-  osl_relation_p neg_identity = osl_relation_pmalloc(CLAN_PRECISION,
-    relation->nb_rows, relation->nb_rows);
-  
-  for (i = 0; i < relation->nb_rows; i++)
-    osl_int_set_si(CLAN_PRECISION, neg_identity->m[i], i, -1);
-
-  osl_relation_insert_columns(relation, neg_identity, 1);
-  osl_relation_free(neg_identity);
-  relation->nb_output_dims = relation->nb_rows;
-}
-
-
-/**
  * clan_relation_new_output_vector function:
  * this function adds a new output dimension to a relation and a new
  * constraint corresponding to the new output dimension to an existing

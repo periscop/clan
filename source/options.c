@@ -106,7 +106,6 @@ void clan_options_help() {
   "                        value: when used, output is standard output\n"
   "                        (default setting: stdout).\n"
   "  -inputscop            Read a .scop as the input.\n"
-  "  -arraystag            Dump the arrays table in the <arrays> tag.\n"
   "  -boundedctxt          Bound all global parameters to be >= -1.\n"
   "  -v, --version         Display the release information (and more).\n"
   "  -h, --help            Display this information.\n\n");
@@ -203,8 +202,6 @@ clan_options_p clan_options_malloc(void) {
   options->castle    = 1;    /* Do print the Clan McCloog castle in output. */
   options->structure = 0;    /* Don't print internal structure.*/
   options->inputscop = 0;    /* Default input is a source file, not a .scop.*/
-  options->arraystag = 0;    /* Don't dump the array list in the
-				<arrays> tag. */
   options->bounded_context = 0;/* Don't bound the global parameters. */
   return options;
 }
@@ -247,9 +244,6 @@ clan_options_p clan_options_read(int argv, char ** argc,
       else
       if (strcmp(argc[i], "-inputscop") == 0)
         options->inputscop = 1;
-      else
-      if (strcmp(argc[i], "-arraystag") == 0)
-        options->arraystag = 1;
       else
       if (strcmp(argc[i], "-boundedctxt") == 0)
         options->bounded_context = 1;

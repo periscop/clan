@@ -109,12 +109,6 @@
    int             parser_floord;        /**< Boolean: floord used */
    int             parser_min;           /**< Boolean: min used */
    int             parser_max;           /**< Boolean: max used */
-#if 0   
-   int *           parser_variables_localvars; /**< List of variables
-                                                    in #pragma local-vars */
-   int *           parser_variables_liveout;   /**< List of variables
-                                                    in #pragma live-out */
-#endif
 
    /* Ugly global variable to keep/read Clan options during parsing. */
    clan_options_p  parser_options = NULL;
@@ -1609,25 +1603,11 @@ void clan_parser_initialize_state(clan_options_p options) {
 
   CLAN_malloc(parser_iterators, clan_symbol_p *, depth*sizeof(clan_symbol_p));
 
-#if 0
-  parser_variables_localvars =
-    (int*)malloc((CLAN_MAX_LOCAL_VARIABLES + 1) * sizeof(int));
-  parser_variables_liveout =
-    (int*)malloc((CLAN_MAX_LOCAL_VARIABLES + 1) * sizeof(int));
-#endif
-
   /* Reset also the Symbol global variables. */
   symbol_nb_iterators  = 0;
   symbol_nb_parameters = 0;
   symbol_nb_arrays     = 0;
   symbol_nb_functions  = 0;
-
-#if 0
-  for (i = 0; i <= CLAN_MAX_LOCAL_VARIABLES; ++i)
-    parser_variables_localvars[i] = -1;
-  for (i = 0; i <= CLAN_MAX_LOCAL_VARIABLES; ++i)
-    parser_variables_liveout[i] = -1;
-#endif
 }
 
 
@@ -1642,10 +1622,6 @@ void clan_parser_free_state() {
   free(parser_nb_local_dims);
   free(parser_valid_else);
   osl_relation_list_drop(&parser_stack);
-#if 0
-  free(parser_variables_localvars);
-  free(parser_variables_liveout);
-#endif
 }
 
 
@@ -1671,11 +1647,6 @@ osl_scop_p clan_parse(FILE * input, clan_options_p options) {
   clan_scanner_free();
 
   if (!clan_parse_error) {
-    /*if (parser_variables_localvars[0] != -1 ||
-      parser_variables_liveout[0] != -1)
-      clan_scop_fill_options(parser_scop, parser_variables_localvars,
-      parser_variables_liveout);
-    */
     scop = parser_scop;
     if (CLAN_DEBUG) {
       CLAN_debug("SCoP before compaction:");
@@ -1711,4 +1682,3 @@ osl_scop_p clan_parse(FILE * input, clan_options_p options) {
 
   return scop;
 }
-

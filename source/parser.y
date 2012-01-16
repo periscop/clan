@@ -746,8 +746,16 @@ affine_condition:
 affine_primary_expression:
     ID
     {
+      clan_symbol_p id;
+
       CLAN_debug("rule affine_primary_expression.1: id");
-      clan_symbol_add(&parser_symbol, $1, CLAN_TYPE_UNKNOWN, parser_loop_depth);
+      id = clan_symbol_add(&parser_symbol, $1, CLAN_UNDEFINED,
+                           parser_loop_depth);
+      if (id->type == CLAN_TYPE_ARRAY)
+        yyerror("variable or array reference in an affine expression");
+      else if (id->type == CLAN_TYPE_FUNCTION)
+        yyerror("function call in an affine expression");
+
       $$ = clan_vector_term(parser_symbol, 1, $1);
       free($1);
       CLAN_debug_call(osl_vector_dump(stderr, $$));

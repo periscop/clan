@@ -268,17 +268,17 @@ clan_symbol_p clan_symbol_lookup_by_type_rank(clan_symbol_p symbol,
  * node will become its first element. A new node is added only if an
  * existing node with the same identifier does not already exist. It returns
  * the pointer to the symbol table node corresponding to the identifier.
- * \param location   The address of the symbol table.
+ * \param table      The address of the symbol table.
  * \param identifier The identifier of the symbol we want to add.
  * \param type       The new symbol type
  * \param rank       The new symbol rank (depth if iterator, ignored otherwise)
  */
-clan_symbol_p clan_symbol_add(clan_symbol_p * location, char * identifier,
+clan_symbol_p clan_symbol_add(clan_symbol_p * table, char * identifier,
                               int type, int rank) {
   clan_symbol_p symbol;
 
   /* If the identifier is already in the table, do nothing. */
-  symbol = clan_symbol_lookup(*location, identifier);
+  symbol = clan_symbol_lookup(*table, identifier);
   if (symbol != NULL)
     return symbol;
 
@@ -290,7 +290,7 @@ clan_symbol_p clan_symbol_add(clan_symbol_p * location, char * identifier,
   /* If the type was unknown (iterator or parameter) we know now that it is
    * a parameter, it would have been already in the table otherwise.
    */
-  if (type == CLAN_TYPE_UNKNOWN)
+  if (type == CLAN_UNDEFINED)
     type = CLAN_TYPE_PARAMETER;
   symbol->type = type;
 
@@ -304,8 +304,8 @@ clan_symbol_p clan_symbol_add(clan_symbol_p * location, char * identifier,
   }
 
   /* We put the new symbol at the beginning of the table (easier ;-) !). */
-  symbol->next = *location;
-  *location = symbol;
+  symbol->next = *table;
+  *table = symbol;
 
   return symbol;
 }
@@ -541,12 +541,12 @@ void clan_symbol_new_iterator(clan_symbol_p * table, clan_symbol_p * array,
   clan_symbol_p symbol;
   symbol = clan_symbol_add(table, id, CLAN_TYPE_ITERATOR, depth + 1);
 
-  // Ensure that the returned symbol was either a new one,
-  // either from the same type.
+  // Ensure that the returned symbol was either a new one, or of the same type.
   if (symbol->type != CLAN_TYPE_ITERATOR) {
     yyerror("a loop iterator was previously used as a parameter");
     return;
   }
+  
   // Update the rank, in case the symbol already exists.
   if (symbol->rank != depth + 1)
     symbol->rank = depth + 1;

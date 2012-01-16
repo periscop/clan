@@ -57,7 +57,6 @@
 # define CLAN_MAX_CONSTRAINTS          5 // Max contraint number for a domain
 # define CLAN_UNDEFINED                -1
 
-# define CLAN_TYPE_UNKNOWN             -1
 # define CLAN_TYPE_ITERATOR             1
 # define CLAN_TYPE_ITERATOR_DEC         2
 # define CLAN_TYPE_PARAMETER            3

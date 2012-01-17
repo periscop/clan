@@ -66,6 +66,8 @@ void clan_options_print(FILE * foo, clan_options_p options) {
 
   fprintf(foo, "castle          = %3d,\n", options->castle);
   fprintf(foo, "structure       = %3d.\n", options->structure);
+  fprintf(foo, "autoscop        = %3d.\n", options->autoscop);
+  fprintf(foo, "autopragma      = %3d.\n", options->autopragma);
   fprintf(foo, "inputscop       = %3d.\n", options->inputscop);
   fprintf(foo, "bounded_context = %3d.\n", options->bounded_context);
 }
@@ -105,6 +107,8 @@ void clan_options_help() {
   "  -o <output>           Name of the output file; 'stdout' is a special\n"
   "                        value: when used, output is standard output\n"
   "                        (default setting: stdout).\n"
+  "  -autoscop             Automatic SCoP extraction.\n"
+  "  -autopragma           Automatic insertion of SCoP pragmas in the code.\n"
   "  -inputscop            Read a .scop as the input.\n"
   "  -boundedctxt          Bound all global parameters to be >= -1.\n"
   "  -v, --version         Display the release information (and more).\n"
@@ -196,10 +200,12 @@ clan_options_p clan_options_malloc(void) {
   CLAN_malloc(options, clan_options_p, sizeof(clan_options_t));
 
   /* We set the various fields with default values. */
-  options->name      = NULL; /* Name of the input file is not set. */
-  options->castle    = 1;    /* Do print the Clan McCloog castle in output. */
-  options->structure = 0;    /* Don't print internal structure.*/
-  options->inputscop = 0;    /* Default input is a source file, not a .scop.*/
+  options->name       = NULL; /* Name of the input file is not set. */
+  options->castle     = 1;    /* Do print the Clan McCloog castle in output. */
+  options->structure  = 0;    /* Don't print internal structure.*/
+  options->autoscop   = 0;    /* Do not extract SCoPs automatically.*/
+  options->autopragma = 0;    /* Do not insert SCoP pragmas automatically.*/
+  options->inputscop  = 0;    /* Default input is a source file, not a .scop.*/
   options->bounded_context = 0;/* Don't bound the global parameters. */
   return options;
 }
@@ -239,6 +245,12 @@ clan_options_p clan_options_read(int argv, char ** argc,
       else
       if (strcmp(argc[i], "-structure") == 0)
         options->structure = 1;
+      else
+      if (strcmp(argc[i], "-autoscop") == 0)
+        options->autoscop = 1;
+      else
+      if (strcmp(argc[i], "-autopragma") == 0)
+        options->autopragma = 1;
       else
       if (strcmp(argc[i], "-inputscop") == 0)
         options->inputscop = 1;
@@ -294,6 +306,13 @@ clan_options_p clan_options_read(int argv, char ** argc,
       }
     }
   }
+
+  if (options->autoscop && options->autopragma)
+    CLAN_error("autoscop and autopragma options cannot be used together");
+
+  if ((options->autoscop || options->autopragma) &&
+      !strcmp(options->name, "stdin"))
+    CLAN_error("autoscop and autopragma options need an input file");
 
   if (!input_is_set && !infos)
     CLAN_error("no input file (-h for help)");

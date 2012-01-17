@@ -53,7 +53,7 @@ TESTS_ENVIRONMENT       = top_builddir=$(top_builddir) SRCDIR=$(srcdir)
 
 EXTRA_DIST              = checker.sh
 
-check_SCRIPTS		= check_unitary.sh check_complex.sh
+check_SCRIPTS		= check_unitary.sh check_complex.sh check_autoscop.sh
 
 ## Replace by program names when needed
 # check_PROGRAMS = ...
@@ -127,28 +127,36 @@ UNITARY_TEST_FILES             	= \
 	$(top_srcdir)/tests/unitary/nestedcurly.c \
 	$(top_srcdir)/tests/unitary/float.c
 
+AUTOSCOP_TEST_FILES = \
+	$(top_srcdir)/tests/autoscop/classicloop.c \
+	$(top_srcdir)/tests/autoscop/matmul_1_bare_metal.c \
+	$(top_srcdir)/tests/autoscop/matmul_2_non_static_fences.c \
+	$(top_srcdir)/tests/autoscop/matmul_3_user_scop.c
 
-TEST_FILES_REF    =		 $(TEST_FILES:.c=.c.scop)
-UNITARY_TEST_FILES_REF		= $(UNITARY_TEST_FILES:.c=.c.scop)
+TEST_FILES_REF = $(TEST_FILES:.c=.c.scop)
+UNITARY_TEST_FILES_REF = $(UNITARY_TEST_FILES:.c=.c.scop)
+AUTOSCOP_TEST_FILES_REF = $(AUTOSCOP_TEST_FILES:.c=.c.scop)
 
-TEST_FILES_CLEAN		= $(TEST_FILES:.c=.c.test)
-UNITARY_TEST_FILES_CLEAN	= $(UNITARY_TEST_FILES:.c=.c.test)
+TEST_FILES_CLEAN = $(TEST_FILES:.c=.c.test)
+UNITARY_TEST_FILES_CLEAN = $(UNITARY_TEST_FILES:.c=.c.test)
+AUTOSCOP_TEST_FILES_CLEAN = $(AUTOSCOP_TEST_FILES:.c=.c.test)
 
-
-CLEANFILES			= \
+CLEANFILES = \
 	$(TEST_FILES_CLEAN) \
-	$(UNITARY_TEST_FILES_CLEAN)
+	$(UNITARY_TEST_FILES_CLEAN) \
+	$(AUTOSCOP_TEST_FILES_CLEAN)
 
-
-EXTRA_DIST	+= \
+EXTRA_DIST += \
 	$(TEST_FILES) \
 	$(TEST_FILES_REF) \
 	$(UNITARY_TEST_FILES) \
 	$(UNITARY_TEST_FILES_REF) \
+	$(AUTOSCOP_TEST_FILES) \
+	$(AUTOSCOP_TEST_FILES_REF) \
 	$(check_SCRIPTS)
-
 
 TESTS_ENVIRONMENT += \
 	CHECKER="$(top_srcdir)/tests/checker.sh" \
 	TEST_FILES="$(TEST_FILES)" \
-	UNITARY_TEST_FILES="$(UNITARY_TEST_FILES)"
+	UNITARY_TEST_FILES="$(UNITARY_TEST_FILES)" \
+	AUTOSCOP_TEST_FILES="$(AUTOSCOP_TEST_FILES)"

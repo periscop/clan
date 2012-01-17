@@ -43,8 +43,8 @@
 int main(int argc, char * argv[]) {
   osl_scop_p scop;
   clan_options_p options;
-  FILE * input;
-  FILE * output;
+  FILE * input, * output, * autopragma;
+  char c;
 
   // Options and input/output file setting.
   options = clan_options_read(argc, argv, &input, &output);
@@ -61,12 +61,24 @@ int main(int argc, char * argv[]) {
   if (options->structure)
     osl_scop_dump(stdout, scop);
 
-  // Generation of the .scop output file.
-  clan_scop_print(output, scop);
+  if (!options->autopragma) {
+    // Generation of the .scop output file.
+    clan_scop_print(output, scop);
+  }
+  else {
+    // Output the file with inserted SCoP pragmas.
+    if ((autopragma = fopen(CLAN_AUTOPRAGMA_FILE, "r")) == NULL)
+      CLAN_error("cannot create the temporary file");
+    while ((c = fgetc(autopragma)) != EOF)
+      fputc(c, output);
+    fclose(autopragma);
+    remove(CLAN_AUTOPRAGMA_FILE);
+  }
 
   // Save the planet.
   clan_options_free(options);
   osl_scop_free(scop);
+  fclose(output);
 
   return 0;
 }

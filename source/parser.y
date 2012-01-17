@@ -67,12 +67,12 @@
    #include <clan/statement.h>
    #include <clan/options.h>
 
-   int yylex(void);
+   int  yylex(void);
    void yyerror(char *);
+   void clan_scanner_initialize();
+   void clan_scanner_reinitialize(int, int, int);
    void clan_scanner_free();
 
-   int clan_parse_error = 0;             /**< Set to 1 during parsing if
-                                              encountered an error */
    void clan_parser_add_ld();
    int  clan_parser_nb_ld();
    void clan_parser_log(char *);
@@ -81,18 +81,21 @@
    osl_scop_p clan_parse(FILE *, clan_options_p);
 
    extern FILE *   yyin;                 /**< File to be read by Lex */
+   extern int      scanner_parsing;      /**< Do we parse or not? */
    extern char *   scanner_latest_text;  /**< Latest text read by Lex */
    extern int      scanner_line;         /**< Current scanned line */
    extern int      scanner_column;       /**< Scanned column (current) */
    extern int      scanner_column_LALR;  /**< Scanned column (before token) */
+   extern int      scanner_scop_start;   /**< Scanned SCoP starting line */
+   extern int      scanner_scop_end;     /**< Scanned SCoP ending line */
+   extern int      scanner_pragma;       /**< Between SCoP pragmas or not? */
    extern int      symbol_nb_arrays;     /**< Number of array symbols */
    extern int      symbol_nb_iterators;  /**< Number of iterator symbols */
    extern int      symbol_nb_parameters; /**< Number of parameter symbols */
    extern int      symbol_nb_functions;  /**< Number of function symbols */
 
-   /* This is the "parser state", a collection of variables that vary
-    * during the parsing and thanks to we can extract all SCoP informations.
-    */
+   // This is the "parser state", a collection of variables that vary
+   // during the parsing and thanks to we can extract all SCoP informations.
    osl_scop_p      parser_scop;          /**< SCoP in construction */
    clan_symbol_p   parser_symbol;        /**< Top of the symbol table */
    int             parser_recording;     /**< Boolean: do we record or not? */
@@ -105,13 +108,21 @@
    int *           parser_nb_local_dims; /**< Nb of local dims per depth */
    int *           parser_valid_else;    /**< Boolean: OK for else per depth */
    int             parser_indent;        /**< SCoP indentation */
+   int             parser_error;         /**< Boolean: parse error */
 
    int             parser_ceild;         /**< Boolean: ceild used */
    int             parser_floord;        /**< Boolean: floord used */
    int             parser_min;           /**< Boolean: min used */
    int             parser_max;           /**< Boolean: max used */
 
-   /* Ugly global variable to keep/read Clan options during parsing. */
+   // Autoscop-relative variables.
+   int             parser_autoscop;      /**< Boolean: autoscop in progress */
+   int             parser_line_start;    /**< Autoscop start line, inclusive */
+   int             parser_line_end;      /**< Autoscop end line, inclusive */
+   int             parser_column_start;  /**< Autoscop start column, inclus. */
+   int             parser_column_end;    /**< Autoscop end column, exclusive */
+
+   // Ugly global variable to keep/read Clan options during parsing.
    clan_options_p  parser_options = NULL;
 %}
 
@@ -124,7 +135,6 @@
          osl_relation_p setex;           /**< A set of affine expressions */
          osl_relation_list_p list;       /**< List of array accesses */
          osl_statement_p stmt;           /**< List of statements */
-         osl_scop_p scop;                /**< SCoP */
        }
 
 
@@ -141,7 +151,7 @@
 
 %token CASE DEFAULT IF ELSE SWITCH WHILE DO FOR GOTO CONTINUE BREAK RETURN
 
-%token IGNORE
+%token IGNORE PRAGMA
 %token MIN MAX CEILD FLOORD
 %token <symbol> ID
 %token <value>  INTEGER
@@ -192,9 +202,13 @@
 %type <list>   assignment_expression
 %type <list>   expression
 
+%destructor { free($$); } <symbol>
+%destructor { osl_vector_free($$); } <affex>
+%destructor { osl_relation_list_free($$); } <list>
+%destructor { osl_statement_free($$); } <stmt>
+
 %start scop_list
 %%
-
 
 // +--------------------------------------------------------------------------+
 // |                              SCoP GRAMMAR                                |
@@ -203,10 +217,10 @@
 
 // Rules for a scop_list
 scop_list:
-    scop
-  | scop_list scop
-  | scop_list IGNORE
-  | IGNORE
+    scop             { CLAN_debug("rule scop_list.1: scop"); } 
+  | scop_list scop   { CLAN_debug("rule scop_list.2: scop_list scop"); } 
+  | scop_list IGNORE { CLAN_debug("rule scop_list.3: scop_list IGNORE"); } 
+  | IGNORE           { CLAN_debug("rule scop_list.4: IGNORE"); } 
   ;
 
 
@@ -253,7 +267,7 @@ scop:
       // Add the SCoP to parser_scop and prepare the state for the next SCoP.
       osl_scop_add(&parser_scop, scop);
       clan_symbol_free(parser_symbol);
-      clan_parser_state_initialize(parser_options);	
+      clan_parser_state_initialize(parser_options);
       CLAN_debug_call(osl_scop_dump(stderr, scop));
     } 
   ;
@@ -275,7 +289,10 @@ statement_indented:
       if (parser_indent == CLAN_UNDEFINED)
         parser_indent = scanner_column_LALR - 1;
     }
-    statement                { $$ = $2; }
+    statement
+    {
+      $$ = $2;
+    }
   ; 
 
 
@@ -285,8 +302,30 @@ statement:
     compound_statement       { $$ = $1; }
   | expression_statement     { $$ = $1; }
   | selection_statement      { $$ = $1; }
-  | iteration_statement      { $$ = $1; }
-  ;
+  | {
+      if ((parser_options->autoscop || parser_options->autopragma) &&
+          !parser_autoscop && !parser_loop_depth) {
+        parser_line_start = scanner_line;
+        parser_column_start = scanner_column_LALR;
+        parser_autoscop = CLAN_TRUE;
+        if (CLAN_DEBUG)
+          fprintf(stderr, "Autoscop start: line %3d column %3d\n",
+                  parser_line_start, parser_column_start);
+      }
+    }    
+    iteration_statement
+    {
+      $$ = $2;
+      if ((parser_options->autoscop || parser_options->autopragma) &&
+          parser_autoscop && !parser_loop_depth) {
+        parser_line_end = scanner_line;
+        parser_column_end = scanner_column;
+        if (CLAN_DEBUG)
+          fprintf(stderr, "Autoscop found: line %3d column %3d\n",
+                  parser_line_end, parser_column_end);
+      }
+    }
+;
 
 
 // Rules for a compound statement
@@ -305,8 +344,10 @@ compound_statement:
 selection_else_statement:
     ELSE 
     {
-      if (!parser_valid_else[parser_if_depth])
+      if (!parser_valid_else[parser_if_depth]) {
 	yyerror("unsupported negation of a condition involving a modulo");
+	YYABORT;
+      }
     }
     statement
     {
@@ -376,12 +417,19 @@ iteration_statement:
       clan_parser_increment_loop_depth();
 
       // Check the stride and the initialization are correct.
-      if ($5 == 0)
-	yyerror("unsupported zero loop stride");
-      if (($5 > 0) && (parser_min || parser_floord))
-	yyerror("illegal min or floord in positive stride loop initialization");
-      if (($5 < 0) && (parser_max || parser_ceild))
-	yyerror("illegal max or ceild in positive stride loop initialization");
+      if (($5 == 0) ||
+	  (($5 > 0) && (parser_min || parser_floord)) ||
+          (($5 < 0) && (parser_max || parser_ceild))) {
+	osl_relation_free($3);
+        osl_relation_free($4);
+        if ($5 == 0)
+	  yyerror("unsupported zero loop stride");
+	else if ($5 > 0)
+	  yyerror("illegal min or floord in forward loop initialization");
+        else
+	  yyerror("illegal max or ceild in backward loop initialization");
+        YYABORT;
+      }
       parser_ceild  = 0;
       parser_floord = 0;
       parser_min    = 0;
@@ -705,8 +753,11 @@ affine_relation:
   | '!' '(' affine_condition ')'
     {
       CLAN_debug("rule affine_relation.7: ! ( condition )");
-      if (clan_relation_existential($3))
+      if (clan_relation_existential($3)) {
+        osl_relation_free($3);
 	yyerror("unsupported negation of a condition involving a modulo");
+	YYABORT;
+      }
       $$ = clan_relation_not($3);
       osl_relation_free($3);
       CLAN_debug_call(osl_relation_dump(stderr, $$));
@@ -775,11 +826,15 @@ affine_primary_expression:
       CLAN_debug("rule affine_primary_expression.1: id");
       id = clan_symbol_add(&parser_symbol, $1, CLAN_UNDEFINED,
                            parser_loop_depth);
-      if (id->type == CLAN_TYPE_ARRAY)
-        yyerror("variable or array reference in an affine expression");
-      else if (id->type == CLAN_TYPE_FUNCTION)
-        yyerror("function call in an affine expression");
-
+      if ((id->type == CLAN_TYPE_ARRAY) || (id->type == CLAN_TYPE_FUNCTION)) {
+        free($1);
+	if (id->type == CLAN_TYPE_ARRAY)
+	  yyerror("variable or array reference in an affine expression");
+	else
+          yyerror("function call in an affine expression");
+	YYABORT;
+      }
+      
       $$ = clan_vector_term(parser_symbol, 1, $1);
       free($1);
       CLAN_debug_call(osl_vector_dump(stderr, $$));
@@ -837,8 +892,12 @@ affine_multiplicative_expression:
       
       CLAN_debug("rule affine_multiplicative_expression.2: "
                  "affine_multiplicative_expression * affine_unary_expression");
-      if (!osl_vector_is_scalar($1) && !osl_vector_is_scalar($3))
+      if (!osl_vector_is_scalar($1) && !osl_vector_is_scalar($3)) {
+        osl_vector_free($1);
+        osl_vector_free($3);
         yyerror("non-affine expression");
+	YYABORT;
+      }
 
       if (osl_vector_is_scalar($1)) {
         coef = osl_int_get_si($1->precision, $1->v, $1->size - 1);
@@ -858,8 +917,12 @@ affine_multiplicative_expression:
       
       CLAN_debug("rule affine_multiplicative_expression.3: "
                  "affine_multiplicative_expression / affine_unary_expression");
-      if (!osl_vector_is_scalar($1) || !osl_vector_is_scalar($3))
+      if (!osl_vector_is_scalar($1) || !osl_vector_is_scalar($3)) {
+        osl_vector_free($1);
+        osl_vector_free($3);
         yyerror("non-affine expression");
+	YYABORT;
+      }
       val1 = osl_int_get_si($1->precision, $1->v, $1->size - 1);
       val2 = osl_int_get_si($3->precision, $3->v, $3->size - 1);
       $$ = clan_vector_term(parser_symbol, val1 / val2, NULL);
@@ -1331,6 +1394,7 @@ expression_statement:
       statement->body->interface = osl_body_interface();
       statement->body->data = body;
       parser_recording = CLAN_FALSE;
+      parser_record = NULL;
       
       parser_scattering[2*parser_loop_depth]++;
 
@@ -1519,46 +1583,49 @@ void yyerror(char *s) {
   int i, line = 1;
   char c = 'C';
   FILE *file;
-  
-  fprintf(stderr, "[Clan] Error: %s at line %d, column %d.\n", s,
-          scanner_line, scanner_column - 1);
-  
-  // Print a message to show where is the problem.
-  if ((parser_options != NULL) && (parser_options->name != NULL)) {
-    file = fopen(parser_options->name, "r");
-    if (file != NULL) {
-      // Go to the right line.
-      while (line != scanner_line) {
-        c = fgetc(file);
-        if (c == '\n')
-          line++;
-      }
+ 
+  CLAN_debug("parse error notified");
 
-      // Print the line.
-      while (c != EOF) {
-        c = fgetc(file);
-        fprintf(stderr, "%c", c);
-        if (c == '\n')
-          break;
-      }
+  if (!parser_options->autoscop && !parser_options->autopragma) {
+    fprintf(stderr, "[Clan] Error: %s at line %d, column %d.\n", s,
+        scanner_line, scanner_column - 1);
 
-      // Print the situation line.
-      for (i = 0; i < scanner_column - 1; i++) {
-        if (i < scanner_column - 5)
-          fprintf(stderr, " ");
-        else if (i < scanner_column - 2)
-          fprintf(stderr, "~");
-        else
-          fprintf(stderr, "^\n");
+    // Print a message to show where is the problem.
+    if ((parser_options != NULL) && (parser_options->name != NULL)) {
+      file = fopen(parser_options->name, "r");
+      if (file != NULL) {
+        // Go to the right line.
+        while (line != scanner_line) {
+          c = fgetc(file);
+          if (c == '\n')
+            line++;
+        }
+
+        // Print the line.
+        while (c != EOF) {
+          c = fgetc(file);
+          fprintf(stderr, "%c", c);
+          if (c == '\n')
+            break;
+        }
+
+        // Print the situation line.
+        for (i = 0; i < scanner_column - 1; i++) {
+          if (i < scanner_column - 5)
+            fprintf(stderr, " ");
+          else if (i < scanner_column - 2)
+            fprintf(stderr, "~");
+          else
+            fprintf(stderr, "^\n");
+        }
+        fclose(file);
       }
-      fclose(file);
-    }
-    else {
-      CLAN_warning("cannot open input file");
+      else {
+        CLAN_warning("cannot open input file");
+      }
     }
   }
-  
-  clan_parse_error = 1;
+  parser_error = CLAN_TRUE;
 }
 
 
@@ -1616,7 +1683,8 @@ void clan_parser_state_malloc() {
 
 /**
  * clan_parser_state_free function:
- * this function frees the memory allocated for the "parser state".
+ * this function frees the memory allocated for the "parser state", with the
+ * exception of the parser_scop.
  */
 void clan_parser_state_free() {
   if (parser_symbol != NULL)
@@ -1637,19 +1705,26 @@ void clan_parser_state_free() {
 void clan_parser_state_initialize(clan_options_p options) {
   int i, nb_columns, depth;
 
-  nb_columns        = CLAN_MAX_DEPTH + CLAN_MAX_LOCAL_DIMS +
-                      CLAN_MAX_PARAMETERS + 2;
-  depth             = CLAN_MAX_DEPTH;
-  parser_symbol     = NULL;
-  parser_loop_depth = 0;
-  parser_options    = options;
-  parser_record     = NULL;
-  parser_if_depth   = 0;
-  parser_ceild      = 0;
-  parser_floord     = 0;
-  parser_min        = 0;
-  parser_max        = 0;
-  parser_indent     = CLAN_UNDEFINED;
+  nb_columns           = CLAN_MAX_DEPTH + CLAN_MAX_LOCAL_DIMS +
+                         CLAN_MAX_PARAMETERS + 2;
+  depth                = CLAN_MAX_DEPTH;
+  parser_symbol        = NULL;
+  parser_loop_depth    = 0;
+  parser_options       = options;
+  parser_recording     = CLAN_FALSE;
+  parser_record        = NULL;
+  parser_if_depth      = 0;
+  parser_ceild         = 0;
+  parser_floord        = 0;
+  parser_min           = 0;
+  parser_max           = 0;
+  parser_indent        = CLAN_UNDEFINED;
+  parser_error         = CLAN_FALSE;
+  parser_autoscop      = CLAN_FALSE;
+  parser_line_start    = 1;
+  parser_line_end      = 1;
+  parser_column_start  = 1;
+  parser_column_end    = 1;
 
   for (i = 0; i < depth; i++) {
     parser_nb_local_dims[i] = 0;
@@ -1668,6 +1743,148 @@ void clan_parser_state_initialize(clan_options_p options) {
 
 
 /**
+ * clan_parser_reinitialize function:
+ * this function frees the temporary dynamic variables of the parser and
+ * reset the variables to default values. It is meant to be used for a
+ * clean restart after a parse error.
+ */
+void clan_parser_reinitialize() {
+  int i;
+  
+  free(parser_record);
+  clan_symbol_free(parser_symbol);
+  for (i = 0; i < parser_loop_depth; i++)
+    clan_symbol_free(parser_iterators[i]);
+  while (parser_stack->next != NULL)
+    osl_relation_list_drop(&parser_stack);
+  osl_scop_free(parser_scop);
+  clan_parser_state_initialize(parser_options);
+}
+
+
+/**
+ * clan_parser_autoscop function:
+ * this functions performs the automatic extraction of SCoPs from the input
+ * file. It leaves the SCoP pragmas already set by the user intact (note that
+ * as a consequence, user-SCoPs cannot be inserted to a larger SCoP).
+ * It writes a file (named by the CLAN_AUTOPRAGMA_FILE macro) with the input
+ * code where new SCoP pragmas have been inserted. If the option -autoscop
+ * is set, it puts the list of SCoPs (including automatically discovered
+ * SCoPs and user-SCoPs) in parser_scop.
+ */
+void clan_parser_autoscop() {
+  int new_scop, nb_scops = 0;
+  int line, column, restart_line, restart_column;
+  long position;
+  char c;
+  int coordinates[5][CLAN_MAX_SCOPS]; // 0, 1: line start, end
+                                      // 2, 3: column start, end
+				      // 4: autoscop or not
+ 
+  while (1) {
+    // For the automatic extraction, we parse everything except user-SCoPs.
+    if (!scanner_pragma)
+      scanner_parsing = CLAN_TRUE;
+    yyparse();
+
+    new_scop = (parser_line_end != 1) || (parser_column_end != 1);
+    restart_line = (new_scop) ? parser_line_end : scanner_line;
+    restart_column = (new_scop) ? parser_column_end : scanner_column;
+    if (CLAN_DEBUG) {
+      if (new_scop)
+	fprintf(stderr, "[Clan] Debug: new autoscop, ");
+      else
+	fprintf(stderr, "[Clan] Debug: no autoscop, ");
+      fprintf(stderr, "restart at line %d, column %d\n",
+	      restart_line, restart_column);
+    }
+ 
+    if (parser_error || new_scop) {
+      if (new_scop) {
+        // If a new SCoP has been found, store its coordinates.
+        if (nb_scops == CLAN_MAX_SCOPS)
+          CLAN_error("too many SCoPs! Change CLAN_MAX_SCOPS and recompile Clan.");
+        coordinates[0][nb_scops] = parser_line_start;
+        coordinates[1][nb_scops] = parser_line_end;
+        coordinates[2][nb_scops] = parser_column_start;
+        coordinates[3][nb_scops] = parser_column_end;
+        coordinates[4][nb_scops] = CLAN_TRUE;
+        if (CLAN_DEBUG) {
+          fprintf(stderr, "[Clan] Debug: AutoSCoP [%d,%d -> %d,%d]\n",
+                  coordinates[0][nb_scops], coordinates[2][nb_scops],
+                  coordinates[1][nb_scops], coordinates[3][nb_scops] - 1);
+        }
+        // Let's go for the next SCoP.
+        parser_autoscop = CLAN_FALSE;
+        nb_scops++;
+      }
+      else if (scanner_scop_start != CLAN_UNDEFINED) {
+        // If the start of a user-SCoP is detected, store its coordinate.
+	coordinates[0][nb_scops] = scanner_scop_start;
+      }
+      else if (scanner_scop_end != CLAN_UNDEFINED) {
+        // If the end of a user-SCoP is detected, store its coordinate.
+	coordinates[1][nb_scops] = scanner_scop_end;
+	coordinates[2][nb_scops] = 0;
+	coordinates[3][nb_scops] = 0;
+	coordinates[4][nb_scops] = CLAN_FALSE;
+        if (CLAN_DEBUG) {
+          fprintf(stderr, "[Clan] Debug: user-SCoP [%d,%d -> %d,%d]\n",
+                  coordinates[0][nb_scops], coordinates[2][nb_scops],
+                  coordinates[1][nb_scops], coordinates[3][nb_scops]);
+        }
+	nb_scops++;
+      }
+
+      // Restart after the SCoP or after the error.
+      rewind(yyin);
+      line = 1;
+      column = 1;
+      while ((line != restart_line) || (column != restart_column)) {
+        c = fgetc(yyin);
+        column++;
+        if (c == '\n') {
+          line++;
+          column = 1;
+        }
+      }
+    }
+
+    // Reinitialize the scanner and the parser for a clean restart.
+    clan_scanner_reinitialize(scanner_pragma, restart_line, restart_column);
+    clan_parser_reinitialize();
+
+    // Check whether we reached the end of file or not.
+    position = ftell(yyin);
+    c = fgetc(yyin);
+    if (fgetc(yyin) == EOF)
+      break;
+    else 
+      fseek(yyin, position, SEEK_SET);
+  }
+ 
+  // Write the code with the inserted SCoP pragmas in CLAN_AUTOPRAGMA_FILE.
+  rewind(yyin);
+  clan_scop_print_autopragma(yyin, nb_scops, coordinates);
+
+  // If the autoscop option is set, use the temporary file for usual parsing.
+  if (parser_options->autoscop) {
+    fclose(yyin);
+    scanner_line = 1;
+    scanner_column = 1;
+    scanner_pragma = CLAN_FALSE;
+    parser_options->autoscop = CLAN_FALSE;
+    if ((yyin = fopen(CLAN_AUTOPRAGMA_FILE, "r")) == NULL)
+      CLAN_error("cannot create the temporary file");
+    yyparse();
+    // Update the SCoP coordinates with those of the original file.
+    clan_scop_update_coordinates(parser_scop, coordinates);
+    parser_options->autoscop = CLAN_TRUE;
+  }
+}
+
+
+/**
  * clan_parse function:
  * this function parses a file to extract a SCoP and returns, if successful,
  * a pointer to the osl_scop_t structure.
@@ -1680,16 +1897,20 @@ osl_scop_p clan_parse(FILE * input, clan_options_p options) {
 
   clan_parser_state_malloc();
   clan_parser_state_initialize(options);
+  clan_scanner_initialize();
   parser_scop = NULL;
 
-  yyparse();
+  if (!options->autoscop && !options->autopragma)
+    yyparse();
+  else
+    clan_parser_autoscop();
 
   CLAN_debug("parsing done");
 
   fclose(yyin);
   clan_scanner_free();
 
-  if (!clan_parse_error)
+  if (!parser_error && !parser_options->autopragma)
     scop = parser_scop;
   else
     scop = NULL;

@@ -36,13 +36,13 @@
  ******************************************************************************/
 
 
-D                           [0-9]
-L                           [a-zA-Z_]
-H                           [a-fA-F0-9]
-E                           [Ee][+-]?{D}+
-P                           [Pp][+-]?{D}+
-FS                          (f|F|l|L)
-IS                          ((u|U)|(u|U)?(l|L|ll|LL)|(l|L|ll|LL)(u|U))
+D  [0-9]
+L  [a-zA-Z_]
+H  [a-fA-F0-9]
+E  [Ee][+-]?{D}+
+P  [Pp][+-]?{D}+
+FS (f|F|l|L)
+IS ((u|U)|(u|U)?(l|L|ll|LL)|(l|L|ll|LL)(u|U))
 
 %{
    #include <stdlib.h>
@@ -56,22 +56,26 @@ IS                          ((u|U)|(u|U)?(l|L|ll|LL)|(l|L|ll|LL)(u|U))
    #include <parser.h>
    #include <clan/macros.h>
    #include <clan/symbol.h>
+   #include <clan/options.h>
 
    void clan_scanner_count();
    int  clan_scanner(int, char *);
+   void clan_scanner_initialize();
 
-   extern int           parser_recording; /**< Do we record what we read ? */
-   extern char *        parser_record;    /**< What we record */
-   extern clan_symbol_p parser_symbol;    /**< Top of the symbol table */
+   extern int            parser_recording; /**< Do we record what we read? */
+   extern char *         parser_record;    /**< What we record */
+   extern clan_symbol_p  parser_symbol;    /**< Top of the symbol table */
+   extern clan_options_p parser_options;   /**< Clan options */
 
-   int    scanner_parsing = CLAN_FALSE;   /**< Do we parse or not ? */
-   int    scanner_comment = 0;            /**< Comment nesting depth */
-   char * scanner_latest_text = NULL;     /**< Latest text read */
-   int    scanner_line = 1;               /**< Current line number */
-   int    scanner_column = 1;             /**< Current column number */
-   int    scanner_column_LALR = 1;        /**< Column number before token */
-   int    scanner_start;                  /**< SCoP starting line */
-   int    scanner_end;                    /**< SCoP ending line */
+   int    scanner_parsing;                 /**< Do we parse or not? */
+   int    scanner_comment;                 /**< Comment nesting depth */
+   char * scanner_latest_text;             /**< Latest text read */
+   int    scanner_line;                    /**< Current line number */
+   int    scanner_column;                  /**< Current column number */
+   int    scanner_column_LALR;             /**< Column number before token */
+   int    scanner_scop_start;              /**< SCoP starting line */
+   int    scanner_scop_end;                /**< SCoP ending line */
+   int    scanner_pragma;                  /**< Between SCoP pragmas or not? */
 %}
 
 %option noyywrap
@@ -156,16 +160,34 @@ IS                          ((u|U)|(u|U)?(l|L|ll|LL)|(l|L|ll|LL)(u|U))
 
 "#pragma"[ ]+"scop"         { 
                               clan_scanner_count();
-                              scanner_start = scanner_line;
-                              scanner_parsing = CLAN_TRUE;
-                              CLAN_debug("start SCoP parsing");
+                              scanner_scop_start = scanner_line;
+                              if (parser_options->autoscop ||
+                                  parser_options->autopragma) {
+                                scanner_pragma = CLAN_TRUE;
+                                scanner_parsing = CLAN_FALSE;
+                                CLAN_debug("pragma scop: stop parsing");
+                                return PRAGMA; // Force a parse error.
+                              }
+                              else {
+                                scanner_parsing = CLAN_TRUE;
+                                CLAN_debug("pragma scop: start parsing");
+                              }
                             }
 "#pragma"[ ]+"endscop"      {
                               clan_scanner_count();
-                              scanner_end = scanner_line;
-                              scanner_parsing = CLAN_FALSE;
-                              CLAN_debug("stop SCoP parsing");
-                              return IGNORE;
+                              scanner_scop_end = scanner_line;
+                              if (parser_options->autoscop ||
+                                  parser_options->autopragma) {
+                                scanner_pragma = CLAN_FALSE;
+                                scanner_parsing = CLAN_TRUE;
+                                CLAN_debug("pragma endscop: start parsing");
+                                return PRAGMA; // Force a parse error.
+                              }
+                              else {
+                                scanner_parsing = CLAN_FALSE;
+                                CLAN_debug("pragma endscop: stop parsing");
+                                return IGNORE;
+                              }
                             }
 
 {L}({L}|{D})*               {
@@ -239,12 +261,45 @@ L?\"(\\.|[^\\"\n])*\"       { return clan_scanner(STRING_LITERAL, "STRING"); }
 [ \t\v\n\f]                 { clan_scanner_count(); }
 .                           { 
                               scanner_column++;
-                              if (scanner_parsing == CLAN_TRUE) {
-                                CLAN_warning("unmatched characters by Lex");
-                              }
+                              CLAN_debug("unmatched characters by Lex");
                             }
 %%
 
+
+/**
+ * clan_scanner_initialize function:
+ * this function initialises the scanner global variables with default values.
+ */
+void clan_scanner_initialize() {
+  yy_flush_buffer(YY_CURRENT_BUFFER);
+  scanner_parsing = CLAN_FALSE;
+  scanner_comment = 0;
+  scanner_latest_text = NULL;
+  scanner_line = 1;
+  scanner_column = 1;
+  scanner_column_LALR = 1;
+  scanner_pragma = CLAN_FALSE;
+  scanner_scop_start = CLAN_UNDEFINED;
+  scanner_scop_end = CLAN_UNDEFINED;
+}
+
+
+/**
+ * clan_scanner_reinitialize function:
+ * this function frees the temporary dynamic variables of the scanner and
+ * and reset the variables to default or input values. It is meant to
+ * be used for a clean restart after a parse error.
+ * \param[in] pragma The initialization value of scanner_pragma.
+ * \param[in] line   The initialization value of scanner_line.
+ * \param[in] column The initialization value of scanner_column.
+ */
+void clan_scanner_reinitialize(int pragma, int line, int column) {
+  free(scanner_latest_text);
+  clan_scanner_initialize();
+  scanner_pragma = pragma;
+  scanner_line = line;
+  scanner_column = column;
+}
 
 
 /**
@@ -268,6 +323,7 @@ void clan_scanner_count() {
     }
   }
 }
+
 
 /**
  * clan_scanner_free function:
@@ -295,7 +351,9 @@ void clan_scanner_free() {
  */
 int clan_scanner(int token, char * message) {
   if (CLAN_DEBUG)
-    fprintf(stderr, "[Clan] Debug: Lex yytext = %s (%s)\n",message, yytext);
+    fprintf(stderr, "[Clan] Debug: Lex yytext = %s "
+                    "(%s at line %d, column %d)\n",
+                    message, yytext, scanner_line, scanner_column);
   clan_scanner_count();
   
   free(scanner_latest_text);
@@ -305,7 +363,7 @@ int clan_scanner(int token, char * message) {
                  (strlen(parser_record) + strlen(yytext) + 1) * sizeof(char));
     strcat(parser_record, yytext);
   }
-
+  
   if (scanner_parsing == CLAN_TRUE)
     return token;
   else

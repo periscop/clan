@@ -53,10 +53,13 @@ extern "C"
  */
 struct clan_options
 {
-  char * name ;  /**< Name of the input file. */
-  int castle;    /**< 1 to put the Clan castle in output, 0 otherwise. */
-  int structure; /**< 1 to print the clan_scop structure, 0 otherwise. */
-  int inputscop; /**< 1 to read a .scop on the input, 0 to read a
+  char * name ;   /**< Name of the input file. */
+  int castle;     /**< 1 to put the Clan castle in output, 0 otherwise. */
+  int structure;  /**< 1 to print the clan_scop structure, 0 otherwise. */
+  int autoscop;   /**< 1 to extract SCoPs automatically, 0 otherwise. */
+  int autopragma; /**< 1 to insert SCoP pragmas in the code automatically,
+                       0 otherwise. */
+  int inputscop;  /**< 1 to read a .scop on the input, 0 to read a
                       source file (default). */
   int bounded_context; /**< 1 to force global parameters >= -1 (default 0) */
 };

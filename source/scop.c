@@ -59,8 +59,8 @@
 #include <clan/scop.h>
 
 
-extern int scanner_start;
-extern int scanner_end;
+extern int scanner_scop_start;
+extern int scanner_scop_end;
 extern int parser_indent;
 
 
@@ -216,8 +216,8 @@ void clan_scop_generate_coordinates(osl_scop_p scop, char * name) {
   // Build the coordinates extension
   coordinates = osl_coordinates_malloc();
   CLAN_strdup(coordinates->name, name);
-  coordinates->start  = scanner_start;
-  coordinates->end    = scanner_end;
+  coordinates->start  = scanner_scop_start;
+  coordinates->end    = scanner_scop_end;
   coordinates->indent = (parser_indent != CLAN_UNDEFINED) ? parser_indent : 0;
 
   // Build the generic extension and insert it to the extension list.
@@ -226,3 +226,83 @@ void clan_scop_generate_coordinates(osl_scop_p scop, char * name) {
   extension->data = coordinates;
   osl_generic_add(&scop->extension, extension);
 }
+
+
+/**
+ * clan_scop_update_coordinates function:
+ * this function replaces the values in the coordinates extension of
+ * each SCoP of the list 'scop' by those in the 'coordinates' array.
+ * The rows of the coordinates array have the following meaning:
+ * 0: line start, 1: line end, 2: column start, 3: column end,
+ * 4: boolean set to 1 for an auto-discovered scop, 0 for user-scop.
+ * The ith column of the coordinates array describes the coordinates
+ * of the ith SCoP.
+ * \param[in,out] scop        SCoP list to update the coordinates.
+ * \param[in]     coordinates Array of coordinates.
+ */
+void clan_scop_update_coordinates(osl_scop_p scop,
+                                  int coordinates[5][CLAN_MAX_SCOPS]) {
+  int i = 0;
+  osl_coordinates_p old;
+
+  while (scop != NULL) {
+    if (i > CLAN_MAX_SCOPS)
+      CLAN_error("too many SCoPs! Change CLAN_MAX_SCOPS and recompile Clan.");
+    
+    old = osl_generic_lookup(scop->extension, OSL_URI_COORDINATES);
+    if (old == NULL)
+      CLAN_error("coordinates extension not present");
+    old->start = coordinates[0][i];
+    old->end   = coordinates[1][i];
+    i++;
+    scop = scop->next;
+  }
+}
+
+
+/**
+ * clan_scop_print_autopragma function:
+ * this function prints a copy of the input file 'input' to a file
+ * named by the CLAN_AUTOPRAGMA_FILE macro, where the SCoP pragmas
+ * for 'nb_scops' SCoPs are inserted according to the coordinates array.
+ * The rows of the coordinates array have the following meaning:
+ * 0: line start, 1: line end, 2: column start, 3: column end,
+ * 4: boolean set to 1 for an auto-discovered scop, 0 for user-scop.
+ * \param[in] input       The input stream (must be open).
+ * \param[in] nb_scops    The number of scops.
+ * \param[in] coordinates The array of coordinates for each SCoPs.
+ */
+void clan_scop_print_autopragma(FILE * input, int nb_scops,
+                                int coordinates[5][CLAN_MAX_SCOPS]) {
+  int i, line, column;
+  char c;
+  FILE * autopragma;
+  
+  if ((autopragma = fopen(CLAN_AUTOPRAGMA_FILE, "w")) == NULL)
+    CLAN_error("cannot create the autopragma file");
+  line = 1;
+  column = 1;
+  i = 0;
+  while ((c = fgetc(input)) != EOF) {
+    if (nb_scops > 0) {
+      if ((line == coordinates[0][i]) && (column == coordinates[2][i]))
+	fprintf(autopragma, "\n#pragma scop\n");
+      if ((line == coordinates[1][i]) && (column == coordinates[3][i])) {
+	fprintf(autopragma, "\n#pragma endscop\n");
+	if (i < nb_scops - 1) {
+	  do
+	    i++;
+	  while ((i < nb_scops - 1) && !coordinates[4][i]);
+	}
+      }
+    }
+    fputc(c, autopragma);
+    column++;
+    if (c == '\n') {
+      line++;
+      column = 1;
+    }
+  }
+  fclose(autopragma);
+}
+

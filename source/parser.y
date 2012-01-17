@@ -77,6 +77,7 @@
    int  clan_parser_nb_ld();
    void clan_parser_log(char *);
    void clan_parser_increment_loop_depth();
+   void clan_parser_state_initialize(clan_options_p);
    osl_scop_p clan_parse(FILE *, clan_options_p);
 
    extern FILE *   yyin;                 /**< File to be read by Lex */
@@ -141,13 +142,12 @@
 %token CASE DEFAULT IF ELSE SWITCH WHILE DO FOR GOTO CONTINUE BREAK RETURN
 
 %token IGNORE
-%token PRAGMALOCALVARS PRAGMALIVEOUT
 %token MIN MAX CEILD FLOORD
 %token <symbol> ID
 %token <value>  INTEGER
 
 %type <stmt>   statement_list
-%type <stmt>   statement_or_ignore
+%type <stmt>   statement_indented
 %type <stmt>   statement
 %type <stmt>   compound_statement
 %type <stmt>   expression_statement
@@ -192,7 +192,7 @@
 %type <list>   assignment_expression
 %type <list>   expression
 
-%start scop
+%start scop_list
 %%
 
 
@@ -201,15 +201,24 @@
 // +--------------------------------------------------------------------------+
 
 
+// Rules for a scop_list
+scop_list:
+    scop
+  | scop_list scop
+  | scop_list IGNORE
+  | IGNORE
+  ;
+
+
 // Rules for a scop
 scop:
-    statement_list
+    statement_list IGNORE
     {
       int nb_parameters;
       osl_scop_p scop;
       osl_generic_p arrays;
 
-      CLAN_debug("rule scop.1: statement_list");
+      CLAN_debug("rule scop.1: statement_list IGNORE");
       scop = osl_scop_malloc();
       CLAN_strdup(scop->language, "C");
 
@@ -225,13 +234,13 @@ scop:
 
       // Compact the SCoP relations.
       if (CLAN_DEBUG) {
-        CLAN_debug("SCoP before compaction:");
-        osl_scop_dump(stderr, scop);
+	CLAN_debug("SCoP before compaction:");
+	osl_scop_dump(stderr, scop);
       }
       clan_scop_compact(scop);
       if (CLAN_DEBUG) {
-        CLAN_debug("SCoP after compaction:");
-        osl_scop_dump(stderr, scop);
+	CLAN_debug("SCoP after compaction:");
+	osl_scop_dump(stderr, scop);
       }
 
       // Add extensions.
@@ -241,7 +250,10 @@ scop:
       osl_generic_add(&scop->extension, arrays);
       clan_scop_generate_coordinates(scop, parser_options->name);
 
-      parser_scop = scop;
+      // Add the SCoP to parser_scop and prepare the state for the next SCoP.
+      osl_scop_add(&parser_scop, scop);
+      clan_symbol_free(parser_symbol);
+      clan_parser_state_initialize(parser_options);	
       CLAN_debug_call(osl_scop_dump(stderr, scop));
     } 
   ;
@@ -250,21 +262,20 @@ scop:
 // Rules for a statement list
 // Return <stmt>
 statement_list:
-    statement_or_ignore      { $$ = $1; }
+    statement_indented       { $$ = $1; }
   | statement_list
-    statement_or_ignore      { $$ = $1; osl_statement_add(&$$, $2); }
+    statement_indented       { $$ = $1; osl_statement_add(&$$, $2); }
   ;
 
 
-// Rules for a statement or ignore
+// Rules for an indented statement
 // Return <stmt>
-statement_or_ignore:
+statement_indented:
     { 
       if (parser_indent == CLAN_UNDEFINED)
         parser_indent = scanner_column_LALR - 1;
     }
     statement                { $$ = $2; }
-  | IGNORE                   { $$ = NULL; }
   ; 
 
 
@@ -283,7 +294,7 @@ statement:
 compound_statement:
     '{' '}'                  { $$ = NULL; }
   | '{' statement_list '}'   { $$ = $2; }
-;
+  ;
 
 
 // +--------------------------------------------------------------------------+
@@ -1584,21 +1595,52 @@ void clan_parser_increment_loop_depth() {
 
 
 /**
- * clan_parser_initialize_state function:
- * this function achieves the initialization of the "parser state": a
- * collection of variables that vary during the parsing and thanks to we
- * can extract all SCoP informations.
+ * clan_parser_state_malloc function:
+ * this function achieves the memory allocation for the "parser state".
  */
-void clan_parser_initialize_state(clan_options_p options) {
+void clan_parser_state_malloc() {
+  int nb_columns, depth;
+
+  nb_columns        = CLAN_MAX_DEPTH + CLAN_MAX_LOCAL_DIMS +
+                      CLAN_MAX_PARAMETERS + 2;
+  depth             = CLAN_MAX_DEPTH;
+  parser_stack      = osl_relation_list_malloc();
+  parser_stack->elt = osl_relation_pmalloc(CLAN_PRECISION, 0, nb_columns);
+
+  CLAN_malloc(parser_nb_local_dims, int *, depth * sizeof(int));
+  CLAN_malloc(parser_valid_else, int *, depth * sizeof(int));
+  CLAN_malloc(parser_scattering, int *, (2 * depth + 1) * sizeof(int));
+  CLAN_malloc(parser_iterators, clan_symbol_p*, depth * sizeof(clan_symbol_p));
+}
+
+
+/**
+ * clan_parser_state_free function:
+ * this function frees the memory allocated for the "parser state".
+ */
+void clan_parser_state_free() {
+  if (parser_symbol != NULL)
+    clan_symbol_free(parser_symbol);
+  free(parser_scattering);
+  free(parser_iterators);
+  free(parser_nb_local_dims);
+  free(parser_valid_else);
+  osl_relation_list_drop(&parser_stack);
+}
+
+
+/**
+ * clan_parser_state_initialize function:
+ * this function achieves the initialization of the "parser state", with
+ * the exception of parser_scop.
+ */
+void clan_parser_state_initialize(clan_options_p options) {
   int i, nb_columns, depth;
 
   nb_columns        = CLAN_MAX_DEPTH + CLAN_MAX_LOCAL_DIMS +
                       CLAN_MAX_PARAMETERS + 2;
   depth             = CLAN_MAX_DEPTH;
   parser_symbol     = NULL;
-  parser_scop       = NULL;
-  parser_stack      = osl_relation_list_malloc();
-  parser_stack->elt = osl_relation_pmalloc(CLAN_PRECISION, 0, nb_columns);
   parser_loop_depth = 0;
   parser_options    = options;
   parser_record     = NULL;
@@ -1609,38 +1651,19 @@ void clan_parser_initialize_state(clan_options_p options) {
   parser_max        = 0;
   parser_indent     = CLAN_UNDEFINED;
 
-  CLAN_malloc(parser_nb_local_dims, int *, depth * sizeof(int));
-  CLAN_malloc(parser_valid_else,    int *, depth * sizeof(int));
   for (i = 0; i < depth; i++) {
     parser_nb_local_dims[i] = 0;
     parser_valid_else[i] = 0;
   }
   
-  CLAN_malloc(parser_scattering, int *, (2 * depth + 1) * sizeof(int));
   for (i = 0; i < 2 * depth + 1; i++)
     parser_scattering[i] = 0;
-
-  CLAN_malloc(parser_iterators, clan_symbol_p *, depth*sizeof(clan_symbol_p));
 
   // Reset also the Symbol global variables.
   symbol_nb_iterators  = 0;
   symbol_nb_parameters = 0;
   symbol_nb_arrays     = 0;
   symbol_nb_functions  = 0;
-}
-
-
-/**
- * clan_parser_free_state function:
- * this function frees the memory allocated for the "parser state".
- */
-void clan_parser_free_state() {
-  clan_symbol_free(parser_symbol);
-  free(parser_scattering);
-  free(parser_iterators);
-  free(parser_nb_local_dims);
-  free(parser_valid_else);
-  osl_relation_list_drop(&parser_stack);
 }
 
 
@@ -1655,7 +1678,9 @@ osl_scop_p clan_parse(FILE * input, clan_options_p options) {
   osl_scop_p scop;
   yyin = input;
 
-  clan_parser_initialize_state(options);
+  clan_parser_state_malloc();
+  clan_parser_state_initialize(options);
+  parser_scop = NULL;
 
   yyparse();
 
@@ -1669,7 +1694,7 @@ osl_scop_p clan_parse(FILE * input, clan_options_p options) {
   else
     scop = NULL;
 
-  clan_parser_free_state();
+  clan_parser_state_free();
   CLAN_debug("parser state successfully freed");
 
   return scop;

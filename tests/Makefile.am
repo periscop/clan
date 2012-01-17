@@ -91,6 +91,9 @@ UNITARY_TEST_FILES             	= \
 	$(top_srcdir)/tests/unitary/infinite_loop2.c \
 	$(top_srcdir)/tests/unitary/infinite_loop3.c \
 	$(top_srcdir)/tests/unitary/infinite_loop4.c \
+	$(top_srcdir)/tests/unitary/multiscop1.c \
+	$(top_srcdir)/tests/unitary/multiscop2.c \
+	$(top_srcdir)/tests/unitary/multiscop3.c \
 	$(top_srcdir)/tests/unitary/empty.c \
 	$(top_srcdir)/tests/unitary/simplecond.c \
 	$(top_srcdir)/tests/unitary/twoconds.c \

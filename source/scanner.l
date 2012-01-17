@@ -158,22 +158,14 @@ IS                          ((u|U)|(u|U)?(l|L|ll|LL)|(l|L|ll|LL)(u|U))
                               clan_scanner_count();
                               scanner_start = scanner_line;
                               scanner_parsing = CLAN_TRUE;
-                              CLAN_debug("start parsing");
+                              CLAN_debug("start SCoP parsing");
                             }
 "#pragma"[ ]+"endscop"      {
                               clan_scanner_count();
                               scanner_end = scanner_line;
                               scanner_parsing = CLAN_FALSE;
-                              CLAN_debug("stop parsing");
+                              CLAN_debug("stop SCoP parsing");
                               return IGNORE;
-                            }
-"#pragma"[ ]+"local-vars"   {
-                              return clan_scanner(PRAGMALOCALVARS,
-                                                  "PRAGMALOCALVARS");
-                            }
-"#pragma"[ ]+"live-out"     {
-                              return clan_scanner(PRAGMALIVEOUT,
-                                                  "PRAGMALIVEOUT");
                             }
 
 {L}({L}|{D})*               {

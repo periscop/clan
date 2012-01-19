@@ -51,31 +51,10 @@ MAINTAINERCLEANFILES	= Makefile.in
 EXTRA_DIST		=			\
 	htmldoc.tar.gz				\
 	clan.pdf				\
-	S4.cloog				\
-	ascii-art.txt				\
-	images/basic.eps			\
-	images/basic.fig			\
-	images/basic.jpg			\
-	images/basic.pdf			\
-	images/basic.txt			\
-	images/basic1.eps			\
-	images/basic1.fig			\
-	images/basic1.jpg			\
-	images/basic1.pdf			\
-	images/basic1.txt			\
-	images/basic2.eps			\
-	images/basic2.fig			\
-	images/basic2.jpg			\
-	images/basic2.pdf			\
-	images/basic2.txt			\
-	images/tree.eps				\
-	images/tree.fig				\
-	images/tree.jpg				\
-	images/tree.pdf				\
-	images/tree.txt
-
+	ascii-art.txt
 
 info_TEXINFOS		= clan.texi
+AM_MAKEINFOHTMLFLAGS    = --no-headers --no-split
 
 DOCDIR			= htmldoc
 DOXYFILE		= Doxyfile

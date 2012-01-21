@@ -17,8 +17,10 @@
 \usepackage{latexsym}
 \usepackage{listings}
 \usepackage{tikz}
-\usepackage{pslatex} % For cooler fonts
+\usepackage{pslatex} % For cooler font\usepackage{soul}
 \lstset{language=C}
+\usepackage{ulem}
+
 
 % For decent A4 (sorry for Letter lovers, Clan is a frenchy):
 \oddsidemargin 0.05 in
@@ -261,7 +263,7 @@ loop condition or to an external or internal {\tt if} condition.}
 
 \begin{small}
 Each loop or {\tt if} condition must be a (composition of) constraint(s) on
-affine expressions, and function calls.
+affine expressions, \sout{and function calls}.
 \begin{itemize} %\renewcommand{\labelitemi}{\ding{229}}
 \item Supported C operators are {\tt >}, {\tt >=}, {\tt <}, {\tt <=},
       {\tt ==}, {\tt !=}, {\tt !}, {\tt \&\&} and {\tt ||}.
@@ -272,7 +274,7 @@ affine expressions, and function calls.
 \item Constraints involving the modulo operator are possible in the following
       form: let {\tt a} be an affine expression and {\tt x} and {\tt y} two
       positive integers, then the condition {\tt (a \% x == y)} is accepted.
-\item Function calls alone can be used as valid {\tt if} conditions.
+\item \sout{Function calls alone can be used as valid {\tt if} conditions}.
 \end{itemize}
 
 \vspace{0.3cm}
@@ -298,10 +300,10 @@ affine expressions, and function calls.
 \end{tabular}
 
 \vspace{0.3cm}
-\textit{Tip: to include data-dependent conditions, e.g.,
+\textit{\sout{Tip: to include data-dependent conditions, e.g.,
 {\tt if (A[i] == 0)}, create a preprocessor macro containing
 the condition and replace it in the SCoP by the macro-function call,
-e.g., {\tt if (my\_condition(A[i]))}}.
+e.g., {\tt if (my\_condition(A[i]))}}}.
 \end{small}
 
 % ******************************************************************************
@@ -320,12 +322,12 @@ the following forms are accepted for the loop step part:
 \titre{Array Subscript}
 
 \begin{small}
-Array subscripts must be either affine expressions or function calls.
+Array subscripts must be either affine expressions \sout{or function calls}.
 
 \vspace{0.3cm}
-\textit{Tip: to include indirections, e.g., {\tt A[B[i]]}, create a
+\textit{\sout{Tip: to include indirections, e.g., {\tt A[B[i]]}, create a
 preprocessor macro containing the subscript and replace it in the SCoP by
-the macro-function call, e.g., {\tt A[my\_subscript(B[i])]}}.
+the macro-function call, e.g., {\tt A[my\_subscript(B[i])]}}}.
 \end{small}
 
 % ******************************************************************************
@@ -333,8 +335,8 @@ the macro-function call, e.g., {\tt A[my\_subscript(B[i])]}}.
 
 \begin{small}
 Infinite {\tt for} loops in the form {\tt for (;;)} are supported.
-{\tt while} loops are supported when the condition is either {\tt 1}
-(infinite loop) or a function call.
+{\tt while} loops are supported when the condition is \sout{either} {\tt 1}
+(infinite loop) \sout{or a function call}.
 \end{small}
 
 \end{multicols}

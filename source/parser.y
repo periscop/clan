@@ -241,11 +241,9 @@ scop:
           CLAN_TYPE_PARAMETER);
       scop->parameters = clan_symbol_to_strings(parser_symbol,
           CLAN_TYPE_PARAMETER);
-      scop->context = osl_relation_pmalloc(parser_options->precision, 0,
-          nb_parameters + 2);
-      osl_relation_set_type(scop->context, OSL_TYPE_CONTEXT);
-      osl_relation_set_attributes(scop->context, 0, 0, 0, nb_parameters);
-
+      scop->context = clan_relation_build_context(nb_parameters,
+                                                  parser_options);
+      
       // Set the statements.
       scop->statement = $1;
 

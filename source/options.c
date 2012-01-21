@@ -111,7 +111,7 @@ void clan_options_help() {
   "  -autoscop             Automatic SCoP extraction.\n"
   "  -autopragma           Automatic insertion of SCoP pragmas in the code.\n"
   "  -inputscop            Read a .scop as the input.\n"
-  "  -precision            32 to work in 32 bits, 64 for 64 bits, 0 for GMP.\n"
+  "  -precision <value>    32 to work in 32 bits, 64 for 64 bits, 0 for GMP.\n"
   "  -boundedctxt          Bound all global parameters to be >= -1.\n"
   "  -v, --version         Display the release information (and more).\n"
   "  -h, --help            Display this information.\n\n");

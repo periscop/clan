@@ -647,6 +647,8 @@ input file @code{basic.c} with default options by typing:
 * Autoscop::
 * Autopragma::
 * Inputscop::
+* Precision::
+* Bounded Context::
 * Help::
 * Version ::
 @end menu
@@ -685,6 +687,21 @@ OpenScop representation.
 @code{-inputscop}: this option asks Clan to use an OpenScop input
 instead of a source code (this is supposed to be a pass-through
 process).
+
+@node Precision
+@subsection Precision @code{-precision <value>}
+
+@code{-precision}: this option asks Clan to work using a given
+precision for the various integer elements, @code{value} may be
+@code{32} for 32 bits, @code{64} for 64 bits (the default) or
+@code{0} fot GMP (the installed OpenScop library must have been
+compiled with GMP support for this option to apply).
+
+@node Bounded Context
+@subsection Bounded Context @code{-boundedctxt}
+
+@code{-boundedctxt}: this option asks Clan to generate context
+relations such that every parameter is considered to be >= -1.
 
 @node Help
 @subsection Help @code{--help} or @code{-h}

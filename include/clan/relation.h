@@ -40,6 +40,7 @@
 # define CLAN_relation_H
 
 # include <osl/relation.h>
+# include <clan/options.h>
 
 # if defined(__cplusplus)
 extern "C"
@@ -50,6 +51,7 @@ extern "C"
  *                            Processing functions                            *
  ******************************************************************************/
 void           clan_relation_tag_array(osl_relation_p, int);
+osl_relation_p clan_relation_build_context(int, clan_options_p);
 osl_relation_p clan_relation_scattering(int *, int, int);
 void           clan_relation_new_output_vector(osl_relation_p, osl_vector_p);
 void           clan_relation_new_output_scalar(osl_relation_p, int);

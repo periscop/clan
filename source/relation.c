@@ -41,9 +41,11 @@
 #include <string.h>
 #include <ctype.h>
 
+#include <osl/macros.h>
 #include <osl/int.h>
 #include <osl/relation.h>
 #include <clan/macros.h>
+#include <clan/options.h>
 #include <clan/relation.h>
 
 int clan_parser_nb_ld(void);
@@ -76,6 +78,41 @@ void clan_relation_tag_array(osl_relation_p relation, int array) {
   osl_int_set_si(relation->precision,
                  relation->m[0], relation->nb_columns - 1, array);
   relation->nb_output_dims++;
+}
+
+
+/**
+ * clan_relation_build_context function:
+ * this function builds a context relation with 'nb_parameters' parameters.
+ * Depending on the bounded_context option, the context has no contraint or
+ * each parameter is set to be >= -1.
+ * \param[in] nb_parameters The number of parameters for the context.
+ * \param[in] options       The global options of Clan.
+ * \return A context relation with 'nb_parameters' parameters.
+ */
+osl_relation_p clan_relation_build_context(int nb_parameters,
+                                           clan_options_p options) {
+  int i;
+  osl_relation_p context = NULL;
+
+  if (options->bounded_context) {
+    context = osl_relation_pmalloc(options->precision,
+                                   nb_parameters, nb_parameters + 2);
+    for (i = 0; i < nb_parameters; i++) {
+      osl_int_set_si(options->precision,
+                     context->m[i], 0, 1);
+      osl_int_set_si(options->precision,
+                     context->m[i], i + 1, 1);
+      osl_int_set_si(options->precision,
+                     context->m[i], context->nb_columns - 1, 1);
+    }
+  }
+  else {
+    context = osl_relation_pmalloc(options->precision, 0, nb_parameters + 2);
+  }
+  osl_relation_set_type(context, OSL_TYPE_CONTEXT);
+  osl_relation_set_attributes(context, 0, 0, 0, nb_parameters);
+  return context;
 }
 
 

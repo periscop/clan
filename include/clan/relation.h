@@ -50,7 +50,7 @@ extern "C"
  *                            Processing functions                            *
  ******************************************************************************/
 void           clan_relation_tag_array(osl_relation_p, int);
-osl_relation_p clan_relation_scattering(int *, int);
+osl_relation_p clan_relation_scattering(int *, int, int);
 void           clan_relation_new_output_vector(osl_relation_p, osl_vector_p);
 void           clan_relation_new_output_scalar(osl_relation_p, int);
 void           clan_relation_compact(osl_relation_p, int);

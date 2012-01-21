@@ -54,7 +54,7 @@ extern "C"
  ******************************************************************************/
 osl_scop_p clan_scop_extract(FILE *, clan_options_p);
 void       clan_scop_compact(osl_scop_p);
-void       clan_scop_print(FILE *, osl_scop_p);
+void       clan_scop_print(FILE *, osl_scop_p, clan_options_p);
 void       clan_scop_generate_scatnames(osl_scop_p);
 void       clan_scop_generate_coordinates(osl_scop_p, char *);
 void       clan_scop_fill_options(osl_scop_p, int*, int*);

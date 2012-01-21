@@ -99,12 +99,13 @@ void clan_scop_compact(osl_scop_p scop) {
  * clan_scop_print function:
  * this function prints the content of an osl_scop_t structure (*scop)
  * into a file (file, possibly stdout) in the OpenScop textual format.
- * \param[in] file The file where the information has to be printed.
- * \param[in] scop The scop structure whose information has to be printed.
+ * \param[in] file    The file where the information has to be printed.
+ * \param[in] scop    The scop structure whose information has to be printed.
+ * \param[in] options Clan's general option settings.
  */
-void clan_scop_print(FILE * file, osl_scop_p scop) {
+void clan_scop_print(FILE * file, osl_scop_p scop, clan_options_p options) {
   
-  if (scop != NULL) {
+  if ((scop != NULL) && (options->castle)) {
     fprintf(file, "#                                                     \n");
     fprintf(file, "#          <|                                         \n");
     fprintf(file, "#           A                                         \n");

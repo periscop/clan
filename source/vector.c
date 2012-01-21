@@ -58,30 +58,31 @@
  * a vector with maximal size and puts the term value at the right place
  * depending if the term is a constant, an iterator coefficient or a
  * parameter coefficient (see the structure of an OpenScop row if unsure!).
- * \param symbol      The first node of the list of symbols.
- * \param coefficient The constant or coefficient.
- * \param identifier  Identifier of iterator or parameter (NULL for constant).
+ * \param[in] symbol      The first node of the list of symbols.
+ * \param[in] coefficient The constant or coefficient.
+ * \param[in] identifier  Identifier of iterator or parameter (NULL for constant).
+ * \param[in] precision   Precision of the vector terms.
  */
 osl_vector_p clan_vector_term(clan_symbol_p symbol, int coefficient,
-                              char * identifier) {
+                              char * identifier, int precision) {
   int rank, size;
   osl_vector_p vector;
 
   size = CLAN_MAX_DEPTH + CLAN_MAX_LOCAL_DIMS + CLAN_MAX_PARAMETERS + 2 ;
-  vector = osl_vector_pmalloc(CLAN_PRECISION, size);
+  vector = osl_vector_pmalloc(precision, size);
 
   if (identifier == NULL) {
     // The term is a constant.
-    osl_int_set_si(CLAN_PRECISION, vector->v, size - 1, coefficient);
+    osl_int_set_si(precision, vector->v, size - 1, coefficient);
   }
   else {
     // The term is an iterator or a parameter coefficient
     rank = clan_symbol_get_rank(symbol, identifier);
 
     if (clan_symbol_get_type(symbol, identifier) == CLAN_TYPE_ITERATOR)
-      osl_int_set_si(CLAN_PRECISION, vector->v, rank, coefficient);
+      osl_int_set_si(precision, vector->v, rank, coefficient);
     else
-      osl_int_set_si(CLAN_PRECISION, vector->v,
+      osl_int_set_si(precision, vector->v,
                      CLAN_MAX_DEPTH + CLAN_MAX_LOCAL_DIMS + rank, coefficient);
   }
   return vector;

@@ -61,6 +61,7 @@ struct clan_options
                        0 otherwise. */
   int inputscop;  /**< 1 to read a .scop on the input, 0 to read a
                       source file (default). */
+  int precision;  /**< 0 for GMP, 32 for 32 bits, 64 for 64 bits. */
   int bounded_context; /**< 1 to force global parameters >= -1 (default 0) */
 };
 typedef struct clan_options   clan_options_t;

@@ -40,6 +40,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <osl/macros.h>
 #include <clan/macros.h>
 #include <clan/options.h>
 
@@ -110,6 +111,7 @@ void clan_options_help() {
   "  -autoscop             Automatic SCoP extraction.\n"
   "  -autopragma           Automatic insertion of SCoP pragmas in the code.\n"
   "  -inputscop            Read a .scop as the input.\n"
+  "  -precision            32 to work in 32 bits, 64 for 64 bits, 0 for GMP.\n"
   "  -boundedctxt          Bound all global parameters to be >= -1.\n"
   "  -v, --version         Display the release information (and more).\n"
   "  -h, --help            Display this information.\n\n");
@@ -129,7 +131,6 @@ void clan_options_help() {
  */
 void clan_options_version() {
   printf("clan %s ", CLAN_VERSION);
-  osl_int_dump_precision(stdout, CLAN_PRECISION);
   printf("       The Chunky Loop Analyzer\n");
 
   printf(
@@ -206,6 +207,7 @@ clan_options_p clan_options_malloc(void) {
   options->autoscop   = 0;    /* Do not extract SCoPs automatically.*/
   options->autopragma = 0;    /* Do not insert SCoP pragmas automatically.*/
   options->inputscop  = 0;    /* Default input is a source file, not a .scop.*/
+  options->precision  = 64;   /* Work in 64 bits by default.*/
   options->bounded_context = 0;/* Don't bound the global parameters. */
   return options;
 }
@@ -258,6 +260,9 @@ clan_options_p clan_options_read(int argv, char ** argc,
       if (strcmp(argc[i], "-boundedctxt") == 0)
         options->bounded_context = 1;
       else
+      if (strcmp(argc[i], "-precision") == 0)
+        clan_options_set(&(options)->precision, argv, argc, &i);
+      else
       if ((strcmp(argc[i], "--help") == 0) || (strcmp(argc[i], "-h") == 0)) {
         clan_options_help();
         infos = 1;
@@ -306,6 +311,11 @@ clan_options_p clan_options_read(int argv, char ** argc,
       }
     }
   }
+
+  if ((options->precision != OSL_PRECISION_MP) &&
+      (options->precision != OSL_PRECISION_SP) &&
+      (options->precision != OSL_PRECISION_DP))
+    CLAN_error("invalid precision (use 32, 64 or 0 for GMP)");
 
   if (options->autoscop && options->autopragma)
     CLAN_error("autoscop and autopragma options cannot be used together");

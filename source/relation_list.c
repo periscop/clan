@@ -59,8 +59,8 @@
  * CLAN_MAX_DEPTH, CLAN_MAX_LOCAL_DIMS and CLAN_MAX_PARAMETERS to define
  * relation and vector sizes). It modifies directly the relation list
  * provided as parameter.
- * \param list          The relation list to compact.
- * \param nb_parameters The true number of parameters in the SCoP.
+ * \param[in,out] list          The relation list to compact.
+ * \param[in]     nb_parameters The true number of parameters in the SCoP.
  */
 void clan_relation_list_compact(osl_relation_list_p list, int nb_parameters) {
   while (list != NULL) {
@@ -74,8 +74,8 @@ void clan_relation_list_compact(osl_relation_list_p list, int nb_parameters) {
  * clan_relation_list_define_type function:
  * this function sets the type of each relation in the relation list to the
  * one provided as parameter, only if it is undefined.
- * \param list The list of relations to set the type.
- * \param type The type.
+ * \param[in,out] list The list of relations to set the type.
+ * \param[in]     type The type.
  */
 void clan_relation_list_define_type(osl_relation_list_p list, int type) {
   osl_relation_p relation;

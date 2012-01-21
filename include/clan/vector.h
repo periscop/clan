@@ -51,7 +51,7 @@ extern "C"
 /*+****************************************************************************
  *                            Processing functions                            *
  ******************************************************************************/
-osl_vector_p clan_vector_term(clan_symbol_p, int, char *);
+osl_vector_p clan_vector_term(clan_symbol_p, int, char *, int);
 
 
 # if defined(__cplusplus)

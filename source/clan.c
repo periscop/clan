@@ -63,7 +63,7 @@ int main(int argc, char * argv[]) {
 
   if (!options->autopragma) {
     // Generation of the .scop output file.
-    clan_scop_print(output, scop);
+    clan_scop_print(output, scop, options);
   }
   else {
     // Output the file with inserted SCoP pragmas.

@@ -123,7 +123,7 @@
    int             parser_column_end;    /**< Autoscop end column, exclusive */
 
    // Ugly global variable to keep/read Clan options during parsing.
-   clan_options_p  parser_options = NULL;
+   clan_options_p  parser_options;
 %}
 
 /* We expect the if-then-else shift/reduce to be there, nothing else. */
@@ -237,9 +237,12 @@ scop:
       CLAN_strdup(scop->language, "C");
 
       // Build the SCoP context.
-      nb_parameters = clan_symbol_nb_of_type(parser_symbol, CLAN_TYPE_PARAMETER);
-      scop->parameters = clan_symbol_to_strings(parser_symbol, CLAN_TYPE_PARAMETER);
-      scop->context = osl_relation_pmalloc(CLAN_PRECISION, 0, nb_parameters + 2);
+      nb_parameters = clan_symbol_nb_of_type(parser_symbol,
+          CLAN_TYPE_PARAMETER);
+      scop->parameters = clan_symbol_to_strings(parser_symbol,
+          CLAN_TYPE_PARAMETER);
+      scop->context = osl_relation_pmalloc(parser_options->precision, 0,
+          nb_parameters + 2);
       osl_relation_set_type(scop->context, OSL_TYPE_CONTEXT);
       osl_relation_set_attributes(scop->context, 0, 0, 0, nb_parameters);
 
@@ -436,8 +439,10 @@ iteration_statement:
       parser_max    = 0;
 
       // Generate the set of constraints contributed by the initialization.
-      iterator_term = clan_vector_term(parser_symbol, 0, NULL);
-      osl_int_set_si(CLAN_PRECISION, iterator_term->v, parser_loop_depth, 1); 
+      iterator_term = clan_vector_term(parser_symbol, 0, NULL,
+                                       parser_options->precision);
+      osl_int_set_si(parser_options->precision, iterator_term->v,
+          parser_loop_depth, 1); 
       iterator_relation = osl_relation_from_vector(iterator_term);
       if ($5 > 0)
 	init_constraints = clan_relation_greater(iterator_relation, $3, 0);
@@ -485,9 +490,11 @@ iteration_statement:
       clan_parser_increment_loop_depth();
       
       // Generate the constraint clan_infinite_loop >= 0.
-      iterator_term = clan_vector_term(parser_symbol, 0, NULL);
-      osl_int_set_si(CLAN_PRECISION, iterator_term->v, parser_loop_depth, 1); 
-      osl_int_set_si(CLAN_PRECISION, iterator_term->v, 0, 1); 
+      iterator_term = clan_vector_term(parser_symbol, 0, NULL,
+                                       parser_options->precision);
+      osl_int_set_si(parser_options->precision,
+                     iterator_term->v, parser_loop_depth, 1); 
+      osl_int_set_si(parser_options->precision, iterator_term->v, 0, 1); 
       iterator_relation = osl_relation_from_vector(iterator_term);
       
       // Add it to the domain stack.
@@ -726,10 +733,10 @@ affine_relation:
       CLAN_debug("rule affine_relation.5: <affex> == <affex>");
       // Warning: cases like ceild(M,32) == ceild(N,32) are not handled.
       // Assert if we encounter such a case.
-      assert ((osl_int_zero(CLAN_PRECISION, $1->v, 0) ||
-	       osl_int_one(CLAN_PRECISION,  $1->v, 0)) &&
-	      (osl_int_zero(CLAN_PRECISION, $3->v, 0) ||
-	       osl_int_one(CLAN_PRECISION,  $3->v, 0)));
+      assert ((osl_int_zero(parser_options->precision, $1->v, 0) ||
+	       osl_int_one(parser_options->precision,  $1->v, 0)) &&
+	      (osl_int_zero(parser_options->precision, $3->v, 0) ||
+	       osl_int_one(parser_options->precision,  $3->v, 0)));
       res = osl_vector_sub($1, $3);
       osl_vector_tag_equality(res);
       $$ = osl_relation_from_vector(res);
@@ -769,9 +776,9 @@ affine_relation:
     {
       CLAN_debug("rule affine_relation.8: "
 	         "affine_expression %% INTEGER == INTEGER");
-      osl_int_set_si(CLAN_PRECISION, $1->v,
+      osl_int_set_si(parser_options->precision, $1->v,
 	             CLAN_MAX_DEPTH + 1 + clan_parser_nb_ld(), -$3);
-      osl_int_add_si(CLAN_PRECISION,
+      osl_int_add_si(parser_options->precision,
 	             $1->v, $1->size - 1, $1->v, $1->size - 1, -$5);
       clan_parser_add_ld();
       $$ = osl_relation_from_vector($1);
@@ -835,14 +842,14 @@ affine_primary_expression:
 	YYABORT;
       }
       
-      $$ = clan_vector_term(parser_symbol, 1, $1);
+      $$ = clan_vector_term(parser_symbol, 1, $1, parser_options->precision);
       free($1);
       CLAN_debug_call(osl_vector_dump(stderr, $$));
     }
   | INTEGER
     {
       CLAN_debug("rule affine_primary_expression.2: INTEGER");
-      $$ = clan_vector_term(parser_symbol, $1, NULL);
+      $$ = clan_vector_term(parser_symbol, $1, NULL, parser_options->precision);
       CLAN_debug_call(osl_vector_dump(stderr, $$));
     }
   | '(' affine_expression ')'
@@ -925,7 +932,8 @@ affine_multiplicative_expression:
       }
       val1 = osl_int_get_si($1->precision, $1->v, $1->size - 1);
       val2 = osl_int_get_si($3->precision, $3->v, $3->size - 1);
-      $$ = clan_vector_term(parser_symbol, val1 / val2, NULL);
+      $$ = clan_vector_term(parser_symbol, val1 / val2, NULL,
+                            parser_options->precision);
       osl_vector_free($1);
       osl_vector_free($3);
       CLAN_debug_call(osl_vector_dump(stderr, $$));
@@ -973,7 +981,7 @@ affine_ceildfloord_expression:
     {
       CLAN_debug("affine_ceildfloord_expression.2: "
                  "ceildfloord ( affine_expression , INTEGER )");
-      osl_int_set_si(CLAN_PRECISION, $3->v, 0, $5);
+      osl_int_set_si(parser_options->precision, $3->v, 0, $5);
       $$ = $3;
       CLAN_debug_call(osl_vector_dump(stderr, $$));
     }
@@ -997,7 +1005,7 @@ affine_ceild_expression:
     {
       CLAN_debug("affine_ceil_expression.2: "
                  "CEILD ( affine_expression , INTEGER )");
-      osl_int_set_si(CLAN_PRECISION, $3->v, 0, $5);
+      osl_int_set_si(parser_options->precision, $3->v, 0, $5);
       $$ = $3;
       CLAN_debug_call(osl_vector_dump(stderr, $$));
     }
@@ -1015,7 +1023,7 @@ affine_floord_expression:
     {
       CLAN_debug("affine_floor_expression.2: "
                  "FLOORD ( affine_expression , INTEGER )");
-      osl_int_set_si(CLAN_PRECISION, $3->v, 0, $5);
+      osl_int_set_si(parser_options->precision, $3->v, 0, $5);
       $$ = $3;
       CLAN_debug_call(osl_vector_dump(stderr, $$));
     }
@@ -1039,8 +1047,9 @@ primary_expression:
       rank = clan_symbol_get_rank(parser_symbol, $1);
       nb_columns = CLAN_MAX_DEPTH + CLAN_MAX_LOCAL_DIMS +
 	           CLAN_MAX_PARAMETERS + 2;
-      id = osl_relation_pmalloc(CLAN_PRECISION, 0, nb_columns);
-      osl_relation_set_attributes(id, 0, parser_loop_depth, 0, CLAN_MAX_PARAMETERS);
+      id = osl_relation_pmalloc(parser_options->precision, 0, nb_columns);
+      osl_relation_set_attributes(id, 0, parser_loop_depth, 0,
+                                  CLAN_MAX_PARAMETERS);
       clan_relation_tag_array(id, rank);
       list = osl_relation_list_malloc();
       list->elt = id;
@@ -1380,7 +1389,7 @@ expression_statement:
 
       // - 2. Scattering
       statement->scattering = clan_relation_scattering(parser_scattering,
-	                                               parser_loop_depth);
+          parser_loop_depth, parser_options->precision);
 
       // - 3. Array accesses
       statement->access = $2;
@@ -1664,16 +1673,16 @@ void clan_parser_increment_loop_depth() {
 /**
  * clan_parser_state_malloc function:
  * this function achieves the memory allocation for the "parser state".
+ * \param[in] precision Precision of the integer elements.
  */
-void clan_parser_state_malloc() {
+void clan_parser_state_malloc(int precision) {
   int nb_columns, depth;
 
   nb_columns        = CLAN_MAX_DEPTH + CLAN_MAX_LOCAL_DIMS +
                       CLAN_MAX_PARAMETERS + 2;
   depth             = CLAN_MAX_DEPTH;
   parser_stack      = osl_relation_list_malloc();
-  parser_stack->elt = osl_relation_pmalloc(CLAN_PRECISION, 0, nb_columns);
-
+  parser_stack->elt = osl_relation_pmalloc(precision, 0, nb_columns);
   CLAN_malloc(parser_nb_local_dims, int *, depth * sizeof(int));
   CLAN_malloc(parser_valid_else, int *, depth * sizeof(int));
   CLAN_malloc(parser_scattering, int *, (2 * depth + 1) * sizeof(int));
@@ -1730,7 +1739,7 @@ void clan_parser_state_initialize(clan_options_p options) {
     parser_nb_local_dims[i] = 0;
     parser_valid_else[i] = 0;
   }
-  
+
   for (i = 0; i < 2 * depth + 1; i++)
     parser_scattering[i] = 0;
 
@@ -1803,7 +1812,7 @@ void clan_parser_autoscop() {
       if (new_scop) {
         // If a new SCoP has been found, store its coordinates.
         if (nb_scops == CLAN_MAX_SCOPS)
-          CLAN_error("too many SCoPs! Change CLAN_MAX_SCOPS and recompile Clan.");
+          CLAN_error("too many SCoPs! Change CLAN_MAX_SCOPS and recompile.");
         coordinates[0][nb_scops] = parser_line_start;
         coordinates[1][nb_scops] = parser_line_end;
         coordinates[2][nb_scops] = parser_column_start;
@@ -1895,7 +1904,7 @@ osl_scop_p clan_parse(FILE * input, clan_options_p options) {
   osl_scop_p scop;
   yyin = input;
 
-  clan_parser_state_malloc();
+  clan_parser_state_malloc(options->precision);
   clan_parser_state_initialize(options);
   clan_scanner_initialize();
   parser_scop = NULL;

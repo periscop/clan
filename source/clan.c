@@ -41,7 +41,7 @@
 #include <clan/clan.h>
 
 int main(int argc, char * argv[]) {
-  osl_scop_p scop;
+  osl_scop_p scop = NULL;
   clan_options_p options;
   FILE * input, * output, * autopragma;
   char c;
@@ -50,29 +50,31 @@ int main(int argc, char * argv[]) {
   options = clan_options_read(argc, argv, &input, &output);
 
   // Extraction of the polyhedral representation of the SCoP from the input.
-  if (options->inputscop)
-    // Input is a .scop file.
-    scop = osl_scop_read(input);
-  else
-    // Input is a source code.
-    scop = clan_scop_extract(input, options);
+  if (input != NULL) {
+    if (options->inputscop)
+      // Input is a .scop file.
+      scop = osl_scop_read(input);
+    else
+      // Input is a source code.
+      scop = clan_scop_extract(input, options);
 
-  // Printing of the internal data structure of the SCoP if asked.
-  if (options->structure)
-    osl_scop_dump(stdout, scop);
+    // Printing of the internal data structure of the SCoP if asked.
+    if (options->structure)
+      osl_scop_dump(stdout, scop);
 
-  if (!options->autopragma) {
-    // Generation of the .scop output file.
-    clan_scop_print(output, scop, options);
-  }
-  else {
-    // Output the file with inserted SCoP pragmas.
-    if ((autopragma = fopen(CLAN_AUTOPRAGMA_FILE, "r")) == NULL)
-      CLAN_error("cannot create the temporary file");
-    while ((c = fgetc(autopragma)) != EOF)
-      fputc(c, output);
-    fclose(autopragma);
-    remove(CLAN_AUTOPRAGMA_FILE);
+    if (!options->autopragma) {
+      // Generation of the .scop output file.
+      clan_scop_print(output, scop, options);
+    }
+    else {
+      // Output the file with inserted SCoP pragmas.
+      if ((autopragma = fopen(CLAN_AUTOPRAGMA_FILE, "r")) == NULL)
+        CLAN_error("cannot create the temporary file");
+      while ((c = fgetc(autopragma)) != EOF)
+        fputc(c, output);
+      fclose(autopragma);
+      remove(CLAN_AUTOPRAGMA_FILE);
+    }
   }
 
   // Save the planet.

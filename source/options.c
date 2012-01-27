@@ -197,18 +197,18 @@ void clan_options_set(int * option, int argv, char ** argc, int * number) {
 clan_options_p clan_options_malloc(void) {
   clan_options_p options;
 
-  /* Memory allocation for the clan_options_t structure. */
+  // Memory allocation for the clan_options_t structure.
   CLAN_malloc(options, clan_options_p, sizeof(clan_options_t));
 
-  /* We set the various fields with default values. */
-  options->name       = NULL; /* Name of the input file is not set. */
-  options->castle     = 1;    /* Do print the Clan McCloog castle in output. */
-  options->structure  = 0;    /* Don't print internal structure.*/
-  options->autoscop   = 0;    /* Do not extract SCoPs automatically.*/
-  options->autopragma = 0;    /* Do not insert SCoP pragmas automatically.*/
-  options->inputscop  = 0;    /* Default input is a source file, not a .scop.*/
-  options->precision  = 64;   /* Work in 64 bits by default.*/
-  options->bounded_context = 0;/* Don't bound the global parameters. */
+  // We set the various fields with default values.
+  options->name       = NULL;  // Name of the input file is not set.
+  options->castle     = 1;     // Do print the Clan McCloog castle in output.
+  options->structure  = 0;     // Don't print internal structure.
+  options->autoscop   = 0;     // Do not extract SCoPs automatically.
+  options->autopragma = 0;     // Do not insert SCoP pragmas automatically.
+  options->inputscop  = 0;     // Default input is a source file, not a .scop.
+  options->precision  = 64;    // Work in 64 bits by default.
+  options->bounded_context = 0;// Don't bound the global parameters. 
   return options;
 }
 
@@ -228,16 +228,17 @@ clan_options_p clan_options_read(int argv, char ** argc,
   int i, infos=0, input_is_set=0;
   clan_options_p options;
 
-  /* clan_options_t structure allocation and initialization. */
+  // clan_options_t structure allocation and initialization.
   options = clan_options_malloc();
 
-  /* The default output is the standard output. */
+  // The default output is the standard output.
   *output = stdout;
+  *input = NULL;
 
   for (i=1; i < argv; i++) {
     if (argc[i][0] == '-') {
       if (argc[i][1] == '\0') {
-        /* "-" alone is a special option to set input to standard input. */
+        // "-" alone is a special option to set input to standard input.
         input_is_set = 1;
 	*input = stdin;
       }
@@ -277,7 +278,7 @@ clan_options_p clan_options_read(int argv, char ** argc,
         if (i+1 >= argv)
           CLAN_error("no output name for -o option");
 
-        /* stdout is a special value to set output to standard output. */
+        // stdout is a special value to set output to standard output.
         if (strcmp(argc[i+1], "stdout") == 0) {
           *output = stdout;
         }
@@ -296,7 +297,7 @@ clan_options_p clan_options_read(int argv, char ** argc,
       if (!input_is_set) {
         input_is_set = 1;
         options->name = argc[i];
-        /* stdin is a special value to set input to standard input. */
+        // stdin is a special value to set input to standard input.
         if (strcmp(argc[i], "stdin") == 0) {
           *input = stdin;
         }
@@ -321,7 +322,7 @@ clan_options_p clan_options_read(int argv, char ** argc,
     CLAN_error("autoscop and autopragma options cannot be used together");
 
   if ((options->autoscop || options->autopragma) &&
-      !strcmp(options->name, "stdin"))
+      ((options->name == NULL) || !strcmp(options->name, "stdin")))
     CLAN_error("autoscop and autopragma options need an input file");
 
   if (!input_is_set && !infos)

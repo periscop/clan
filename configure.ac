@@ -106,6 +106,7 @@ AC_SUBST(OSL_LIBS)
 case "$with_osl" in
 bundled)
 	OSL_CPPFLAGS="-I$srcdir/osl/include -Iosl/include"
+	OSL_LIBS="$srcdir/osl/source/libosl.la"
 	;;
 build)
 	OSL_CPPFLAGS="-I$osl_srcdir/include -I$with_osl_builddir/include"
@@ -118,7 +119,7 @@ system)
 	if test "x$with_osl_exec_prefix" != "x"; then
 		OSL_LDFLAGS="-L$with_osl_exec_prefix/lib"
 	fi
-	OSL_LIBS="-losl"
+	OSL_LIBS="$with_osl_exec_prefix/lib/libosl.la -losl"
 esac
 AM_CONDITIONAL(BUNDLED_OSL, test $with_osl = bundled)
 

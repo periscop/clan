@@ -91,7 +91,7 @@ libclan_la_SOURCES  =                   \
 
 #############################################################################
 
-LDADD             = libclan.la
+LDADD             = @OSL_LIBS@ libclan.la
 clan_CPPFLAGS     = @OSL_CPPFLAGS@ -g
 clan_DEPENDENCIES = libclan.la
 clan_SOURCES      = source/clan.c

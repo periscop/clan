@@ -174,7 +174,7 @@ state_1=internal_state[imod8][j][1];
 
 # =============================================== Statement 4
 # Number of relations describing the statement:
-7
+8
 
 # ----------------------------------------------  4.1 Domain
 DOMAIN
@@ -192,6 +192,11 @@ SCATTERING
    0    0    0   -1    0    0    0    0    0    2    ## c3 == 2
 
 # ----------------------------------------------  4.3 Access
+READ
+1 8 1 1 0 4
+# e/i| Arr|  j |  i  NSE. imo. imo.|  1  
+   0   -1    0    0    0    0    0    1    ## Arr == sum
+
 WRITE
 1 8 1 1 0 4
 # e/i| Arr|  j |  i  NSE. imo. imo.|  1  
@@ -336,7 +341,7 @@ internal_state[imod8][j][1]=sum;
 
 # =============================================== Statement 7
 # Number of relations describing the statement:
-7
+8
 
 # ----------------------------------------------  7.1 Domain
 DOMAIN
@@ -354,6 +359,11 @@ SCATTERING
    0    0    0   -1    0    0    0    0    0    5    ## c3 == 5
 
 # ----------------------------------------------  7.3 Access
+READ
+1 8 1 1 0 4
+# e/i| Arr|  j |  i  NSE. imo. imo.|  1  
+   0   -1    0    0    0    0    0    1    ## Arr == sum
+
 WRITE
 1 8 1 1 0 4
 # e/i| Arr|  j |  i  NSE. imo. imo.|  1  

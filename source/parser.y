@@ -201,6 +201,7 @@
 %type <list>   conditional_expression
 %type <list>   assignment_expression
 %type <list>   expression
+%type <value>  assignment_operator
 
 %destructor { free($$); } <symbol>
 %destructor { osl_vector_free($$); } <affex>
@@ -1111,10 +1112,23 @@ postfix_expression:
       $$ = $1;
       CLAN_debug_call(osl_relation_list_dump(stderr, $$));
     }
-  | postfix_expression INC_OP
-    { $$ = $1; }
-  | postfix_expression DEC_OP
-    { $$ = $1; }
+  | postfix_expression unary_increment_operator
+    { 
+      osl_relation_list_p list;
+
+      CLAN_debug("rule postfix_expression.6: postfix_expression -> "
+	         "postfix_expression ++/--");
+      list = $1;
+      // The last reference in the list is also written.
+      if (list != NULL) {
+	while (list->next != NULL)
+	  list = list->next;
+	list->next = osl_relation_list_node(list->elt);
+	list->next->elt->type = OSL_TYPE_WRITE;
+      }
+      $$ = $1;
+      CLAN_debug_call(osl_relation_list_dump(stderr, $$));
+    }
   ;
 
 argument_expression_list:
@@ -1130,10 +1144,23 @@ argument_expression_list:
 unary_expression:
     postfix_expression
     { $$ = $1; }
-  | INC_OP unary_expression
-    { $$ = $2; }
-  | DEC_OP unary_expression
-    { $$ = $2; }
+  | unary_increment_operator unary_expression
+    {
+      osl_relation_list_p list;
+
+      CLAN_debug("rule unary_expression.2: unary_expression -> "
+	         "++/-- unary_expression");
+      list = $2;
+      // The last reference in the list is also written.
+      if (list != NULL) {
+	while (list->next != NULL)
+	  list = list->next;
+	list->next = osl_relation_list_node(list->elt);
+	list->next->elt->type = OSL_TYPE_WRITE;
+      }
+      $$ = $2;
+      CLAN_debug_call(osl_relation_list_dump(stderr, $$));
+    }
   | unary_operator cast_expression
     { $$ = $2; }
   | SIZEOF unary_expression
@@ -1149,6 +1176,11 @@ unary_operator:
   | '-'
   | '~'
   | '!'
+  ;
+
+unary_increment_operator:
+    INC_OP
+  | DEC_OP
   ;
 
 cast_expression:
@@ -1324,11 +1356,15 @@ assignment_expression:
       CLAN_debug("rule assignment_expression.2: unary_expression "
 	         "assignment_operator assignment_expression;");
       $$ = $1;
-      // Accesses of $1 are READ except the last one which is a WRITE.
+      // Accesses of $1 are READ except the last one which is a WRITE or both.
       clan_relation_list_define_type($$, OSL_TYPE_READ);
       list = $$;
       while (list->next != NULL)
 	list = list->next;
+      if ($2 == CLAN_TYPE_RDWR) {
+	list->next = osl_relation_list_node(list->elt);
+	list = list->next;
+      }
       osl_relation_set_type(list->elt, OSL_TYPE_WRITE);
       osl_relation_list_add(&$$, $3);
       CLAN_debug_call(osl_relation_list_dump(stderr, $$));
@@ -1337,7 +1373,13 @@ assignment_expression:
 
 assignment_operator:
     '='
-  | MUL_ASSIGN
+    { $$ = CLAN_TYPE_WRITE; }
+  | assignment_rdwr_operator
+    { $$ = CLAN_TYPE_RDWR; }
+  ;
+
+assignment_rdwr_operator:
+    MUL_ASSIGN
   | DIV_ASSIGN
   | MOD_ASSIGN
   | ADD_ASSIGN

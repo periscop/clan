@@ -65,6 +65,9 @@
 # define CLAN_TYPE_STRUCTURE            6
 # define CLAN_TYPE_FIELD                7
 # define CLAN_TYPE_FUNCTION             8
+# define CLAN_TYPE_READ                 9
+# define CLAN_TYPE_WRITE               10
+# define CLAN_TYPE_RDWR                11
 
 # define CLAN_AUTOPRAGMA_FILE           "clan_autopragma.c"
 

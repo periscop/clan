@@ -543,10 +543,13 @@ Those restrictions are detailed in the next sections.
 Each loop initialization must be an assignment of the loop counter such that the
 right hand side is one or several affine expressions aggregated with @code{max}
 (resp. @code{min}) operators if the loop step is positive (resp. negative).
+Optionally, the loop iterator can be declared (as an @code{int}) in the loop
+initialization part.
 
 For instance:
 @itemize @bullet
 @item @code{j = 3*i + 2*N} is correct.
+@item @code{int j = 3*i + 2*N} is correct.
 @item @code{j = ceild(i + N, 10)} is correct if the @code{j}-loop step is positive.
 @item @code{j = max(i, ceild(N, 3))} is correct if the @code{j}-loop step is positive.
 @item @code{j = min(min(N,10), 7*i)} is correct if the @code{j}-loop step is negative.

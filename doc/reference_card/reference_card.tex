@@ -235,12 +235,13 @@ Codes between SCoP pragmas must comply to the following restrictions:
 Each loop initialization must be an assignment of the loop counter such that the
 right hand side is one or several affine expressions aggregated with {\tt max}
 (resp. {\tt min}) operators if the loop step is positive (resp. negative).
+Optionally, the iterator can be declared as an {\tt int} in the initialization part.
 
 \vspace{0.3cm}
 \begin{tabular}{p{4cm}|p{4.39cm}}
 \multicolumn{1}{c|}{Example of Loop Initialization} &\multicolumn{1}{c}{Diagnostic}\\
 \hline
-{\tt j = 3*i + 2*N} & Correct\\
+{\tt int j = 3*i + 2*N} & Correct\\
 \hline
 {\tt j = ceild(i + N, 10)} & Correct if {\tt j} step is positive\\
 \hline
@@ -322,7 +323,7 @@ the following forms are accepted for the loop step part:
 \titre{Array Subscript}
 
 \begin{small}
-Array subscripts must be either affine expressions \sout{or function calls}.
+Array subscripts must be \sout{either} affine expressions \sout{or function calls}.
 
 \vspace{0.3cm}
 \textit{\sout{Tip: to include indirections, e.g., {\tt A[B[i]]}, create a

@@ -514,18 +514,24 @@ iteration_statement:
 
 
 loop_initialization:
-    ID
+    loop_declaration ID
     {
-      clan_symbol_new_iterator(&parser_symbol, parser_iterators, $1,
+      clan_symbol_new_iterator(&parser_symbol, parser_iterators, $2,
 	                       parser_loop_depth);
     }
     '=' affine_minmax_expression ';'
     {
       CLAN_debug("rule lower_bound.1: ID = max_affex ;");
-      free($1);
-      $$ = $4;
+      free($2);
+      $$ = $5;
       CLAN_debug_call(osl_relation_dump(stderr, $$));
     }
+  ;
+
+
+loop_declaration:
+    INT
+  |
   ;
 
 

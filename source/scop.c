@@ -55,6 +55,7 @@
 #include <parser.h>
 #include <clan/macros.h>
 #include <clan/options.h>
+#include <clan/relation.h>
 #include <clan/statement.h>
 #include <clan/scop.h>
 
@@ -307,3 +308,21 @@ void clan_scop_print_autopragma(FILE * input, int nb_scops,
   fclose(autopragma);
 }
 
+
+/**
+ * clan_scop_simplify function:
+ * this function tries to simplify the iteration domains of the SCoP.
+ * /param[in,out] scop SCoP to simplify (updated).
+ */
+void clan_scop_simplify(osl_scop_p scop) {
+  osl_statement_p statement;
+  
+  while (scop != NULL) {
+    statement = scop->statement;
+    while (statement != NULL) {
+      clan_relation_simplify(statement->domain);
+      statement = statement->next;
+    }
+    scop = scop->next;
+  }
+}

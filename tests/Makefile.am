@@ -59,7 +59,7 @@ check_SCRIPTS		= check_unitary.sh check_complex.sh check_autoscop.sh
 # check_PROGRAMS = ...
 TESTS			= $(check_SCRIPTS)
 
-TEST_FILES             	= \
+TEST_FILES = \
 	$(top_srcdir)/tests/ax-do.c \
 	$(top_srcdir)/tests/gauss.c \
 	$(top_srcdir)/tests/gemver.c \
@@ -67,7 +67,7 @@ TEST_FILES             	= \
 	$(top_srcdir)/tests/matmul.c \
 	$(top_srcdir)/tests/swim.c
 
-UNITARY_TEST_FILES             	= \
+UNITARY_TEST_FILES = \
 	$(top_srcdir)/tests/unitary/classicloop.c \
 	$(top_srcdir)/tests/unitary/simpleloop.c \
 	$(top_srcdir)/tests/unitary/basicnest.c \
@@ -94,6 +94,9 @@ UNITARY_TEST_FILES             	= \
 	$(top_srcdir)/tests/unitary/multiscop1.c \
 	$(top_srcdir)/tests/unitary/multiscop2.c \
 	$(top_srcdir)/tests/unitary/multiscop3.c \
+	$(top_srcdir)/tests/unitary/loop_context1.c \
+	$(top_srcdir)/tests/unitary/loop_context2.c \
+	$(top_srcdir)/tests/unitary/loop_context3.c \
 	$(top_srcdir)/tests/unitary/empty.c \
 	$(top_srcdir)/tests/unitary/simplecond.c \
 	$(top_srcdir)/tests/unitary/twoconds.c \

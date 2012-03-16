@@ -652,6 +652,8 @@ input file @code{basic.c} with default options by typing:
 * Inputscop::
 * Precision::
 * Bounded Context::
+* No Loop Context::
+* No Domain Simplify::
 * Help::
 * Version ::
 @end menu
@@ -705,6 +707,26 @@ compiled with GMP support for this option to apply).
 
 @code{-boundedctxt}: this option asks Clan to generate context
 relations such that every parameter is considered to be >= -1.
+
+@node No Loop Context
+@subsection No Loop Context @code{-noloopctxt}
+
+@code{-noloopctxt}: this option asks Clan to avoid generating
+additional constraints to ensure the initial values of the loop
+iterators respect the loop conditions. This option allows to
+generate simpler iteration domains, however it should be
+used with care. For instance without this option, a loop such
+as @code{for (i = 0; i > 2; i++)} cannot be detected as an
+empty loop.
+
+@node No Domain Simplify
+@subsection No Domain Simplify @code{-nosimplify}
+
+@code{-nosimplify}: this option asks Clan to avoid trying to
+simplify the iteration domains. Clan is not linked to a polyhedral
+library, hence it is just able to remove trivially redundant
+constraints and union parts. However, for debugging or time
+saving reason, this step can be disabled using this option.
 
 @node Help
 @subsection Help @code{--help} or @code{-h}

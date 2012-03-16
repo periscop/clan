@@ -491,14 +491,12 @@ void clan_relation_tag_inequality(osl_relation_p relation, int row) {
  * \param relation The relation which includes a constraint to be tagged.
  * \param row      The row corresponding to the constraint to tag.
  */
-/*
 static
 void clan_relation_tag_equality(osl_relation_p relation, int row) {
   if ((relation == NULL) || (relation->nb_rows < row))
     CLAN_error("the constraint cannot be equality-tagged");
   osl_int_set_si(relation->precision, relation->m[row], 0, 0);
 }
-*/
 
 
 /**
@@ -904,4 +902,328 @@ osl_relation_p clan_relation_stride(osl_relation_p r, int depth, int stride) {
   clan_parser_add_ld();
 
   return full;
+}
+
+
+/**
+ * clan_relation_gaussian_elimination function:
+ * this function eliminates the coefficients of a given column (pivot_column)
+ * of a relation matrix using a given pivot (the pivot itself is not
+ * eliminated). This function updates the relation directly. The correct
+ * elimination of columns elements (except the pivot) is guaranteed only if
+ * the pivot row corresponds to an equality. Otherwise, this fuction will do
+ * its best to eliminate the other columns elements, but the resulting
+ * relation will not be equivalent to the input.
+ * \param[in,out] relation     Relation where to eliminate a column (modified).
+ * \param[in]     pivot_row    Row coordinate of the pivot.
+ * \param[in]     pivot_column Column coordinate of the pivot.
+ */
+static
+void clan_relation_gaussian_elimination(osl_relation_p relation,
+                                        int pivot_row, int pivot_column) {
+  int i, j, same_sign, precision, identical;
+  osl_int_p temp, pivot_coef, current_coef;
+  
+  if (relation == NULL)
+    return;
+
+  precision = relation->precision;
+
+  if (relation->next != NULL)
+    OSL_debug("gaussian elimination works only on the first part of unions");
+
+  if ((pivot_row    >= relation->nb_rows)    || (pivot_row    < 0) ||
+      (pivot_column >= relation->nb_columns) || (pivot_column < 0))
+    OSL_error("bad pivot position");
+
+  if (osl_int_zero(precision, relation->m[pivot_row], pivot_column))
+    OSL_error("pivot value is 0");
+
+  if (!osl_int_zero(precision, relation->m[pivot_row], 0))
+    OSL_warning("pivot not in an equality: non equivalent simplified relation");
+
+  // Achieve the gaussian elimination.
+  // TODO: (ndCedric) investigate the impact of converting i > 0 to i - 1 >= 0.
+  //       When we multiply with some coefficients, like here, we may run into
+  //       trouble. For instance, let us suppose we want to simplify N > i
+  //       knowing that 2i = N. If we keep the >, we end up with N > 0. If we
+  //       translate to >=, we end up with N >= 2 which is not quite the same.
+  temp = osl_int_malloc(precision);
+  pivot_coef = osl_int_malloc(precision);
+  current_coef = osl_int_malloc(precision);
+  for (i = 0; i < relation->nb_rows; i++) {
+    // Do not eliminate if:
+    // - The current element to eliminate is the pivot,
+    // - The current element to eliminate is already zero,
+    // - The pivot lies in an inequality and the element in an equality,
+    // - The pivot and the current element are described with inequalities and
+    //   their coefficients have the same sign (impossible to eliminate).
+    same_sign = (osl_int_neg(precision, relation->m[pivot_row], pivot_column)&&
+                 osl_int_neg(precision, relation->m[i], pivot_column)) ||
+                (osl_int_pos(precision, relation->m[pivot_row], pivot_column)&&
+                 osl_int_pos(precision, relation->m[i], pivot_column));
+    if ((i != pivot_row) &&
+        (!osl_int_zero(precision, relation->m[i], pivot_column)) &&
+        (osl_int_zero(precision, relation->m[pivot_row], 0) ||
+         !osl_int_zero(precision, relation->m[i], 0))) {
+      if (osl_int_zero(precision, relation->m[pivot_row], 0) ||
+          osl_int_zero(precision, relation->m[i], 0) || !same_sign) {
+        // Set the values of coefficients for the pivot and the current rows:
+        // - if the pivot and the current element do not have the same sign,
+        //   ensure that only an equality can be multiplied by a negative coef,
+        // - if the signs are different, use positive coefficients.
+        osl_int_assign(precision,
+            pivot_coef, 0, relation->m[pivot_row], pivot_column);
+        osl_int_assign(precision,
+            current_coef, 0, relation->m[i], pivot_column);
+        if (same_sign) {
+          if (osl_int_zero(precision, relation->m[pivot_row], 0))
+            osl_int_oppose(precision, current_coef, 0, current_coef, 0);
+          else
+            osl_int_oppose(precision, pivot_coef, 0, pivot_coef, 0);
+        }
+        else {
+          osl_int_abs(precision, pivot_coef, 0, pivot_coef, 0);
+          osl_int_abs(precision, current_coef, 0, current_coef, 0);
+        }
+
+        // element = pivot_coef * element + current_coef * pivot_row_element
+        for (j = 1; j < relation->nb_columns; j++) {
+          osl_int_mul(precision,
+              temp, 0, current_coef, 0, relation->m[pivot_row], j);
+          osl_int_mul(precision,
+              relation->m[i], j, pivot_coef, 0, relation->m[i], j);
+          osl_int_add(precision,
+              relation->m[i], j, relation->m[i], j, temp, 0); 
+        }
+      }
+      else {
+        // In the case of two inequalities of the same sign, check whether they
+        // are identical and if yes, zero the current row.
+        identical = 1;
+          for (j = 1; j < relation->nb_columns; j++) {
+            if (osl_int_ne(precision,
+                           relation->m[i], j, relation->m[pivot_row], j)) {
+            identical = 0;
+            break;
+          }
+        }
+        if (identical) {
+          for (j = 1; j < relation->nb_columns; j++)
+            osl_int_sub(precision, relation->m[i], j,
+                        relation->m[i], j, relation->m[i], j);
+        }
+      }
+    }
+  }
+  osl_int_free(precision, temp, 0);
+  osl_int_free(precision, pivot_coef, 0);
+  osl_int_free(precision, current_coef, 0);
+}
+
+
+/**
+ * clan_relation_simplify_parts function:
+ * this function removes some duplicated union parts in a lazy way: there
+ * is no guarantee that it will remove duplicated constraints, it will
+ * just try and remove trivial duplicates.
+ * \param[in,out] relation The relation to simplify (modified).
+ */
+static
+void clan_relation_simplify_parts(osl_relation_p relation) {
+  osl_relation_p test, temp;
+
+  test = relation->next;
+  while (relation != NULL) {
+    while (test != NULL) {
+      if (osl_relation_part_equal(relation, test)) {
+        temp = test;
+        test = test->next;
+        if (relation->next == temp)
+          relation->next = test;
+        temp->next = NULL;
+        osl_relation_free(temp);
+      }
+      else {
+        test = test->next;
+      }
+    }
+    relation = relation->next;
+  }
+}
+
+
+/**
+ * clan_relation_simplify function:
+ * this function removes some duplicated constraints in a lazy way: there
+ * is no guarantee that it will remove duplicated constraints, it will
+ * just try and remove trivial duplicates. Hey, no polyhedral library
+ * there, so this is just trivial stuff.
+ * \param[in,out] relation The relation to simplify (modified).
+ */
+void clan_relation_simplify(osl_relation_p relation) {
+  int i, j, k, to_eliminate, offset;
+  osl_relation_p gauss, reference_gauss, reference = relation;
+
+  gauss = osl_relation_clone(relation);
+  reference_gauss = gauss;
+  while (relation != NULL) {
+    // First, try to eliminate columns elements by pivoting.
+    for (j = 1; j < gauss->nb_columns; j++) {
+      // Try to find a pivot, hence such that:
+      // - the pivot is not 0,
+      // - the constraint including the pivot is an equality,
+      // - there is no non-zero element in the row before the pivot.
+      
+      //printf("j = %d\n", j);
+      //osl_relation_dump(stdout, gauss);
+      for (i = 0; i < gauss->nb_rows; i++) {
+        if (!osl_int_zero(gauss->precision, gauss->m[i], j) &&
+            osl_int_zero(gauss->precision, gauss->m[i], 0)) {
+          to_eliminate = 1;
+          for (k = 1; k < j; k++)
+            if (!osl_int_zero(gauss->precision, gauss->m[i], k))
+              to_eliminate = 0;
+          if (to_eliminate)
+            clan_relation_gaussian_elimination(gauss, i, j);
+        }
+      }
+      //osl_relation_dump(stdout, gauss);
+    }
+    
+    // Second, remove trivially duplicated rows.
+    for (i = 0; i < gauss->nb_rows; i++) {
+      for (k = i + 1; k < gauss->nb_rows; k++) {
+        to_eliminate = 1;
+        for (j = 1; j < gauss->nb_columns; j++) {
+          if (osl_int_ne(gauss->precision, gauss->m[i], j, gauss->m[k], j)) {
+            to_eliminate = 0;
+            break;
+          }
+        }
+        if (to_eliminate) {
+          for (j = 1; j < gauss->nb_columns; j++)
+            osl_int_sub(gauss->precision, gauss->m[k], j,
+                gauss->m[k], j, gauss->m[k], j);
+        }
+      }
+    }
+
+    // Third, remove positive constant >= 0 constraints (e.g., 42 >= 0)
+    for (i = 0; i < gauss->nb_rows; i++) {
+      if (osl_int_pos(gauss->precision, gauss->m[i], gauss->nb_columns - 1) &&
+          !osl_int_zero(gauss->precision, gauss->m[i], 0)) {
+        to_eliminate = 1;
+        for (j = 1; j < gauss->nb_columns - 1; j++) {
+          if (!osl_int_zero(gauss->precision, gauss->m[i], j)) {
+            to_eliminate = 0;
+            break;
+          }
+        }
+        if (to_eliminate)
+          osl_int_sub(gauss->precision,
+                      gauss->m[i], gauss->nb_columns - 1,
+                      gauss->m[i], gauss->nb_columns - 1,
+                      gauss->m[i], gauss->nb_columns - 1);
+      }
+    }
+
+    // Remove the rows in the original relation which correspond to
+    // zero-rows in the gauss relation since they are redundant.
+    offset = 0;
+    for (i = 0; i < gauss->nb_rows; i++) {
+      to_eliminate = 1;
+      for (j = 1; j < gauss->nb_columns; j++) {
+        if (!osl_int_zero(gauss->precision, gauss->m[i], j)) {
+          to_eliminate = 0;
+          break;
+        }
+      }
+      if (to_eliminate) {
+        osl_relation_remove_row(relation, i - offset);
+        offset++;
+      }
+    }
+
+    gauss    = gauss->next;
+    relation = relation->next;
+  }
+  osl_relation_free(reference_gauss);
+  clan_relation_simplify_parts(reference);
+}
+
+
+/**
+ * clan_relation_loop_context function:
+ * this function adds the constraints to ensure that the loop iterator
+ * initial value respects the loop condition. This set of constraints is
+ * called the "loop context". Without such a context, a loop like the
+ * following: for (i = 0; i > 2; i++) would just translate to the
+ * constraints i >= 0 && i > 2 which is obviously wrong. Hence this
+ * function computes the set of constraints of the loop condition with
+ * respect to the initial value (in our example this would be 0 > 2)
+ * and adds it to the loop condition constraints. This function modifies
+ * the loop condition provided as input.
+ * \param[in,out] condition      The set of constraints corresponding to the
+ *                               loop condition (updated).
+ * \param[in]     initialization Lower bound constraints.
+ * \param[in]     depth          Current loop depth.
+ */
+void clan_relation_loop_context(osl_relation_p condition,
+                                osl_relation_p initialization,
+                                int depth) {
+  int i, j;
+  osl_relation_p contextual = NULL, temp, first_condition, new_condition;
+
+  if ((condition == NULL) || (initialization == NULL))
+    return;
+
+  if (initialization->next != NULL)
+    OSL_error("cannot compute the loop context for an initialization union");
+
+  if (initialization->nb_columns != condition->nb_columns)
+    OSL_error("imcompatible number of columns");
+
+  for (i = 0; i < initialization->nb_rows; i++)
+    if (osl_int_zero(initialization->precision, initialization->m[i], 0))
+      OSL_error("no equality is allowed in the initialization relation");
+  
+  first_condition = condition;
+  // For each possible initial value (e.g., in the case of a max):
+  for (i = 0; i < initialization->nb_rows; i++) {
+    condition = first_condition;
+    // For each union part of the condition
+    while (condition != NULL) {
+      // Build the loop context (i.e. the loop condition where the
+      // iterator is replaced by its initial value).
+      temp = osl_relation_nclone(condition, 1);
+      osl_relation_insert_blank_row(temp, 0);
+      for (j = 0; j < temp->nb_columns; j++)
+        osl_int_assign(temp->precision,
+                       temp->m[0], j, initialization->m[i], j);
+      clan_relation_tag_equality(temp, 0);
+      clan_relation_gaussian_elimination(temp, 0, depth);
+      osl_relation_remove_row(temp, 0);
+      
+      // Intersect the union part of the condition with its loop context.
+      new_condition = osl_relation_nclone(condition, 1);
+      osl_relation_insert_constraints(new_condition, temp, -1);
+
+      osl_relation_free(temp);
+      osl_relation_add(&contextual, new_condition);
+      condition = condition->next;
+    }
+  }
+
+  condition = first_condition;
+  osl_relation_free_inside(condition);
+  osl_relation_free(condition->next);
+  
+  // Replace the inside of condition.
+  condition->nb_rows = contextual->nb_rows;
+  condition->m = contextual->m;
+  condition->next = contextual->next;
+
+  // Free the contextual "shell".
+  free(contextual);
 }

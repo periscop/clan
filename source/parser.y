@@ -259,6 +259,10 @@ scop:
 	osl_scop_dump(stderr, scop);
       }
 
+      // Simplify the SCoP iteration domains.
+      if (!parser_options->nosimplify)
+        clan_scop_simplify(scop);
+
       // Add extensions.
       scop->registry = osl_interface_get_default_registry();
       clan_scop_generate_scatnames(scop);
@@ -455,6 +459,8 @@ iteration_statement:
       clan_relation_and(parser_stack->elt, init_constraints);
       
       // Add the contribution of the condition to the current domain.
+      if (!parser_options->noloopcontext)
+	clan_relation_loop_context($4, init_constraints, parser_loop_depth);
       clan_relation_and(parser_stack->elt, $4);
 
       // Add the contribution of the stride to the current domain.

@@ -60,6 +60,7 @@ void       clan_scop_generate_coordinates(osl_scop_p, char *);
 void       clan_scop_fill_options(osl_scop_p, int*, int*);
 void       clan_scop_update_coordinates(osl_scop_p, int (*)[CLAN_MAX_SCOPS]);
 void       clan_scop_print_autopragma(FILE *, int, int (*)[CLAN_MAX_SCOPS]);
+void       clan_scop_simplify(osl_scop_p scop);
 
 
 # if defined(__cplusplus)

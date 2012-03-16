@@ -62,6 +62,8 @@ void           clan_relation_and(osl_relation_p, osl_relation_p);
 int            clan_relation_existential(osl_relation_p);
 void           clan_relation_oppose_row(osl_relation_p, int);
 osl_relation_p clan_relation_stride(osl_relation_p, int, int);
+void           clan_relation_simplify(osl_relation_p);
+void           clan_relation_loop_context(osl_relation_p, osl_relation_p, int);
  
 # if defined(__cplusplus)
   }

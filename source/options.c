@@ -71,6 +71,8 @@ void clan_options_print(FILE * foo, clan_options_p options) {
   fprintf(foo, "autopragma      = %3d.\n", options->autopragma);
   fprintf(foo, "inputscop       = %3d.\n", options->inputscop);
   fprintf(foo, "bounded_context = %3d.\n", options->bounded_context);
+  fprintf(foo, "noloopcontext   = %3d.\n", options->noloopcontext);
+  fprintf(foo, "nosimplify      = %3d.\n", options->nosimplify);
 }
 
 
@@ -113,6 +115,8 @@ void clan_options_help() {
   "  -inputscop            Read a .scop as the input.\n"
   "  -precision <value>    32 to work in 32 bits, 64 for 64 bits, 0 for GMP.\n"
   "  -boundedctxt          Bound all global parameters to be >= -1.\n"
+  "  -noloopctxt           Do not include loop context (simplifies domains).\n"
+  "  -nosimplify           Do not simplify iteration domains.\n"
   "  -v, --version         Display the release information (and more).\n"
   "  -h, --help            Display this information.\n\n");
   printf(
@@ -209,6 +213,8 @@ clan_options_p clan_options_malloc(void) {
   options->inputscop  = 0;     // Default input is a source file, not a .scop.
   options->precision  = 64;    // Work in 64 bits by default.
   options->bounded_context = 0;// Don't bound the global parameters. 
+  options->noloopcontext   = 0;// Do include loop context in domains. 
+  options->nosimplify      = 0;// Do simplify iteration domains. 
   return options;
 }
 
@@ -260,6 +266,12 @@ clan_options_p clan_options_read(int argv, char ** argc,
       else
       if (strcmp(argc[i], "-boundedctxt") == 0)
         options->bounded_context = 1;
+      else
+      if (strcmp(argc[i], "-noloopctxt") == 0)
+        options->noloopcontext = 1;
+      else
+      if (strcmp(argc[i], "-nosimplify") == 0)
+        options->nosimplify = 1;
       else
       if (strcmp(argc[i], "-precision") == 0)
         clan_options_set(&(options)->precision, argv, argc, &i);

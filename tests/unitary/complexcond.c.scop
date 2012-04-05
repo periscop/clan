@@ -71,7 +71,7 @@ SCATTERING
 WRITE
 1 5 1 1 0 1
 # e/i| Arr|  i |  n |  1  
-   0   -1    0    0    1    ## Arr == a
+   0   -1    0    0    3    ## Arr == a
 
 # ----------------------------------------------  1.4 Body
 # Statement body is provided
@@ -109,7 +109,7 @@ SCATTERING
 WRITE
 1 5 1 1 0 1
 # e/i| Arr|  i |  n |  1  
-   0   -1    0    0    2    ## Arr == b
+   0   -1    0    0    4    ## Arr == b
 
 # ----------------------------------------------  2.4 Body
 # Statement body is provided
@@ -149,7 +149,7 @@ SCATTERING
 WRITE
 1 5 1 1 0 1
 # e/i| Arr|  i |  n |  1  
-   0   -1    0    0    3    ## Arr == c
+   0   -1    0    0    5    ## Arr == c
 
 # ----------------------------------------------  3.4 Body
 # Statement body is provided
@@ -188,7 +188,7 @@ SCATTERING
 WRITE
 1 5 1 1 0 1
 # e/i| Arr|  i |  n |  1  
-   0   -1    0    0    4    ## Arr == d
+   0   -1    0    0    6    ## Arr == d
 
 # ----------------------------------------------  4.4 Body
 # Statement body is provided
@@ -209,12 +209,14 @@ b0 i b1
 
 <arrays>
 # Number of arrays
-4
+6
 # Mapping array-identifiers/array-names
-4 d
-3 c
-2 b
-1 a
+1 i
+2 n
+3 a
+4 b
+5 c
+6 d
 </arrays>
 
 <coordinates>

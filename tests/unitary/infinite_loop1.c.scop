@@ -84,9 +84,10 @@ b0 clan_infinite_loop b1
 
 <arrays>
 # Number of arrays
-1
+2
 # Mapping array-identifiers/array-names
-1 S1
+1 clan_infinite_loop
+2 S1
 </arrays>
 
 <coordinates>

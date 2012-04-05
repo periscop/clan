@@ -100,11 +100,12 @@ a^=(b|(c+2))%2-!(a[n]/2);
 # =============================================== Extensions
 <arrays>
 # Number of arrays
-3
+4
 # Mapping array-identifiers/array-names
-3 c
-2 b
 1 a
+2 b
+3 c
+4 n
 </arrays>
 
 <coordinates>

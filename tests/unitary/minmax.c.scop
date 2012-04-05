@@ -135,7 +135,7 @@ SCATTERING
 WRITE
 1 8 1 2 0 3
 # e/i| Arr|  i    j |  n    m    p |  1  
-   0   -1    0    0    0    0    0    1    ## Arr == a
+   0   -1    0    0    0    0    0    6    ## Arr == a
 
 # ----------------------------------------------  1.4 Body
 # Statement body is provided
@@ -156,9 +156,14 @@ b0 i b1 j b2
 
 <arrays>
 # Number of arrays
-1
+6
 # Mapping array-identifiers/array-names
-1 a
+1 i
+2 n
+3 m
+4 p
+5 j
+6 a
 </arrays>
 
 <coordinates>

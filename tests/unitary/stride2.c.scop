@@ -80,7 +80,7 @@ SCATTERING
 WRITE
 4 10 4 3 0 1
 # e/i| Arr  [1]  [2]  [3]|  i    j    k |  N |  1  
-   0   -1    0    0    0    0    0    0    0    1    ## Arr == a
+   0   -1    0    0    0    0    0    0    0    5    ## Arr == a
    0    0   -1    0    0    1    0    0    0    0    ## [1] == i
    0    0    0   -1    0    0    1    0    0    0    ## [2] == j
    0    0    0    0   -1    0    0    1    0    0    ## [3] == k
@@ -104,9 +104,13 @@ b0 i b1 j b2 k b3
 
 <arrays>
 # Number of arrays
-1
+5
 # Mapping array-identifiers/array-names
-1 a
+1 i
+2 N
+3 j
+4 k
+5 a
 </arrays>
 
 <coordinates>

@@ -70,7 +70,7 @@ SCATTERING
 WRITE
 2 6 2 1 0 1
 # e/i| Arr  [1]|  i |  n |  1  
-   0   -1    0    0    0    1    ## Arr == c
+   0   -1    0    0    0    3    ## Arr == c
    0    0   -1    1    0    0    ## [1] == i
 
 # ----------------------------------------------  1.4 Body
@@ -92,9 +92,11 @@ b0 i b1
 
 <arrays>
 # Number of arrays
-1
+3
 # Mapping array-identifiers/array-names
-1 c
+1 i
+2 n
+3 c
 </arrays>
 
 <coordinates>

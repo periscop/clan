@@ -62,6 +62,7 @@
  * \param[in] coefficient The constant or coefficient.
  * \param[in] identifier  Identifier of iterator or parameter (NULL for constant).
  * \param[in] precision   Precision of the vector terms.
+ * \return A vector corresponding to the symbol and its coefficient.
  */
 osl_vector_p clan_vector_term(clan_symbol_p symbol, int coefficient,
                               char * identifier, int precision) {

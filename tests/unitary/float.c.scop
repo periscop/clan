@@ -169,10 +169,10 @@ d=5;
 # Number of arrays
 4
 # Mapping array-identifiers/array-names
-4 d
-3 c
-2 b
 1 a
+2 b
+3 c
+4 d
 </arrays>
 
 <coordinates>

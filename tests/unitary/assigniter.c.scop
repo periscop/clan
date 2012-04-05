@@ -74,18 +74,18 @@ SCATTERING
 WRITE
 2 7 2 2 0 1
 # e/i| Arr  [1]|  i    j |  N |  1  
-   0   -1    0    0    0    0    1    ## Arr == A
+   0   -1    0    0    0    0    4    ## Arr == A
    0    0   -1    1    0    0    0    ## [1] == i
 
 READ
 1 6 1 2 0 1
 # e/i| Arr|  i    j |  N |  1  
-   0   -1    0    0    0    1    ## Arr == A
+   0   -1    0    0    0    1    ## Arr == i
 
 READ
 1 6 1 2 0 1
 # e/i| Arr|  i    j |  N |  1  
-   0   -1    0    0    0    2    ## Arr == (null)
+   0   -1    0    0    0    3    ## Arr == j
 
 # ----------------------------------------------  1.4 Body
 # Statement body is provided
@@ -106,9 +106,12 @@ b0 i b1 j b2
 
 <arrays>
 # Number of arrays
-1
+4
 # Mapping array-identifiers/array-names
-1 A
+1 i
+2 N
+3 j
+4 A
 </arrays>
 
 <coordinates>

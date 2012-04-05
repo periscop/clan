@@ -74,7 +74,7 @@ SCATTERING
 READ
 1 6 1 2 0 1
 # e/i| Arr|  i    j |  n |  1  
-   0   -1    0    0    0    1    ## Arr == a
+   0   -1    0    0    0    4    ## Arr == a
 
 # ----------------------------------------------  1.4 Body
 # Statement body is provided
@@ -112,7 +112,7 @@ SCATTERING
 READ
 1 5 1 1 0 1
 # e/i| Arr|  i |  n |  1  
-   0   -1    0    0    2    ## Arr == c
+   0   -1    0    0    5    ## Arr == c
 
 # ----------------------------------------------  2.4 Body
 # Statement body is provided
@@ -133,10 +133,13 @@ b0 i b1 j b2
 
 <arrays>
 # Number of arrays
-2
+5
 # Mapping array-identifiers/array-names
-2 c
-1 a
+1 i
+2 n
+3 j
+4 a
+5 c
 </arrays>
 
 <coordinates>

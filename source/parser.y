@@ -89,10 +89,6 @@
    extern int      scanner_scop_start;   /**< Scanned SCoP starting line */
    extern int      scanner_scop_end;     /**< Scanned SCoP ending line */
    extern int      scanner_pragma;       /**< Between SCoP pragmas or not? */
-   extern int      symbol_nb_arrays;     /**< Number of array symbols */
-   extern int      symbol_nb_iterators;  /**< Number of iterator symbols */
-   extern int      symbol_nb_parameters; /**< Number of parameter symbols */
-   extern int      symbol_nb_functions;  /**< Number of function symbols */
 
    // This is the "parser state", a collection of variables that vary
    // during the parsing and thanks to we can extract all SCoP informations.
@@ -106,6 +102,7 @@
    clan_symbol_p * parser_iterators;     /**< Current iterator list */
    osl_relation_list_p parser_stack;     /**< Iteration domain stack */
    int *           parser_nb_local_dims; /**< Nb of local dims per depth */
+   int             parser_nb_parameters; /**< Nb of parameter symbols */
    int *           parser_valid_else;    /**< Boolean: OK for else per depth */
    int             parser_indent;        /**< SCoP indentation */
    int             parser_error;         /**< Boolean: parse error */
@@ -490,8 +487,10 @@ iteration_statement:
       osl_relation_p iterator_relation;
 
       CLAN_debug("rule iteration_statement.2.1: loop_infinite ...");
-      clan_symbol_new_iterator(&parser_symbol, parser_iterators,
-	                       "clan_infinite_loop", parser_loop_depth);
+      if (!clan_symbol_new_iterator(&parser_symbol, parser_iterators,
+	                            "clan_infinite_loop", parser_loop_depth))
+	YYABORT;
+
       clan_parser_increment_loop_depth();
       
       // Generate the constraint clan_infinite_loop >= 0.
@@ -522,8 +521,9 @@ iteration_statement:
 loop_initialization:
     loop_declaration ID
     {
-      clan_symbol_new_iterator(&parser_symbol, parser_iterators, $2,
-	                       parser_loop_depth);
+      if (!clan_symbol_new_iterator(&parser_symbol, parser_iterators, $2,
+	                            parser_loop_depth))
+	YYABORT;
     }
     '=' affine_minmax_expression ';'
     {
@@ -556,6 +556,7 @@ loop_condition:
 // Handled cases (with s an integer):
 // i++, i--; ++i, --i, i = i + v, i = i - s, i += s, i -= s
 // return <value>
+// TODO: we should check that ID corresponds to the current loop iterator.
 //
 loop_stride:
     ID INC_OP             { $$ =  1;  free($1); }
@@ -842,9 +843,16 @@ affine_primary_expression:
       clan_symbol_p id;
 
       CLAN_debug("rule affine_primary_expression.1: id");
-      id = clan_symbol_add(&parser_symbol, $1, CLAN_UNDEFINED,
-                           parser_loop_depth);
-      if ((id->type == CLAN_TYPE_ARRAY) || (id->type == CLAN_TYPE_FUNCTION)) {
+      id = clan_symbol_add(&parser_symbol, $1, CLAN_UNDEFINED);
+      // An id in an affex can be either an iterator or a parameter. If it is
+      // an unknown (embeds read-only variables), it is updated to a parameter.
+      if (id->type == CLAN_UNDEFINED) {
+        id->type = CLAN_TYPE_PARAMETER;
+        id->rank = ++parser_nb_parameters;
+      }
+
+      if ((id->type != CLAN_TYPE_ITERATOR) &&
+          (id->type != CLAN_TYPE_PARAMETER)) {
         free($1);
 	if (id->type == CLAN_TYPE_ARRAY)
 	  yyerror("variable or array reference in an affine expression");
@@ -1049,19 +1057,19 @@ affine_floord_expression:
 primary_expression:
     ID
     {
-      int rank, nb_columns;
+      int nb_columns;
       osl_relation_p id;
       osl_relation_list_p list;
+      clan_symbol_p symbol;
 
       CLAN_debug("rule primary_expression.1: ID");
-      clan_symbol_add(&parser_symbol, $1, CLAN_TYPE_ARRAY, parser_loop_depth);
-      rank = clan_symbol_get_rank(parser_symbol, $1);
+      symbol = clan_symbol_add(&parser_symbol, $1, CLAN_UNDEFINED);
       nb_columns = CLAN_MAX_DEPTH + CLAN_MAX_LOCAL_DIMS +
 	           CLAN_MAX_PARAMETERS + 2;
       id = osl_relation_pmalloc(parser_options->precision, 0, nb_columns);
       osl_relation_set_attributes(id, 0, parser_loop_depth, 0,
                                   CLAN_MAX_PARAMETERS);
-      clan_relation_tag_array(id, rank);
+      clan_relation_tag_array(id, symbol->key);
       list = osl_relation_list_malloc();
       list->elt = id;
       free($1);
@@ -1085,6 +1093,8 @@ postfix_expression:
   | postfix_expression '[' affine_expression ']' // ANSI: expression
     {
       CLAN_debug("rule postfix_expression.2: postfix_expression [ <affex> ]");
+      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_ARRAY))
+        YYABORT;
       clan_relation_new_output_vector($1->elt, $3);
       osl_vector_free($3);
       $$ = $1;
@@ -1092,34 +1102,40 @@ postfix_expression:
     }
   | postfix_expression '(' ')'
     { 
+      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_FUNCTION))
+        YYABORT;
       osl_relation_list_free($1);
       $$ = NULL;
     }
   | postfix_expression '(' argument_expression_list ')'
     {
+      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_FUNCTION))
+        YYABORT;
       osl_relation_list_free($1);
       $$ = $3;
     }
   | postfix_expression '.' ID
     {
-      int rank;
+      clan_symbol_p symbol;
 
       CLAN_debug("rule postfix_expression.4: postfix_expression . ID");
-      clan_symbol_add(&parser_symbol, $3, CLAN_TYPE_ARRAY, parser_loop_depth);
-      rank = clan_symbol_get_rank(parser_symbol, $3);
-      clan_relation_new_output_scalar($1->elt, rank);
+      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_ARRAY))
+        YYABORT;
+      symbol = clan_symbol_add(&parser_symbol, $3, CLAN_TYPE_FIELD);
+      clan_relation_new_output_scalar($1->elt, symbol->key);
       free($3);
       $$ = $1;
       CLAN_debug_call(osl_relation_list_dump(stderr, $$));
     }
   | postfix_expression PTR_OP ID
     {
-      int rank;
+      clan_symbol_p symbol;
 
       CLAN_debug("rule postfix_expression.5: postfix_expression -> ID");
-      clan_symbol_add(&parser_symbol, $3, CLAN_TYPE_ARRAY, parser_loop_depth);
-      rank = clan_symbol_get_rank(parser_symbol, $3);
-      clan_relation_new_output_scalar($1->elt, rank);
+      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_ARRAY))
+        YYABORT;
+      symbol = clan_symbol_add(&parser_symbol, $3, CLAN_TYPE_FIELD);
+      clan_relation_new_output_scalar($1->elt, symbol->key);
       free($3);
       $$ = $1;
       CLAN_debug_call(osl_relation_list_dump(stderr, $$));
@@ -1130,6 +1146,8 @@ postfix_expression:
 
       CLAN_debug("rule postfix_expression.6: postfix_expression -> "
 	         "postfix_expression ++/--");
+      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_ARRAY))
+        YYABORT;
       list = $1;
       // The last reference in the list is also written.
       if (list != NULL) {
@@ -1162,6 +1180,8 @@ unary_expression:
 
       CLAN_debug("rule unary_expression.2: unary_expression -> "
 	         "++/-- unary_expression");
+      if (!clan_symbol_update_type(parser_symbol, $2, CLAN_TYPE_ARRAY))
+        YYABORT;
       list = $2;
       // The last reference in the list is also written.
       if (list != NULL) {
@@ -1367,6 +1387,8 @@ assignment_expression:
 
       CLAN_debug("rule assignment_expression.2: unary_expression "
 	         "assignment_operator assignment_expression;");
+      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_ARRAY))
+        YYABORT;
       $$ = $1;
       // Accesses of $1 are READ except the last one which is a WRITE or both.
       clan_relation_list_define_type($$, OSL_TYPE_READ);
@@ -1786,6 +1808,7 @@ void clan_parser_state_initialize(clan_options_p options) {
   parser_line_end      = 1;
   parser_column_start  = 1;
   parser_column_end    = 1;
+  parser_nb_parameters = 0;
 
   for (i = 0; i < depth; i++) {
     parser_nb_local_dims[i] = 0;
@@ -1794,12 +1817,6 @@ void clan_parser_state_initialize(clan_options_p options) {
 
   for (i = 0; i < 2 * depth + 1; i++)
     parser_scattering[i] = 0;
-
-  // Reset also the Symbol global variables.
-  symbol_nb_iterators  = 0;
-  symbol_nb_parameters = 0;
-  symbol_nb_arrays     = 0;
-  symbol_nb_functions  = 0;
 }
 
 

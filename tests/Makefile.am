@@ -53,7 +53,8 @@ TESTS_ENVIRONMENT       = top_builddir=$(top_builddir) SRCDIR=$(srcdir)
 
 EXTRA_DIST              = checker.sh
 
-check_SCRIPTS		= check_unitary.sh check_complex.sh check_autoscop.sh
+check_SCRIPTS		= check_unitary.sh check_complex.sh \
+			  check_fail.sh check_autoscop.sh
 
 ## Replace by program names when needed
 # check_PROGRAMS = ...
@@ -97,6 +98,9 @@ UNITARY_TEST_FILES = \
 	$(top_srcdir)/tests/unitary/loop_context1.c \
 	$(top_srcdir)/tests/unitary/loop_context2.c \
 	$(top_srcdir)/tests/unitary/loop_context3.c \
+	$(top_srcdir)/tests/unitary/ref1_parameter_after_reference.c \
+	$(top_srcdir)/tests/unitary/ref2_parameter_before_reference.c \
+	$(top_srcdir)/tests/unitary/ref3_iterator_reference.c \
 	$(top_srcdir)/tests/unitary/empty.c \
 	$(top_srcdir)/tests/unitary/simplecond.c \
 	$(top_srcdir)/tests/unitary/twoconds.c \
@@ -130,6 +134,14 @@ UNITARY_TEST_FILES = \
 	$(top_srcdir)/tests/unitary/nestedcurly.c \
 	$(top_srcdir)/tests/unitary/float.c
 
+FAIL_TEST_FILES = \
+	$(top_srcdir)/tests/must_fail/array_in_affex.c \
+	$(top_srcdir)/tests/must_fail/variable_to_iterator.c \
+	$(top_srcdir)/tests/must_fail/function_call_in_affex.c \
+	$(top_srcdir)/tests/must_fail/non_affine_in_affex.c \
+	$(top_srcdir)/tests/must_fail/write_iterator.c \
+	$(top_srcdir)/tests/must_fail/write_parameter.c
+
 AUTOSCOP_TEST_FILES = \
 	$(top_srcdir)/tests/autoscop/classicloop.c \
 	$(top_srcdir)/tests/autoscop/matmul_1_bare_metal.c \
@@ -138,15 +150,18 @@ AUTOSCOP_TEST_FILES = \
 
 TEST_FILES_REF = $(TEST_FILES:.c=.c.scop)
 UNITARY_TEST_FILES_REF = $(UNITARY_TEST_FILES:.c=.c.scop)
+FAIL_TEST_FILES_REF = $(FAIL_TEST_FILES:.c=.c.scop)
 AUTOSCOP_TEST_FILES_REF = $(AUTOSCOP_TEST_FILES:.c=.c.scop)
 
 TEST_FILES_CLEAN = $(TEST_FILES:.c=.c.test)
 UNITARY_TEST_FILES_CLEAN = $(UNITARY_TEST_FILES:.c=.c.test)
+FAIL_TEST_FILES_CLEAN = $(FAIL_TEST_FILES:.c=.c.test)
 AUTOSCOP_TEST_FILES_CLEAN = $(AUTOSCOP_TEST_FILES:.c=.c.test)
 
 CLEANFILES = \
 	$(TEST_FILES_CLEAN) \
 	$(UNITARY_TEST_FILES_CLEAN) \
+	$(FAIL_TEST_FILES_CLEAN) \
 	$(AUTOSCOP_TEST_FILES_CLEAN)
 
 EXTRA_DIST += \
@@ -154,6 +169,8 @@ EXTRA_DIST += \
 	$(TEST_FILES_REF) \
 	$(UNITARY_TEST_FILES) \
 	$(UNITARY_TEST_FILES_REF) \
+	$(FAIL_TEST_FILES) \
+	$(FAIL_TEST_FILES_REF) \
 	$(AUTOSCOP_TEST_FILES) \
 	$(AUTOSCOP_TEST_FILES_REF) \
 	$(check_SCRIPTS)
@@ -162,4 +179,5 @@ TESTS_ENVIRONMENT += \
 	CHECKER="$(top_srcdir)/tests/checker.sh" \
 	TEST_FILES="$(TEST_FILES)" \
 	UNITARY_TEST_FILES="$(UNITARY_TEST_FILES)" \
+	FAIL_TEST_FILES="$(FAIL_TEST_FILES)" \
 	AUTOSCOP_TEST_FILES="$(AUTOSCOP_TEST_FILES)"

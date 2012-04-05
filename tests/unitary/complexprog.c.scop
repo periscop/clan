@@ -82,18 +82,18 @@ SCATTERING
 WRITE
 2 7 2 1 0 2
 # e/i| Arr  [1]|  i |  M    N |  1  
-   0   -1    0    0    0    0    1    ## Arr == a
+   0   -1    0    0    0    0    4    ## Arr == a
    0    0   -1    1    0    0    0    ## [1] == i
 
 READ
 1 6 1 1 0 2
 # e/i| Arr|  i |  M    N |  1  
-   0   -1    0    0    0    3    ## Arr == b
+   0   -1    0    0    0    6    ## Arr == b
 
 READ
 1 6 1 1 0 2
 # e/i| Arr|  i |  M    N |  1  
-   0   -1    0    0    0    4    ## Arr == c
+   0   -1    0    0    0    7    ## Arr == c
 
 # ----------------------------------------------  1.4 Body
 # Statement body is provided
@@ -143,12 +143,12 @@ SCATTERING
 WRITE
 1 6 1 1 0 2
 # e/i| Arr|  i |  M    N |  1  
-   0   -1    0    0    0    4    ## Arr == c
+   0   -1    0    0    0    7    ## Arr == c
 
 READ
 1 6 1 1 0 2
 # e/i| Arr|  i |  M    N |  1  
-   0   -1    0    0    0    4    ## Arr == c
+   0   -1    0    0    0    7    ## Arr == c
 
 # ----------------------------------------------  2.4 Body
 # Statement body is provided
@@ -182,13 +182,13 @@ SCATTERING
 WRITE
 2 6 2 0 0 2
 # e/i| Arr  [1]|  M    N |  1  
-   0   -1    0    0    0    1    ## Arr == a
+   0   -1    0    0    0    4    ## Arr == a
    0    0   -1    0    0    0    ## [1] == 0
 
 READ
 1 5 1 0 0 2
 # e/i| Arr|  M    N |  1  
-   0   -1    0    0    4    ## Arr == c
+   0   -1    0    0    7    ## Arr == c
 
 # ----------------------------------------------  3.4 Body
 # Statement body is provided
@@ -207,12 +207,15 @@ b0 i b1
 
 <arrays>
 # Number of arrays
-4
+7
 # Mapping array-identifiers/array-names
-4 c
-3 b
-2 pow
-1 a
+1 M
+2 N
+3 i
+4 a
+5 pow
+6 b
+7 c
 </arrays>
 
 <coordinates>

@@ -74,7 +74,7 @@ SCATTERING
 READ
 3 8 3 2 0 1
 # e/i| Arr  [1]  [2]|  i    j |  N |  1  
-   0   -1    0    0    0    0    0    2    ## Arr == a
+   0   -1    0    0    0    0    0    5    ## Arr == a
    0    0   -1    0    1    0    0    0    ## [1] == i
    0    0    0   -1    0    1    0    0    ## [2] == j
 
@@ -118,7 +118,7 @@ SCATTERING
 READ
 3 8 3 2 0 1
 # e/i| Arr  [1]  [2]|  i    j |  N |  1  
-   0   -1    0    0    0    0    0    3    ## Arr == b
+   0   -1    0    0    0    0    0    6    ## Arr == b
    0    0   -1    0    1    0    0    0    ## [1] == i
    0    0    0   -1    0    1    0    0    ## [2] == j
 
@@ -141,11 +141,14 @@ b0 i b1 j b2
 
 <arrays>
 # Number of arrays
-3
+6
 # Mapping array-identifiers/array-names
-3 b
-2 a
-1 scanf
+1 i
+2 N
+3 j
+4 scanf
+5 a
+6 b
 </arrays>
 
 <coordinates>
@@ -209,7 +212,7 @@ SCATTERING
 WRITE
 3 8 3 2 0 1
 # e/i| Arr  [1]  [2]|  i    j |  N |  1  
-   0   -1    0    0    0    0    0    1    ## Arr == c
+   0   -1    0    0    0    0    0    4    ## Arr == c
    0    0   -1    0    1    0    0    0    ## [1] == i
    0    0    0   -1    0    1    0    0    ## [2] == j
 
@@ -257,28 +260,28 @@ SCATTERING
 WRITE
 3 9 3 3 0 1
 # e/i| Arr  [1]  [2]|  i    j    k |  N |  1  
-   0   -1    0    0    0    0    0    0    1    ## Arr == c
+   0   -1    0    0    0    0    0    0    4    ## Arr == c
    0    0   -1    0    1    0    0    0    0    ## [1] == i
    0    0    0   -1    0    1    0    0    0    ## [2] == j
 
 READ
 3 9 3 3 0 1
 # e/i| Arr  [1]  [2]|  i    j    k |  N |  1  
-   0   -1    0    0    0    0    0    0    1    ## Arr == c
+   0   -1    0    0    0    0    0    0    4    ## Arr == c
    0    0   -1    0    1    0    0    0    0    ## [1] == i
    0    0    0   -1    0    1    0    0    0    ## [2] == j
 
 READ
 3 9 3 3 0 1
 # e/i| Arr  [1]  [2]|  i    j    k |  N |  1  
-   0   -1    0    0    0    0    0    0    2    ## Arr == a
+   0   -1    0    0    0    0    0    0    6    ## Arr == a
    0    0   -1    0    1    0    0    0    0    ## [1] == i
    0    0    0   -1    0    0    1    0    0    ## [2] == k
 
 READ
 3 9 3 3 0 1
 # e/i| Arr  [1]  [2]|  i    j    k |  N |  1  
-   0   -1    0    0    0    0    0    0    3    ## Arr == b
+   0   -1    0    0    0    0    0    0    7    ## Arr == b
    0    0   -1    0    0    0    1    0    0    ## [1] == k
    0    0    0   -1    0    1    0    0    0    ## [2] == j
 
@@ -301,11 +304,15 @@ b0 i b1 j b2 k b3
 
 <arrays>
 # Number of arrays
-3
+7
 # Mapping array-identifiers/array-names
-3 b
-2 a
-1 c
+1 i
+2 N
+3 j
+4 c
+5 k
+6 a
+7 b
 </arrays>
 
 <coordinates>
@@ -369,7 +376,7 @@ SCATTERING
 READ
 3 8 3 2 0 1
 # e/i| Arr  [1]  [2]|  i    j |  N |  1  
-   0   -1    0    0    0    0    0    2    ## Arr == c
+   0   -1    0    0    0    0    0    5    ## Arr == c
    0    0   -1    0    1    0    0    0    ## [1] == i
    0    0    0   -1    0    1    0    0    ## [2] == j
 
@@ -427,10 +434,13 @@ b0 i b1 j b2
 
 <arrays>
 # Number of arrays
-2
+5
 # Mapping array-identifiers/array-names
-2 c
-1 printf
+1 i
+2 N
+3 j
+4 printf
+5 c
 </arrays>
 
 <coordinates>

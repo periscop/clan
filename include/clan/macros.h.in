@@ -56,6 +56,7 @@
 # define CLAN_MAX_CONSTRAINTS          5 // Max contraint number for a domain
 # define CLAN_MAX_SCOPS               256 // Max number of SCoPs for autoscop
 # define CLAN_UNDEFINED                -1
+# define CLAN_KEY_START                 1
 
 # define CLAN_TYPE_ITERATOR             1
 # define CLAN_TYPE_ITERATOR_DEC         2

@@ -68,7 +68,7 @@ SCATTERING
 WRITE
 1 4 1 1 0 0
 # e/i| Arr|  i |  1  
-   0   -1    0    1    ## Arr == a
+   0   -1    0    2    ## Arr == a
 
 # ----------------------------------------------  1.4 Body
 # Statement body is provided
@@ -89,9 +89,10 @@ b0 i b1
 
 <arrays>
 # Number of arrays
-1
+2
 # Mapping array-identifiers/array-names
-1 a
+1 i
+2 a
 </arrays>
 
 <coordinates>

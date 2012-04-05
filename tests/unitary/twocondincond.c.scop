@@ -68,7 +68,7 @@ SCATTERING
 READ
 1 7 1 0 0 4
 # e/i| Arr|  M    N    Q    P |  1  
-   0   -1    0    0    0    0    1    ## Arr == a
+   0   -1    0    0    0    0    5    ## Arr == a
 
 # ----------------------------------------------  1.4 Body
 # Statement body is provided
@@ -98,7 +98,7 @@ SCATTERING
 READ
 1 7 1 0 0 4
 # e/i| Arr|  M    N    Q    P |  1  
-   0   -1    0    0    0    0    2    ## Arr == b
+   0   -1    0    0    0    0    6    ## Arr == b
 
 # ----------------------------------------------  2.4 Body
 # Statement body is provided
@@ -130,7 +130,7 @@ SCATTERING
 READ
 1 7 1 0 0 4
 # e/i| Arr|  M    N    Q    P |  1  
-   0   -1    0    0    0    0    3    ## Arr == c
+   0   -1    0    0    0    0    7    ## Arr == c
 
 # ----------------------------------------------  3.4 Body
 # Statement body is provided
@@ -145,11 +145,15 @@ c;
 # =============================================== Extensions
 <arrays>
 # Number of arrays
-3
+7
 # Mapping array-identifiers/array-names
-3 c
-2 b
-1 a
+1 M
+2 N
+3 Q
+4 P
+5 a
+6 b
+7 c
 </arrays>
 
 <coordinates>

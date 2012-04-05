@@ -43,20 +43,14 @@
 
 #include <osl/strings.h>
 #include <osl/generic.h>
+#include <osl/relation.h>
+#include <osl/relation_list.h>
 #include <osl/extensions/arrays.h>
 #include <clan/macros.h>
 #include <clan/symbol.h>
 
 
-/*+****************************************************************************
- *                               Global variables                             *
- ******************************************************************************/
-
-
-int symbol_nb_iterators  = 0; /**< Current number of iterator symbols  */
-int symbol_nb_parameters = 0; /**< Current number of parameter symbols */
-int symbol_nb_arrays     = 0; /**< Current number of array symbols     */
-int symbol_nb_functions  = 0; /**< Current number of function symbols  */
+void yyerror(char *);
 
 
 /*+****************************************************************************
@@ -71,9 +65,9 @@ int symbol_nb_functions  = 0; /**< Current number of function symbols  */
  * depression or, for the lucky ones, getting a headache... It includes an
  * indentation level (level) in order to work with others print_structure
  * functions.
- * \param file   File where informations are printed.
- * \param symbol The symbol whose information have to be printed.
- * \param level  Number of spaces before printing, for each line.
+ * \param[in] file   File where informations are printed.
+ * \param[in] symbol The symbol whose information have to be printed.
+ * \param[in] level  Number of spaces before printing, for each line.
  */
 void clan_symbol_print_structure(FILE * file, clan_symbol_p symbol,
                                  int level) {
@@ -101,6 +95,16 @@ void clan_symbol_print_structure(FILE * file, clan_symbol_p symbol,
     }
     else
       first = 0;
+
+    // A blank line.
+    for (j = 0; j <= level + 1; j++)
+      fprintf(file, "|\t");
+    fprintf(file, "\n");
+
+    // Go to the right level and print the key.
+    for (j = 0; j <= level; j++)
+      fprintf(file, "|\t");
+    fprintf(file, "Key: %d\n", symbol->key);
 
     // A blank line.
     for (j = 0; j <= level+1; j++)
@@ -169,8 +173,8 @@ void clan_symbol_print_structure(FILE * file, clan_symbol_p symbol,
  * clan_symbol_print function:
  * This function prints the content of a clan_symbol_t structure (*symbol) into
  * a file (file, possibly stdout).
- * \param file   File where informations are printed.
- * \param symbol The symbol whose information have to be printed.
+ * \param[in] file   File where informations are printed.
+ * \param[in] symbol The symbol whose information have to be printed.
  */
 void clan_symbol_print(FILE * file, clan_symbol_p symbol) {
   clan_symbol_print_structure(file, symbol, 0);
@@ -187,12 +191,16 @@ void clan_symbol_print(FILE * file, clan_symbol_p symbol) {
  * This function allocates the memory space for a clan_symbol_t structure and
  * sets its fields with default values. Then it returns a pointer to the
  * allocated space.
+ * \return A newly allocated symbol set with default values.
  */
 clan_symbol_p clan_symbol_malloc() {
   clan_symbol_p symbol;
 
   CLAN_malloc(symbol, clan_symbol_p, sizeof(clan_symbol_t));
+  symbol->key        = CLAN_UNDEFINED;
   symbol->identifier = NULL;
+  symbol->type       = CLAN_UNDEFINED;
+  symbol->rank       = CLAN_UNDEFINED;
   symbol->next       = NULL;
 
   return symbol;
@@ -202,7 +210,7 @@ clan_symbol_p clan_symbol_malloc() {
 /**
  * clan_symbol_free function:
  * This function frees the allocated memory for a clan_symbol_t structure.
- * \param symbol The pointer to the symbol we want to free.
+ * \param[in,out] symbol The pointer to the symbol we want to free.
  */
 void clan_symbol_free(clan_symbol_p symbol) {
   clan_symbol_p next;
@@ -226,8 +234,9 @@ void clan_symbol_free(clan_symbol_p symbol) {
  * This function searches the symbol table for a symbol with the identifier
  * provided as parameter. It returns the pointer to the symbol if it already
  * exists inside the table, NULL otherwise.
- * \param symbol     The first node of the list of symbols.
- * \param identifier The identifier we are looking for.
+ * \param[in] symbol     The first node of the list of symbols.
+ * \param[in] identifier The identifier we are looking for.
+ * \return The symbol corresponding to identifier, NULL if it doesn't exist.
  */
 clan_symbol_p clan_symbol_lookup(clan_symbol_p symbol, char * identifier) {
   while (symbol != NULL) {
@@ -241,23 +250,41 @@ clan_symbol_p clan_symbol_lookup(clan_symbol_p symbol, char * identifier) {
 
   
 /**
- * clan_symbol_lookup_by_type_rank( function:
- * This function searches the symbol table for a symbol with the type and rank
+ * clan_symbol_lookup_by_key function:
+ * This function searches the symbol table for a symbol with the key
  * provided as parameter. It returns the pointer to the symbol if it already
  * exists inside the table, NULL otherwise.
- * \param symbol The first node of the list of symbols.
- * \param type   The type of the searched symbol.
- * \param rank   The rank of the searched symbol.
+ * \param[in] symbol The first node of the list of symbols.
+ * \param[in] key    The key of the searched symbol.
+ * \return The symbol corresponding to the key, or NULL if it doesn't exist.
  */
-clan_symbol_p clan_symbol_lookup_by_type_rank(clan_symbol_p symbol,
-                                              int type, int rank) {
+clan_symbol_p clan_symbol_lookup_by_key(clan_symbol_p symbol, int key) {
   while (symbol != NULL) {
-    if ((symbol->type == type) && (symbol->rank == rank))
+    if (symbol->key == key)
       return symbol;
     else
       symbol = symbol->next;
   }
   return NULL;
+}
+
+
+/**
+ * clan_symbol_generate_new_key function:
+ * this function generates a key which is not yet present in the table.
+ * \param[in] table The first element of the symbol table.
+ * \return A key which would be convenient for a new symbol.
+ */
+static
+int clan_symbol_generate_new_key(clan_symbol_p table) {
+  int key = CLAN_KEY_START;
+  
+  while (table != NULL) {
+    if (table->key >= key)
+      key = table->key + 1;
+    table = table->next;
+  }
+  return key;
 }
 
 
@@ -268,14 +295,13 @@ clan_symbol_p clan_symbol_lookup_by_type_rank(clan_symbol_p symbol,
  * node will become its first element. A new node is added only if an
  * existing node with the same identifier does not already exist. It returns
  * the pointer to the symbol table node corresponding to the identifier.
- * \param table      The address of the symbol table.
- * \param identifier The identifier of the symbol we want to add.
- * \param type       The new symbol type
- * \param rank       The new symbol rank (depth if iterator, ignored otherwise)
+ * \param[in,out] table      The address of the symbol table.
+ * \param[in]     identifier The identifier of the symbol we want to add.
+ * \param[in]     type       The new symbol type.
  */
 clan_symbol_p clan_symbol_add(clan_symbol_p * table, char * identifier,
-                              int type, int rank) {
-  clan_symbol_p symbol;
+                              int type) {
+  clan_symbol_p symbol, tmp = *table;
 
   // If the identifier is already in the table, do nothing.
   symbol = clan_symbol_lookup(*table, identifier);
@@ -284,29 +310,41 @@ clan_symbol_p clan_symbol_add(clan_symbol_p * table, char * identifier,
 
   // Else, we allocate and fill a new clan_symbol_t node.
   symbol = clan_symbol_malloc();
-
+  symbol->key = clan_symbol_generate_new_key(*table);
   symbol->identifier = strdup(identifier);
-
-  // If the type was unknown (iterator or parameter) we know now that it is
-  // a parameter, it would have been already in the table otherwise.
-  if (type == CLAN_UNDEFINED)
-    type = CLAN_TYPE_PARAMETER;
   symbol->type = type;
 
-  switch (symbol->type) {
-    case CLAN_TYPE_ITERATOR : symbol->rank = rank;
-                              symbol_nb_iterators++;
-			      break;
-    case CLAN_TYPE_PARAMETER: symbol->rank = ++symbol_nb_parameters; break;
-    case CLAN_TYPE_ARRAY    : symbol->rank = ++symbol_nb_arrays;     break;
-    case CLAN_TYPE_FUNCTION : symbol->rank = ++symbol_nb_functions;  break;
+  // We put the new symbol at the end of the table.
+  if (*table == NULL) {
+    *table = symbol;
+  }
+  else {
+    while (tmp->next != NULL)
+      tmp = tmp->next;
+    tmp->next = symbol;
   }
 
-  // We put the new symbol at the beginning of the table (easier ;-) !). */
-  symbol->next = *table;
-  *table = symbol;
-
   return symbol;
+}
+
+
+/**
+ * clan_symbol_get_key function:
+ * This function returns the key of the symbol with identifier "identifier"
+ * in the symbol table whose first element is "symbol". If the symbol with
+ * the specified identifier is not found, it returns CLAN_UNDEFINED.
+ * \param[in] symbol     The first node of the list of symbols.
+ * \param[in] identifier The identifier we want to know the key.
+ * \return The key corresponding to the identifier or CLAN_UNDEFINED.
+ */
+int clan_symbol_get_key(clan_symbol_p symbol, char * identifier) {
+  while (symbol != NULL) {
+    if (strcmp(symbol->identifier,identifier) == 0)
+      return symbol->key;
+    else
+      symbol = symbol->next;
+  }
+  return CLAN_UNDEFINED;
 }
 
 
@@ -315,8 +353,9 @@ clan_symbol_p clan_symbol_add(clan_symbol_p * table, char * identifier,
  * This function returns the rank of the symbol with identifier "identifier"
  * in the symbol table whose first element is "symbol". If the symbol with
  * the specified identifier is not found, it returns -1.
- * \param symbol     The first node of the list of symbols.
- * \param identifier The identifier we want to know the rank.
+ * \param[in] symbol     The first node of the list of symbols.
+ * \param[in] identifier The identifier we want to know the key.
+ * \return The rank corresponding to the identifier or CLAN_UNDEFINED.
  */
 int clan_symbol_get_rank(clan_symbol_p symbol, char * identifier) {
   while (symbol != NULL) {
@@ -325,7 +364,7 @@ int clan_symbol_get_rank(clan_symbol_p symbol, char * identifier) {
     else
       symbol = symbol->next;
   }
-  return -1;
+  return CLAN_UNDEFINED;
 }
 
 
@@ -334,8 +373,9 @@ int clan_symbol_get_rank(clan_symbol_p symbol, char * identifier) {
  * This function returns the type of the symbol with identifier "identifier"
  * in the symbol table whose first element is "symbol". If the symbol with
  * the specified identifier is not found, it returns -1.
- * \param symbol     The first node of the list of symbols.
- * \param identifier The identifier we want to know the type.
+ * \param[in] symbol     The first node of the list of symbols.
+ * \param[in] identifier The identifier we want to know the type.
+ * \return The type of the symbol corresponding to the identifier.
  */
 int clan_symbol_get_type(clan_symbol_p symbol, char * identifier) {
   while (symbol != NULL) {
@@ -344,7 +384,7 @@ int clan_symbol_get_type(clan_symbol_p symbol, char * identifier) {
     else
       symbol = symbol->next;
   }
-  return -1;
+  return CLAN_UNDEFINED;
 }
 
 
@@ -410,8 +450,8 @@ int clan_symbol_nb_of_type(clan_symbol_p symbol, int type) {
  * structure containing the symbol strings of a given type in the
  * symbol table. The osl_generic_t is a shell for an osl_strings_t
  * which actually stores the symbol strings. The symbol strings are sorted
- * according to their rank. If there is no corresponding symbol in the
- * table, it returns NULL.
+ * in the same order as they appear in the symbol table. If there is no
+ * corresponding symbol in the table, it returns NULL.
  * \param[in] symbol The top of the symbol table.
  * \param[in] type   The type of the elements.
  * \return An osl_generic_t with the symbol strings of the given type.
@@ -437,17 +477,12 @@ osl_generic_p clan_symbol_to_strings(clan_symbol_p symbol, int type) {
   while (symbol != NULL) {
     if (symbol->type == type) {
       length = strlen(symbol->identifier) + 1;
-      CLAN_malloc(identifiers[symbol->rank - 1], char *, length * sizeof(char));
-      strcpy(identifiers[symbol->rank - 1], symbol->identifier);
+      CLAN_malloc(identifiers[i], char *, length * sizeof(char));
+      strcpy(identifiers[i], symbol->identifier);
       i++;
     }
     symbol = symbol->next;
   }
-
-  // A basic check that there is no hole in the rank list.
-  for (i = 0; i < nb_identifiers; i++)
-    if (identifiers[i] == NULL)
-      CLAN_error("hole in the string list");
 
   // Build the osl_strings_t container.
   strings = osl_strings_malloc();
@@ -495,8 +530,7 @@ osl_generic_p clan_symbol_to_arrays(clan_symbol_p symbol) {
 
   // A first scan to know how many arrays there are.
   while (symbol != NULL) {
-    if (symbol->type == CLAN_TYPE_ARRAY)
-      nb_arrays++;
+    nb_arrays++;
     symbol = symbol->next;
   }
 
@@ -509,11 +543,9 @@ osl_generic_p clan_symbol_to_arrays(clan_symbol_p symbol) {
     symbol = top;
     i = 0;
     while (symbol != NULL) {
-      if (symbol->type == CLAN_TYPE_ARRAY) {
-        arrays->id[i] = symbol->rank;
-        CLAN_strdup(arrays->names[i], symbol->identifier);
-        i++;
-      }
+      arrays->id[i] = symbol->key;
+      CLAN_strdup(arrays->names[i], symbol->identifier);
+      i++;
       symbol = symbol->next;
     }
     
@@ -524,30 +556,88 @@ osl_generic_p clan_symbol_to_arrays(clan_symbol_p symbol) {
   return generic;
 }
 
-void yyerror(char *);
 
 /**
  * clan_symbol_new_iterator function:
- * this function registers (or updates) an iterator in the symbol
- * table and adds it to the iterator array.
+ * this function return 1 if it succeeds to register (or to update) an
+ * iterator in the symbol table and to add it to the iterator array. It
+ * returns 0 otherwise. The reason for failure can be that the symbol
+ * is already in use for something else than an iterator.
  * \param[in,out] table The symbol table.
  * \param[in,out] array The iterator array.
  * \param[in]     id    The textual name of the iterator.
  * \param[in]     depth The current loop depth.
+ * \return 1 on success, 0 on failure.
  */
-void clan_symbol_new_iterator(clan_symbol_p * table, clan_symbol_p * array,
+int clan_symbol_new_iterator(clan_symbol_p * table, clan_symbol_p * array,
                               char * id, int depth) {
   clan_symbol_p symbol;
-  symbol = clan_symbol_add(table, id, CLAN_TYPE_ITERATOR, depth + 1);
+  symbol = clan_symbol_add(table, id, CLAN_TYPE_ITERATOR);
 
   // Ensure that the returned symbol was either a new one, or of the same type.
   if (symbol->type != CLAN_TYPE_ITERATOR) {
-    yyerror("a loop iterator was previously used as a parameter");
-    return;
+    yyerror("a loop iterator was previously used for something else");
+    return 0;
   }
   
   // Update the rank, in case the symbol already exists.
   if (symbol->rank != depth + 1)
     symbol->rank = depth + 1;
+
   array[depth] = clan_symbol_clone_one(symbol);
+  return 1;
+}
+
+
+/**
+ * clan_symbol_update_type function:
+ * this function returns 1 if it succeeds to modify the type of a symbol
+ * in the symbol table. The modified symbol corresponds to the reference
+ * accessed in the last access relation of an access list provided as
+ * parameter. It returns 0 if it fails. The reasons for a failure can be
+ * either to try to modify an iterator type or a parameter type since they
+ * are supposed to be dead-ends.
+ * \param[in,out] table  The first symbol of the symbol table (one element
+ *                       may be modified).
+ * \param[in]     access A list of access relations.
+ * \param[in]     type   The new type for the symbol we want to update.
+ * \return 1 on success, 0 on failure.
+ */
+int clan_symbol_update_type(clan_symbol_p table, osl_relation_list_p access,
+                            int type) {
+  int key;
+  int relation_type;
+  clan_symbol_p symbol;
+  
+  if (table == NULL)
+    CLAN_error("cannot even try to update type: NULL symbol table");
+  if (access == NULL)
+    CLAN_error("cannot even try to update type: NULL access list");
+
+  // We will only consider the last reference in the list.
+  while (access->next != NULL)
+    access = access->next;
+
+  // Get the key (with some cheating with the relation type to be able to use
+  // osl_relation_get_array_id), find the corresponding symbol and update.
+  relation_type = access->elt->type;
+  access->elt->type = OSL_TYPE_READ;
+  key = osl_relation_get_array_id(access->elt);
+  access->elt->type = relation_type;
+  symbol = clan_symbol_lookup_by_key(table, key);
+  if (symbol == NULL)
+    CLAN_error("no symbol corresponding to the key");
+
+  if ((symbol->type == CLAN_TYPE_ITERATOR) && (type != CLAN_TYPE_ITERATOR)) {
+    yyerror("illegal use of an iterator (update or reference) in a statement");
+    return 0;
+  }
+
+  if ((symbol->type == CLAN_TYPE_PARAMETER) && (type != CLAN_TYPE_PARAMETER)) {
+    yyerror("illegal use of a parameter (update or reference) in a statement");
+    return 0;
+  }
+
+  symbol->type = type;
+  return 1;
 }

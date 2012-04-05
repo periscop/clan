@@ -70,13 +70,13 @@ SCATTERING
 WRITE
 2 6 2 1 0 1
 # e/i| Arr  [1]|  i |  N |  1  
-   0   -1    0    0    0    1    ## Arr == a
-   0    0   -1    0    0    2    ## [1] == 2
+   0   -1    0    0    0    3    ## Arr == a
+   0    0   -1    0    0    4    ## [1] == 4
 
 READ
 1 5 1 1 0 1
 # e/i| Arr|  i |  N |  1  
-   0   -1    0    0    3    ## Arr == c
+   0   -1    0    0    5    ## Arr == c
 
 # ----------------------------------------------  1.4 Body
 # Statement body is provided
@@ -108,14 +108,14 @@ SCATTERING
 WRITE
 2 5 2 0 0 1
 # e/i| Arr  [1]|  N |  1  
-   0   -1    0    0    3    ## Arr == c
-   0    0   -1    0    4    ## [1] == 4
+   0   -1    0    0    5    ## Arr == c
+   0    0   -1    0    6    ## [1] == 6
 
 READ
 2 5 2 0 0 1
 # e/i| Arr  [1]|  N |  1  
-   0   -1    0    0    1    ## Arr == a
-   0    0   -1    0    2    ## [1] == 2
+   0   -1    0    0    3    ## Arr == a
+   0    0   -1    0    4    ## [1] == 4
 
 # ----------------------------------------------  2.4 Body
 # Statement body is provided
@@ -145,7 +145,7 @@ SCATTERING
 WRITE
 1 4 1 0 0 1
 # e/i| Arr|  N |  1  
-   0   -1    0    5    ## Arr == toto
+   0   -1    0    7    ## Arr == toto
 
 # ----------------------------------------------  3.4 Body
 # Statement body is provided
@@ -164,13 +164,15 @@ b0 i b1
 
 <arrays>
 # Number of arrays
-5
+7
 # Mapping array-identifiers/array-names
-5 toto
-4 d
-3 c
-2 b
-1 a
+1 i
+2 N
+3 a
+4 b
+5 c
+6 d
+7 toto
 </arrays>
 
 <coordinates>

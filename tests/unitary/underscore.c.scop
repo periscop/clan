@@ -80,28 +80,28 @@ SCATTERING
 WRITE
 3 11 3 3 0 3
 # e/i| Arr  [1]  [2]|  i    j    k |  M    N    K |  1  
-   0   -1    0    0    0    0    0    0    0    0    1    ## Arr == C
+   0   -1    0    0    0    0    0    0    0    0    7    ## Arr == C
    0    0   -1    0    1    0    0    0    0    0    0    ## [1] == i
    0    0    0   -1    0    1    0    0    0    0    0    ## [2] == j
 
 READ
 3 11 3 3 0 3
 # e/i| Arr  [1]  [2]|  i    j    k |  M    N    K |  1  
-   0   -1    0    0    0    0    0    0    0    0    2    ## Arr == _C_
+   0   -1    0    0    0    0    0    0    0    0    8    ## Arr == _C_
    0    0   -1    0    1    0    0    0    0    0    0    ## [1] == i
    0    0    0   -1    0    1    0    0    0    0    0    ## [2] == j
 
 READ
 3 11 3 3 0 3
 # e/i| Arr  [1]  [2]|  i    j    k |  M    N    K |  1  
-   0   -1    0    0    0    0    0    0    0    0    3    ## Arr == A
+   0   -1    0    0    0    0    0    0    0    0    9    ## Arr == A
    0    0   -1    0    1    0    0    0    0    0    0    ## [1] == i
    0    0    0   -1    0    0    1    0    0    0    0    ## [2] == k
 
 READ
 3 11 3 3 0 3
 # e/i| Arr  [1]  [2]|  i    j    k |  M    N    K |  1  
-   0   -1    0    0    0    0    0    0    0    0    4    ## Arr == B
+   0   -1    0    0    0    0    0    0    0    0   10    ## Arr == B
    0    0   -1    0    0    0    1    0    0    0    0    ## [1] == k
    0    0    0   -1    0    1    0    0    0    0    0    ## [2] == j
 
@@ -124,12 +124,18 @@ b0 i b1 j b2 k b3
 
 <arrays>
 # Number of arrays
-4
+10
 # Mapping array-identifiers/array-names
-4 B
-3 A
-2 _C_
-1 C
+1 i
+2 M
+3 j
+4 N
+5 k
+6 K
+7 C
+8 _C_
+9 A
+10 B
 </arrays>
 
 <coordinates>

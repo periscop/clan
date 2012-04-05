@@ -157,10 +157,13 @@ b0 i b1 j b2
 
 <arrays>
 # Number of arrays
-2
+5
 # Mapping array-identifiers/array-names
-2 S2
-1 S1
+1 i
+2 N
+3 j
+4 S1
+5 S2
 </arrays>
 
 <coordinates>

@@ -109,13 +109,13 @@ a=(b=c?d:e)?f:g;
 # Number of arrays
 7
 # Mapping array-identifiers/array-names
-7 g
-6 f
-5 e
-4 d
-3 c
-2 b
 1 a
+2 b
+3 c
+4 d
+5 e
+6 f
+7 g
 </arrays>
 
 <coordinates>

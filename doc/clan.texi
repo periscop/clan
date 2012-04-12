@@ -23,7 +23,7 @@
 @settitle Clan - a polyhedral representation extractor for high level programs
 
 @set EDITION 1.0
-@set VERSION 0.7.0
+@set VERSION 0.7.1
 @set UPDATED January 19th 2012
 @c @set UPDATED Coming soon
 @setchapternewpage odd
@@ -612,7 +612,7 @@ a static control part. The output file format is OpenScop, @pxref{Bas12}.
 It has been designed by various researchers in polyhedral compilation from
 various institutions. It builds on previous popular polyhedral file formats
 like @emph{.cloog} to provide a unique, extensible file format to every
-polyhedral compilation tools (including future versions of CLooG) while
+polyhedral compilation tools (including CLooG) while
 being polyhedral library independent. To guarantee an up-to-date
 information, the reader is invited to read the OpenScop document
 directly @pxref{Bas12}.
@@ -1108,10 +1108,10 @@ directory of the Clan distribution.
 
 The Texinfo sources of the present document are also provided in the @code{doc}
 directory. You can build it in PDF format
-(by typing @code{texi2pdf cloog.texi} or @code{make pdf}) or HTML format
-(by typing @code{makeinfo --html cloog.texi}, using @code{--no-split}
+(by typing @code{texi2pdf clan.texi} or @code{make pdf}) or HTML format
+(by typing @code{makeinfo --html clan.texi}, using @code{--no-split}
 option to generate a single HTML file) or info format
-(by typing @code{makeinfo cloog.texi}).
+(by typing @code{makeinfo clan.texi}).
 
 @c %  **************************** DEVELOPPING ********************************
 @node Development

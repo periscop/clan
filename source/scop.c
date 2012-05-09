@@ -49,6 +49,7 @@
 #include <osl/extensions/scatnames.h>
 #include <osl/extensions/arrays.h>
 #include <osl/extensions/coordinates.h>
+#include <osl/extensions/clay.h>
 #include <osl/generic.h>
 #include <osl/body.h>
 #include <osl/scop.h>
@@ -227,6 +228,31 @@ void clan_scop_generate_coordinates(osl_scop_p scop, char * name) {
   extension->interface = osl_coordinates_interface();
   extension->data = coordinates;
   osl_generic_add(&scop->extension, extension);
+}
+
+
+/**
+ * clan_scop_generate_clay function:
+ * this function generates a clay extension for the scop passed as
+ * an argument.
+ * \param[in,out] scop   The scop to add a clay extension to.
+ * \param[in]     script The clay script.
+ */
+void clan_scop_generate_clay(osl_scop_p scop, char * script) {
+  osl_clay_p clay;
+  osl_generic_p extension;
+
+  if ((script != NULL) && (strlen(script) > 0)) {
+    // Build the clay extension
+    clay = osl_clay_malloc();
+    CLAN_strdup(clay->script, script);
+
+    // Build the generic extension and insert it to the extension list.
+    extension = osl_generic_malloc();
+    extension->interface = osl_clay_interface();
+    extension->data = clay;
+    osl_generic_add(&scop->extension, extension);
+  }
 }
 
 

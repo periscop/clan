@@ -57,6 +57,7 @@ void       clan_scop_compact(osl_scop_p);
 void       clan_scop_print(FILE *, osl_scop_p, clan_options_p);
 void       clan_scop_generate_scatnames(osl_scop_p);
 void       clan_scop_generate_coordinates(osl_scop_p, char *);
+void       clan_scop_generate_clay(osl_scop_p, char *);
 void       clan_scop_fill_options(osl_scop_p, int*, int*);
 void       clan_scop_update_coordinates(osl_scop_p, int (*)[CLAN_MAX_SCOPS]);
 void       clan_scop_print_autopragma(FILE *, int, int (*)[CLAN_MAX_SCOPS]);

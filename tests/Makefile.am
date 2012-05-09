@@ -101,6 +101,7 @@ UNITARY_TEST_FILES = \
 	$(top_srcdir)/tests/unitary/ref1_parameter_after_reference.c \
 	$(top_srcdir)/tests/unitary/ref2_parameter_before_reference.c \
 	$(top_srcdir)/tests/unitary/ref3_iterator_reference.c \
+	$(top_srcdir)/tests/unitary/clay.c \
 	$(top_srcdir)/tests/unitary/empty.c \
 	$(top_srcdir)/tests/unitary/simplecond.c \
 	$(top_srcdir)/tests/unitary/twoconds.c \

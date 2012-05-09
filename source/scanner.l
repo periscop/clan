@@ -70,6 +70,7 @@ IS ((u|U)|(u|U)?(l|L|ll|LL)|(l|L|ll|LL)(u|U))
    int    scanner_parsing;                 /**< Do we parse or not? */
    int    scanner_comment;                 /**< Comment nesting depth */
    char * scanner_latest_text;             /**< Latest text read */
+   char * scanner_clay;                    /**< Data for the Clay software */
    int    scanner_line;                    /**< Current line number */
    int    scanner_column;                  /**< Current column number */
    int    scanner_column_LALR;             /**< Column number before token */
@@ -83,8 +84,36 @@ IS ((u|U)|(u|U)?(l|L|ll|LL)|(l|L|ll|LL)(u|U))
 %option nounput
 %x LINECOMMENT
 %x FULLCOMMENT
+%x CLAY
 
 %%
+<CLAY>"*/"                  {
+                              scanner_column += 2;
+                              scanner_comment--;
+                              if (scanner_comment == 0)
+                                BEGIN INITIAL;      /* Quit any mode */
+                            }
+<CLAY>"/*"                  {
+                              scanner_column += 2;
+                              scanner_comment++;
+                            }
+<CLAY>\n                    {
+                              scanner_line++;
+                              scanner_column = 1;
+                              if (scanner_parsing) {
+			        CLAN_realloc(scanner_clay, char *,
+                                    (strlen(scanner_clay) + 2) * sizeof(char));
+                                strcat(scanner_clay, yytext);
+			      }
+                            }
+<CLAY>.                     {
+                              scanner_column++;
+                              if (scanner_parsing) {
+                                CLAN_realloc(scanner_clay, char *,
+                                    (strlen(scanner_clay) + 2) * sizeof(char));
+                                strcat(scanner_clay, yytext);
+			      }
+                            }
 <FULLCOMMENT>"*/"           {
                               scanner_column += 2;
                               scanner_comment--;
@@ -109,6 +138,15 @@ IS ((u|U)|(u|U)?(l|L|ll|LL)|(l|L|ll|LL)(u|U))
 "//"                        { 
                               scanner_column += 2;
                               BEGIN LINECOMMENT;    /* Enter LINECOMMENT mode*/
+                            }
+"/* Clay\n"                 {
+                              scanner_column = 1;
+                              scanner_line++;
+			      if (scanner_comment == 0)
+				BEGIN CLAY;         /* Enter CLAY mode*/
+			      else
+                                BEGIN FULLCOMMENT;  /* Enter FULLCOMMENT mode*/
+                              scanner_comment++;
                             }
 "/*"                        {
                               scanner_column += 2;
@@ -275,6 +313,8 @@ void clan_scanner_initialize() {
   scanner_parsing = CLAN_FALSE;
   scanner_comment = 0;
   scanner_latest_text = NULL;
+  CLAN_malloc(scanner_clay, char *, sizeof(char));
+  scanner_clay[0] = '\0';
   scanner_line = 1;
   scanner_column = 1;
   scanner_column_LALR = 1;
@@ -295,6 +335,7 @@ void clan_scanner_initialize() {
  */
 void clan_scanner_reinitialize(int pragma, int line, int column) {
   free(scanner_latest_text);
+  free(scanner_clay);
   clan_scanner_initialize();
   scanner_pragma = pragma;
   scanner_line = line;
@@ -337,6 +378,7 @@ void clan_scanner_free() {
   yy_delete_buffer(YY_CURRENT_BUFFER);
   free(yy_buffer_stack);
   free(scanner_latest_text);
+  free(scanner_clay);
 }
 
 

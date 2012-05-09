@@ -83,6 +83,7 @@
    extern FILE *   yyin;                 /**< File to be read by Lex */
    extern int      scanner_parsing;      /**< Do we parse or not? */
    extern char *   scanner_latest_text;  /**< Latest text read by Lex */
+   extern char *   scanner_clay;         /**< Data for the Clay software */
    extern int      scanner_line;         /**< Current scanned line */
    extern int      scanner_column;       /**< Scanned column (current) */
    extern int      scanner_column_LALR;  /**< Scanned column (before token) */
@@ -266,6 +267,7 @@ scop:
       arrays = clan_symbol_to_arrays(parser_symbol);
       osl_generic_add(&scop->extension, arrays);
       clan_scop_generate_coordinates(scop, parser_options->name);
+      clan_scop_generate_clay(scop, scanner_clay);
 
       // Add the SCoP to parser_scop and prepare the state for the next SCoP.
       osl_scop_add(&parser_scop, scop);

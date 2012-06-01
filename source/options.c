@@ -117,6 +117,7 @@ void clan_options_help() {
   "  -boundedctxt          Bound all global parameters to be >= -1.\n"
   "  -noloopctxt           Do not include loop context (simplifies domains).\n"
   "  -nosimplify           Do not simplify iteration domains.\n"
+  "  -outscoplib           Print to the SCoPLib format.\n"
   "  -v, --version         Display the release information (and more).\n"
   "  -h, --help            Display this information.\n\n");
   printf(
@@ -215,6 +216,7 @@ clan_options_p clan_options_malloc(void) {
   options->bounded_context = 0;// Don't bound the global parameters. 
   options->noloopcontext   = 0;// Do include loop context in domains. 
   options->nosimplify      = 0;// Do simplify iteration domains. 
+  options->outscoplib      = 0;// Default OpenScop format
   return options;
 }
 
@@ -272,6 +274,9 @@ clan_options_p clan_options_read(int argv, char ** argc,
       else
       if (strcmp(argc[i], "-nosimplify") == 0)
         options->nosimplify = 1;
+      else
+      if (strcmp(argc[i], "-outscoplib") == 0)
+        options->outscoplib = 1;
       else
       if (strcmp(argc[i], "-precision") == 0)
         clan_options_set(&(options)->precision, argv, argc, &i);

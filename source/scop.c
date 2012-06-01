@@ -141,7 +141,10 @@ void clan_scop_print(FILE * file, osl_scop_p scop, clan_options_p options) {
     fprintf(file, "#.::  :::::::::::::::::::Y88as88a...s88aa.\n#\n");
   }
 
-  osl_scop_print(file, scop);
+  if (options->outscoplib)
+    osl_scop_print_scoplib(file, scop);
+  else
+    osl_scop_print(file, scop);
 }
 
 

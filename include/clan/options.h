@@ -65,6 +65,8 @@ struct clan_options
   int bounded_context; /**< 1 to force global parameters >= -1 (default 0) */
   int noloopcontext;   /**< 1 to avoid inserting loop context (default 0) */
   int nosimplify;      /**< 1 to avoid simplifying domains (default 0) */
+
+  int outscoplib;      /**< 1 print to the SCoPLib format (default 0) */
 };
 typedef struct clan_options   clan_options_t;
 typedef struct clan_options * clan_options_p;

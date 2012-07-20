@@ -56,6 +56,7 @@
    #include <osl/statement.h>
    #include <osl/strings.h>
    #include <osl/generic.h>
+   #include <osl/body.h>
    #include <osl/extensions/arrays.h>
    #include <osl/scop.h>
    #include <clan/macros.h>

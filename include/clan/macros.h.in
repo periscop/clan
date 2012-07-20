@@ -133,6 +133,4 @@
 
 # define CLAN_min(x,y) ((x) < (y)? (x) : (y))
 
-# include <osl/osl.h>
-
 #endif /* define CLAN_MACROS_H */

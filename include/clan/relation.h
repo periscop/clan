@@ -39,7 +39,6 @@
 #ifndef CLAN_relation_H
 # define CLAN_relation_H
 
-# include <osl/relation.h>
 # include <clan/options.h>
 
 # if defined(__cplusplus)
@@ -47,24 +46,33 @@ extern "C"
   {
 # endif
 
+
+struct osl_relation;
+struct osl_vector;
+
+
 /*+****************************************************************************
  *                            Processing functions                            *
  ******************************************************************************/
-void           clan_relation_tag_array(osl_relation_p, int);
-osl_relation_p clan_relation_build_context(int, clan_options_p);
-osl_relation_p clan_relation_scattering(int *, int, int);
-void           clan_relation_new_output_vector(osl_relation_p, osl_vector_p);
-void           clan_relation_new_output_scalar(osl_relation_p, int);
-void           clan_relation_compact(osl_relation_p, int);
-osl_relation_p clan_relation_greater(osl_relation_p, osl_relation_p, int);
-osl_relation_p clan_relation_not(osl_relation_p);
-void           clan_relation_and(osl_relation_p, osl_relation_p);
-int            clan_relation_existential(osl_relation_p);
-void           clan_relation_oppose_row(osl_relation_p, int);
-osl_relation_p clan_relation_stride(osl_relation_p, int, int);
-void           clan_relation_simplify(osl_relation_p);
-void           clan_relation_loop_context(osl_relation_p, osl_relation_p, int);
- 
+void                 clan_relation_tag_array(struct osl_relation*, int);
+struct osl_relation* clan_relation_build_context(int, clan_options_p);
+struct osl_relation* clan_relation_scattering(int*, int, int);
+void                 clan_relation_new_output_vector(struct osl_relation*,
+                                                     struct osl_vector*);
+void                 clan_relation_new_output_scalar(struct osl_relation*, int);
+void                 clan_relation_compact(struct osl_relation*, int);
+struct osl_relation* clan_relation_greater(struct osl_relation*,
+                                           struct osl_relation*, int);
+struct osl_relation* clan_relation_not(struct osl_relation*);
+void                 clan_relation_and(struct osl_relation*,
+                                       struct osl_relation*);
+int                  clan_relation_existential(struct osl_relation*);
+void                 clan_relation_oppose_row(struct osl_relation*, int);
+struct osl_relation* clan_relation_stride(struct osl_relation*, int, int);
+void                 clan_relation_simplify(struct osl_relation*);
+void                 clan_relation_loop_context(struct osl_relation*,
+                                                struct osl_relation*, int);
+
 # if defined(__cplusplus)
   }
 # endif

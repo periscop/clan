@@ -40,7 +40,6 @@
 # define CLAN_SCOP_H
 
 # include <stdio.h>
-# include <osl/scop.h>
 # include <clan/options.h>
 
 # if defined(__cplusplus)
@@ -49,19 +48,24 @@ extern "C"
 # endif
 
 
+struct osl_scop;
+
+
 /*+****************************************************************************
  *                            Processing functions                            *
  ******************************************************************************/
-osl_scop_p clan_scop_extract(FILE *, clan_options_p);
-void       clan_scop_compact(osl_scop_p);
-void       clan_scop_print(FILE *, osl_scop_p, clan_options_p);
-void       clan_scop_generate_scatnames(osl_scop_p);
-void       clan_scop_generate_coordinates(osl_scop_p, char *);
-void       clan_scop_generate_clay(osl_scop_p, char *);
-void       clan_scop_fill_options(osl_scop_p, int*, int*);
-void       clan_scop_update_coordinates(osl_scop_p, int (*)[CLAN_MAX_SCOPS]);
-void       clan_scop_print_autopragma(FILE *, int, int (*)[CLAN_MAX_SCOPS]);
-void       clan_scop_simplify(osl_scop_p scop);
+struct osl_scop* clan_scop_extract(FILE*, clan_options_p);
+void             clan_scop_compact(struct osl_scop*);
+void             clan_scop_print(FILE*, struct osl_scop*, clan_options_p);
+void             clan_scop_generate_scatnames(struct osl_scop*);
+void             clan_scop_generate_coordinates(struct osl_scop*, char*);
+void             clan_scop_generate_clay(struct osl_scop*, char*);
+void             clan_scop_fill_options(struct osl_scop*, int*, int*);
+void             clan_scop_update_coordinates(struct osl_scop*,
+                                              int (*)[CLAN_MAX_SCOPS]);
+void             clan_scop_print_autopragma(FILE*, int,
+                                            int (*)[CLAN_MAX_SCOPS]);
+void             clan_scop_simplify(struct osl_scop*);
 
 
 # if defined(__cplusplus)

@@ -39,6 +39,7 @@
 #include <stdio.h>
 
 #include <clan/clan.h>
+#include <osl/scop.h>
 
 int main(int argc, char * argv[]) {
   osl_scop_p scop = NULL;

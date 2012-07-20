@@ -39,18 +39,19 @@
 #ifndef CLAN_STATEMENT_H
 # define CLAN_STATEMENT_H
 
-# include <osl/statement.h>
-
 # if defined(__cplusplus)
 extern "C"
   {
 # endif
 
 
+struct osl_statement;
+
+
 /*+****************************************************************************
  *                            Processing functions                            *
  ******************************************************************************/
-void clan_statement_compact(osl_statement_p, int);
+void clan_statement_compact(struct osl_statement*, int);
 
 
 # if defined(__cplusplus)

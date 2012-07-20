@@ -53,7 +53,7 @@ extern "C"
  */
 struct clan_options
 {
-  char * name ;   /**< Name of the input file. */
+  char* name ;    /**< Name of the input file. */
   int castle;     /**< 1 to put the Clan castle in output, 0 otherwise. */
   int structure;  /**< 1 to print the clan_scop structure, 0 otherwise. */
   int autoscop;   /**< 1 to extract SCoPs automatically, 0 otherwise. */
@@ -68,14 +68,14 @@ struct clan_options
 
   int outscoplib;      /**< 1 print to the SCoPLib format (default 0) */
 };
-typedef struct clan_options   clan_options_t;
-typedef struct clan_options * clan_options_p;
+typedef struct clan_options  clan_options_t;
+typedef struct clan_options* clan_options_p;
 
 
 /*+****************************************************************************
  *                          Structure display function                        *
  ******************************************************************************/
-void clan_options_print(FILE *, clan_options_p);
+void           clan_options_print(FILE*, clan_options_p);
 
 
 /*+****************************************************************************
@@ -88,7 +88,7 @@ void           clan_options_free(clan_options_p);
 /*+****************************************************************************
  *                               Reading function                             *
  ******************************************************************************/
-clan_options_p clan_options_read(int, char **, FILE **, FILE **);
+clan_options_p clan_options_read(int, char**, FILE**, FILE**);
 
 
 /*+****************************************************************************

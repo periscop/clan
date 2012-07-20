@@ -39,18 +39,21 @@
 #ifndef CLAN_RELATION_LIST_H
 # define CLAN_RELATION_LIST_H
 
-# include <osl/relation_list.h>
-
 # if defined(__cplusplus)
 extern "C"
   {
 # endif
 
+
+struct osl_relation_list;
+
+
 /*+****************************************************************************
  *                            Processing functions                            *
  ******************************************************************************/
-void clan_relation_list_compact(osl_relation_list_p, int);
-void clan_relation_list_define_type(osl_relation_list_p, int);
+void clan_relation_list_compact(struct osl_relation_list*, int);
+void clan_relation_list_define_type(struct osl_relation_list*, int);
+
 
 # if defined(__cplusplus)
   }

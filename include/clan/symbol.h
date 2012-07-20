@@ -39,62 +39,61 @@
 #ifndef CLAN_SYMBOL_H
 # define CLAN_SYMBOL_H
 
-# include <osl/strings.h>
-# include <osl/generic.h>
-# include <osl/relation_list.h>
-# include <osl/extensions/arrays.h>
-
 # if defined(__cplusplus)
 extern "C"
   {
 # endif
 
+struct osl_strings;
+struct osl_generic;
+struct osl_relation_list;
 
 /**
  * The clan_symbol_t structure is a node of the symbol table of the parser.
  */
 struct clan_symbol
 {
-  int key;                   /**< Unique symbol key */
-  char * identifier;         /**< Symbol identifier */
-  int type;                  /**< Symbol type (variable, iterator...) */
-  int rank;                  /**< Depth for iterators, number for parameters */
-  struct clan_symbol * next; /**< Next symbol in the symbol table */
+  int key;                  /**< Unique symbol key */
+  char* identifier;         /**< Symbol identifier */
+  int type;                 /**< Symbol type (variable, iterator...) */
+  int rank;                 /**< Depth for iterators, number for parameters */
+  struct clan_symbol* next; /**< Next symbol in the symbol table */
 };
-typedef struct clan_symbol   clan_symbol_t;
-typedef struct clan_symbol * clan_symbol_p;
+typedef struct clan_symbol  clan_symbol_t;
+typedef struct clan_symbol* clan_symbol_p;
 
 
 /*+****************************************************************************
  *                          Structure display function                        *
  ******************************************************************************/
-void          clan_symbol_print_structure(FILE *, clan_symbol_p, int);
-void          clan_symbol_print(FILE *, clan_symbol_p);
+void                clan_symbol_print_structure(FILE*, clan_symbol_p, int);
+void                clan_symbol_print(FILE*, clan_symbol_p);
 
 
 /*+****************************************************************************
  *                    Memory allocation/deallocation function                 *
  ******************************************************************************/
-clan_symbol_p clan_symbol_malloc();
-void          clan_symbol_free(clan_symbol_p);
+clan_symbol_p       clan_symbol_malloc();
+void                clan_symbol_free(clan_symbol_p);
 
 
 /*+****************************************************************************
  *                            Processing functions                            *
  ******************************************************************************/
-clan_symbol_p clan_symbol_lookup(clan_symbol_p, char *);
-clan_symbol_p clan_symbol_lookup_by_key(clan_symbol_p, int);
-clan_symbol_p clan_symbol_add(clan_symbol_p *, char *, int);
-int           clan_symbol_get_rank(clan_symbol_p, char *);
-int           clan_symbol_get_type(clan_symbol_p, char *);
-osl_strings_p clan_symbol_array_to_strings(clan_symbol_p *, int);
-int           clan_symbol_nb_of_type(clan_symbol_p, int);
-osl_generic_p clan_symbol_to_strings(clan_symbol_p, int);
-clan_symbol_p clan_symbol_clone_one(clan_symbol_p);
-osl_generic_p clan_symbol_to_arrays(clan_symbol_p);
-int           clan_symbol_new_iterator(clan_symbol_p *, clan_symbol_p *,
-                                       char *, int); 
-int           clan_symbol_update_type(clan_symbol_p, osl_relation_list_p, int);
+clan_symbol_p       clan_symbol_lookup(clan_symbol_p, char*);
+clan_symbol_p       clan_symbol_lookup_by_key(clan_symbol_p, int);
+clan_symbol_p       clan_symbol_add(clan_symbol_p*, char*, int);
+int                 clan_symbol_get_rank(clan_symbol_p, char*);
+int                 clan_symbol_get_type(clan_symbol_p, char*);
+struct osl_strings* clan_symbol_array_to_strings(clan_symbol_p*, int);
+int                 clan_symbol_nb_of_type(clan_symbol_p, int);
+struct osl_generic* clan_symbol_to_strings(clan_symbol_p, int);
+clan_symbol_p       clan_symbol_clone_one(clan_symbol_p);
+struct osl_generic* clan_symbol_to_arrays(clan_symbol_p);
+int                 clan_symbol_new_iterator(clan_symbol_p*, clan_symbol_p*,
+                                             char*, int); 
+int                 clan_symbol_update_type(clan_symbol_p,
+                                            struct osl_relation_list*, int);
 
 # if defined(__cplusplus)
   }

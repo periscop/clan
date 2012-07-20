@@ -39,7 +39,6 @@
 #ifndef CLAN_VECTOR_H
 # define CLAN_VECTOR_H
 
-# include <osl/vector.h>
 # include <clan/symbol.h>
 
 # if defined(__cplusplus)
@@ -48,10 +47,13 @@ extern "C"
 # endif
 
 
+struct osl_vector;
+
+
 /*+****************************************************************************
  *                            Processing functions                            *
  ******************************************************************************/
-osl_vector_p clan_vector_term(clan_symbol_p, int, char *, int);
+struct osl_vector* clan_vector_term(clan_symbol_p, int, char*, int);
 
 
 # if defined(__cplusplus)

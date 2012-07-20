@@ -41,6 +41,7 @@
 #include <ctype.h>
 #include <string.h>
 
+#include <osl/macros.h>
 #include <osl/strings.h>
 #include <osl/generic.h>
 #include <osl/relation.h>

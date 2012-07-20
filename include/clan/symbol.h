@@ -95,4 +95,8 @@ osl_generic_p clan_symbol_to_arrays(clan_symbol_p);
 int           clan_symbol_new_iterator(clan_symbol_p *, clan_symbol_p *,
                                        char *, int); 
 int           clan_symbol_update_type(clan_symbol_p, osl_relation_list_p, int);
+
+# if defined(__cplusplus)
+  }
+# endif
 #endif /* define CLAN_SYMBOL_H */

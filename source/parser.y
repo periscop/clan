@@ -69,57 +69,57 @@
    #include <clan/options.h>
 
    int  yylex(void);
-   void yyerror(char *);
+   void yyerror(char*);
    void clan_scanner_initialize();
    void clan_scanner_reinitialize(int, int, int);
    void clan_scanner_free();
 
    void clan_parser_add_ld();
    int  clan_parser_nb_ld();
-   void clan_parser_log(char *);
+   void clan_parser_log(char*);
    void clan_parser_increment_loop_depth();
    void clan_parser_state_initialize(clan_options_p);
-   osl_scop_p clan_parse(FILE *, clan_options_p);
+   osl_scop_p clan_parse(FILE*, clan_options_p);
 
-   extern FILE *   yyin;                 /**< File to be read by Lex */
-   extern int      scanner_parsing;      /**< Do we parse or not? */
-   extern char *   scanner_latest_text;  /**< Latest text read by Lex */
-   extern char *   scanner_clay;         /**< Data for the Clay software */
-   extern int      scanner_line;         /**< Current scanned line */
-   extern int      scanner_column;       /**< Scanned column (current) */
-   extern int      scanner_column_LALR;  /**< Scanned column (before token) */
-   extern int      scanner_scop_start;   /**< Scanned SCoP starting line */
-   extern int      scanner_scop_end;     /**< Scanned SCoP ending line */
-   extern int      scanner_pragma;       /**< Between SCoP pragmas or not? */
+   extern FILE*   yyin;                 /**< File to be read by Lex */
+   extern int     scanner_parsing;      /**< Do we parse or not? */
+   extern char*   scanner_latest_text;  /**< Latest text read by Lex */
+   extern char*   scanner_clay;         /**< Data for the Clay software */
+   extern int     scanner_line;         /**< Current scanned line */
+   extern int     scanner_column;       /**< Scanned column (current) */
+   extern int     scanner_column_LALR;  /**< Scanned column (before token) */
+   extern int     scanner_scop_start;   /**< Scanned SCoP starting line */
+   extern int     scanner_scop_end;     /**< Scanned SCoP ending line */
+   extern int     scanner_pragma;       /**< Between SCoP pragmas or not? */
 
    // This is the "parser state", a collection of variables that vary
    // during the parsing and thanks to we can extract all SCoP informations.
-   osl_scop_p      parser_scop;          /**< SCoP in construction */
-   clan_symbol_p   parser_symbol;        /**< Top of the symbol table */
-   int             parser_recording;     /**< Boolean: do we record or not? */
-   char *          parser_record;        /**< What we record (statement body)*/
-   int             parser_loop_depth;    /**< Current loop depth */
-   int             parser_if_depth;      /**< Current if depth */
-   int *           parser_scattering;    /**< Current statement scattering */
-   clan_symbol_p * parser_iterators;     /**< Current iterator list */
-   osl_relation_list_p parser_stack;     /**< Iteration domain stack */
-   int *           parser_nb_local_dims; /**< Nb of local dims per depth */
-   int             parser_nb_parameters; /**< Nb of parameter symbols */
-   int *           parser_valid_else;    /**< Boolean: OK for else per depth */
-   int             parser_indent;        /**< SCoP indentation */
-   int             parser_error;         /**< Boolean: parse error */
+   osl_scop_p     parser_scop;          /**< SCoP in construction */
+   clan_symbol_p  parser_symbol;        /**< Top of the symbol table */
+   int            parser_recording;     /**< Boolean: do we record or not? */
+   char*          parser_record;        /**< What we record (statement body)*/
+   int            parser_loop_depth;    /**< Current loop depth */
+   int            parser_if_depth;      /**< Current if depth */
+   int*           parser_scattering;    /**< Current statement scattering */
+   clan_symbol_p* parser_iterators;     /**< Current iterator list */
+   osl_relation_list_p parser_stack;    /**< Iteration domain stack */
+   int*           parser_nb_local_dims; /**< Nb of local dims per depth */
+   int            parser_nb_parameters; /**< Nb of parameter symbols */
+   int*           parser_valid_else;    /**< Boolean: OK for else per depth */
+   int            parser_indent;        /**< SCoP indentation */
+   int            parser_error;         /**< Boolean: parse error */
 
-   int             parser_ceild;         /**< Boolean: ceild used */
-   int             parser_floord;        /**< Boolean: floord used */
-   int             parser_min;           /**< Boolean: min used */
-   int             parser_max;           /**< Boolean: max used */
+   int            parser_ceild;         /**< Boolean: ceild used */
+   int            parser_floord;        /**< Boolean: floord used */
+   int            parser_min;           /**< Boolean: min used */
+   int            parser_max;           /**< Boolean: max used */
 
    // Autoscop-relative variables.
-   int             parser_autoscop;      /**< Boolean: autoscop in progress */
-   int             parser_line_start;    /**< Autoscop start line, inclusive */
-   int             parser_line_end;      /**< Autoscop end line, inclusive */
-   int             parser_column_start;  /**< Autoscop start column, inclus. */
-   int             parser_column_end;    /**< Autoscop end column, exclusive */
+   int            parser_autoscop;      /**< Boolean: autoscop in progress */
+   int            parser_line_start;    /**< Autoscop start line, inclusive */
+   int            parser_line_end;      /**< Autoscop end line, inclusive */
+   int            parser_column_start;  /**< Autoscop start column, inclus. */
+   int            parser_column_end;    /**< Autoscop end column, exclusive */
 
    // Ugly global variable to keep/read Clan options during parsing.
    clan_options_p  parser_options;
@@ -129,7 +129,7 @@
 %expect 1
 
 %union { int value;                      /**< An integer value for integers */
-         char * symbol;                  /**< A string for identifiers */
+         char* symbol;                   /**< A string for identifiers */
          osl_vector_p affex;             /**< An affine expression */
          osl_relation_p setex;           /**< A set of affine expressions */
          osl_relation_list_p list;       /**< List of array accesses */
@@ -1668,7 +1668,7 @@ direct_abstract_declarator:
 void yyerror(char *s) {
   int i, line = 1;
   char c = 'C';
-  FILE *file;
+  FILE* file;
  
   CLAN_debug("parse error notified");
 
@@ -1760,10 +1760,10 @@ void clan_parser_state_malloc(int precision) {
   depth             = CLAN_MAX_DEPTH;
   parser_stack      = osl_relation_list_malloc();
   parser_stack->elt = osl_relation_pmalloc(precision, 0, nb_columns);
-  CLAN_malloc(parser_nb_local_dims, int *, depth * sizeof(int));
-  CLAN_malloc(parser_valid_else, int *, depth * sizeof(int));
-  CLAN_malloc(parser_scattering, int *, (2 * depth + 1) * sizeof(int));
-  CLAN_malloc(parser_iterators, clan_symbol_p*, depth * sizeof(clan_symbol_p));
+  CLAN_malloc(parser_nb_local_dims, int*, depth * sizeof(int));
+  CLAN_malloc(parser_valid_else, int*, depth * sizeof(int));
+  CLAN_malloc(parser_scattering, int*, (2 * depth + 1) * sizeof(int));
+  CLAN_malloc(parser_iterators, clan_symbol_p*, depth* sizeof(clan_symbol_p));
 }
 
 
@@ -1972,7 +1972,7 @@ void clan_parser_autoscop() {
  * \param input   The file to parse (already open).
  * \param options Options for file parsing.
  */
-osl_scop_p clan_parse(FILE * input, clan_options_p options) {
+osl_scop_p clan_parse(FILE* input, clan_options_p options) {
   osl_scop_p scop;
   yyin = input;
 

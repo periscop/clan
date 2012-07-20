@@ -59,24 +59,24 @@ IS ((u|U)|(u|U)?(l|L|ll|LL)|(l|L|ll|LL)(u|U))
    #include <clan/options.h>
 
    void clan_scanner_count();
-   int  clan_scanner(int, char *);
+   int  clan_scanner(int, char*);
    void clan_scanner_initialize();
 
    extern int            parser_recording; /**< Do we record what we read? */
-   extern char *         parser_record;    /**< What we record */
+   extern char*          parser_record;    /**< What we record */
    extern clan_symbol_p  parser_symbol;    /**< Top of the symbol table */
    extern clan_options_p parser_options;   /**< Clan options */
 
-   int    scanner_parsing;                 /**< Do we parse or not? */
-   int    scanner_comment;                 /**< Comment nesting depth */
-   char * scanner_latest_text;             /**< Latest text read */
-   char * scanner_clay;                    /**< Data for the Clay software */
-   int    scanner_line;                    /**< Current line number */
-   int    scanner_column;                  /**< Current column number */
-   int    scanner_column_LALR;             /**< Column number before token */
-   int    scanner_scop_start;              /**< SCoP starting line */
-   int    scanner_scop_end;                /**< SCoP ending line */
-   int    scanner_pragma;                  /**< Between SCoP pragmas or not? */
+   int   scanner_parsing;                  /**< Do we parse or not? */
+   int   scanner_comment;                  /**< Comment nesting depth */
+   char* scanner_latest_text;              /**< Latest text read */
+   char* scanner_clay;                     /**< Data for the Clay software */
+   int   scanner_line;                     /**< Current line number */
+   int   scanner_column;                   /**< Current column number */
+   int   scanner_column_LALR;              /**< Column number before token */
+   int   scanner_scop_start;               /**< SCoP starting line */
+   int   scanner_scop_end;                 /**< SCoP ending line */
+   int   scanner_pragma;                   /**< Between SCoP pragmas or not? */
 %}
 
 %option noyywrap
@@ -391,7 +391,7 @@ void clan_scanner_free() {
  * \param token   The token code to send to Yacc for the Lex item.
  * \param message A string to be printed for debugging.
  */
-int clan_scanner(int token, char * message) {
+int clan_scanner(int token, char* message) {
   if (CLAN_DEBUG)
     fprintf(stderr, "[Clan] Debug: Lex yytext = %s "
                     "(%s at line %d, column %d)\n",
@@ -401,7 +401,7 @@ int clan_scanner(int token, char * message) {
   free(scanner_latest_text);
   scanner_latest_text = strdup(yytext);
   if (parser_recording) {
-    CLAN_realloc(parser_record, char *,
+    CLAN_realloc(parser_record, char*,
                  (strlen(parser_record) + strlen(yytext) + 1) * sizeof(char));
     strcat(parser_record, yytext);
   }

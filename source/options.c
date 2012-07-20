@@ -57,7 +57,7 @@
  * \param foo     File where informations are printed.
  * \param options Option structure whose information have to be printed.
  */
-void clan_options_print(FILE * foo, clan_options_p options) {
+void clan_options_print(FILE* foo, clan_options_p options) {
   fprintf(foo, "Options:\n");
 
   if (options->name != NULL)
@@ -176,8 +176,8 @@ void clan_options_version() {
  * \param number Number of the element corresponding to the considered option,
  *               this function adds 1 to number to pass away the option value.
  */
-void clan_options_set(int * option, int argv, char ** argc, int * number) {
-  char ** endptr;
+void clan_options_set(int* option, int argv, char** argc, int* number) {
+  char** endptr;
 
   if (*number+1 >= argv)
     CLAN_error("an option lacks of argument");
@@ -231,8 +231,8 @@ clan_options_p clan_options_malloc(void) {
  * \param input   Input  file (modified by the function).
  * \param output  Output file (modified by the function).
  */
-clan_options_p clan_options_read(int argv, char ** argc,
-                                 FILE ** input, FILE ** output) {
+clan_options_p clan_options_read(int argv, char** argc,
+                                 FILE** input, FILE** output) {
   int i, infos=0, input_is_set=0;
   clan_options_p options;
 

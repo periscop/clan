@@ -133,7 +133,7 @@ osl_relation_p clan_relation_build_context(int nb_parameters,
  * \param[in] depth     The depth of the statement.
  * \param[in] precision The precision of the relation elements.
  */
-osl_relation_p clan_relation_scattering(int * vector, int depth,
+osl_relation_p clan_relation_scattering(int* vector, int depth,
                                         int precision) {
   int i, j, nb_rows, nb_columns;
   int beta_col, alpha_col;
@@ -678,8 +678,8 @@ void clan_relation_oppose_row(osl_relation_p r, int row) {
  */
 static
 void clan_relation_extract_bounding(osl_relation_p r,
-                                    osl_relation_p * bound,
-                                    osl_relation_p * notbound,
+                                    osl_relation_p* bound,
+                                    osl_relation_p* notbound,
                                     int depth, int lower) {
   int i, precision;
   osl_relation_p constraint;

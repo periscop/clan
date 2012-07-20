@@ -65,7 +65,7 @@
  * \return A vector corresponding to the symbol and its coefficient.
  */
 osl_vector_p clan_vector_term(clan_symbol_p symbol, int coefficient,
-                              char * identifier, int precision) {
+                              char* identifier, int precision) {
   int rank, size;
   osl_vector_p vector;
 

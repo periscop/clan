@@ -70,7 +70,7 @@ extern int parser_indent;
  *                            Processing functions                            *
  ******************************************************************************/
 
-osl_scop_p clan_parse(FILE *, clan_options_p);
+osl_scop_p clan_parse(FILE*, clan_options_p);
 
 /**
  * clan_scop_extract function:
@@ -80,7 +80,7 @@ osl_scop_p clan_parse(FILE *, clan_options_p);
  * \param input   The file to parse (already open).
  * \param options Options for file parsing.
  */
-osl_scop_p clan_scop_extract(FILE * input, clan_options_p options) {
+osl_scop_p clan_scop_extract(FILE* input, clan_options_p options) {
   return clan_parse(input, options);
 }
 
@@ -105,7 +105,7 @@ void clan_scop_compact(osl_scop_p scop) {
  * \param[in] scop    The scop structure whose information has to be printed.
  * \param[in] options Clan's general option settings.
  */
-void clan_scop_print(FILE * file, osl_scop_p scop, clan_options_p options) {
+void clan_scop_print(FILE* file, osl_scop_p scop, clan_options_p options) {
   
   if ((scop != NULL) && (options->castle)) {
     fprintf(file, "#                                                     \n");
@@ -184,7 +184,7 @@ void clan_scop_generate_scatnames(osl_scop_p scop) {
     return;
 
   // Create the NULL-terminated list of scattering dimension names.
-  CLAN_malloc(string, char **, (2*max_depth + 2) * sizeof(char *));
+  CLAN_malloc(string, char**, (2*max_depth + 2) * sizeof(char *));
   string[2*max_depth + 1] = NULL;
   for (i = 0; i < max_depth; i++) {
     sprintf(buffer, "b%d", i);
@@ -215,7 +215,7 @@ void clan_scop_generate_scatnames(osl_scop_p scop) {
  * \param[in]     name The name of the SCoP original file.
  * \param[in,out] scop The scop to add a scatnames extension to.
  */
-void clan_scop_generate_coordinates(osl_scop_p scop, char * name) {
+void clan_scop_generate_coordinates(osl_scop_p scop, char* name) {
   osl_coordinates_p coordinates;
   osl_generic_p extension;
 
@@ -241,7 +241,7 @@ void clan_scop_generate_coordinates(osl_scop_p scop, char * name) {
  * \param[in,out] scop   The scop to add a clay extension to.
  * \param[in]     script The clay script.
  */
-void clan_scop_generate_clay(osl_scop_p scop, char * script) {
+void clan_scop_generate_clay(osl_scop_p scop, char* script) {
   osl_clay_p clay;
   osl_generic_p extension;
 
@@ -303,11 +303,11 @@ void clan_scop_update_coordinates(osl_scop_p scop,
  * \param[in] nb_scops    The number of scops.
  * \param[in] coordinates The array of coordinates for each SCoPs.
  */
-void clan_scop_print_autopragma(FILE * input, int nb_scops,
+void clan_scop_print_autopragma(FILE* input, int nb_scops,
                                 int coordinates[5][CLAN_MAX_SCOPS]) {
   int i, line, column;
   char c;
-  FILE * autopragma;
+  FILE* autopragma;
   
   if ((autopragma = fopen(CLAN_AUTOPRAGMA_FILE, "w")) == NULL)
     CLAN_error("cannot create the autopragma file");

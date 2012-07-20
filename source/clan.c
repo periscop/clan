@@ -41,10 +41,10 @@
 #include <clan/clan.h>
 #include <osl/scop.h>
 
-int main(int argc, char * argv[]) {
+int main(int argc, char* argv[]) {
   osl_scop_p scop = NULL;
   clan_options_p options;
-  FILE * input, * output, * autopragma;
+  FILE* input, *output, *autopragma;
   char c;
 
   // Options and input/output file setting.

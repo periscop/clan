@@ -391,8 +391,7 @@ selection_statement:
 	clan_relation_and(parser_stack->elt, not_if);
 	osl_relation_free(not_if);
 	parser_valid_else[parser_if_depth] = 1;
-      }
-      else {
+      } else {
 	parser_valid_else[parser_if_depth] = 0;
       }
       osl_relation_free($3);
@@ -931,8 +930,7 @@ affine_multiplicative_expression:
       if (osl_vector_is_scalar($1)) {
         coef = osl_int_get_si($1->precision, $1->v, $1->size - 1);
         $$ = osl_vector_mul_scalar($3, coef);
-      }
-      else {
+      } else {
         coef = osl_int_get_si($3->precision, $3->v, $3->size - 1);
         $$ = osl_vector_mul_scalar($1, coef);
       }
@@ -1705,8 +1703,7 @@ void yyerror(char *s) {
             fprintf(stderr, "^\n");
         }
         fclose(file);
-      }
-      else {
+      } else {
         CLAN_warning("cannot open input file");
       }
     }
@@ -1898,12 +1895,10 @@ void clan_parser_autoscop() {
         // Let's go for the next SCoP.
         parser_autoscop = CLAN_FALSE;
         nb_scops++;
-      }
-      else if (scanner_scop_start != CLAN_UNDEFINED) {
+      } else if (scanner_scop_start != CLAN_UNDEFINED) {
         // If the start of a user-SCoP is detected, store its coordinate.
 	coordinates[0][nb_scops] = scanner_scop_start;
-      }
-      else if (scanner_scop_end != CLAN_UNDEFINED) {
+      } else if (scanner_scop_end != CLAN_UNDEFINED) {
         // If the end of a user-SCoP is detected, store its coordinate.
 	coordinates[1][nb_scops] = scanner_scop_end;
 	coordinates[2][nb_scops] = 0;

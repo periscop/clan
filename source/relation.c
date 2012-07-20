@@ -106,8 +106,7 @@ osl_relation_p clan_relation_build_context(int nb_parameters,
       osl_int_set_si(options->precision,
                      context->m[i], context->nb_columns - 1, 1);
     }
-  }
-  else {
+  } else {
     context = osl_relation_pmalloc(options->precision, 0, nb_parameters + 2);
   }
   osl_relation_set_type(context, OSL_TYPE_CONTEXT);
@@ -561,8 +560,7 @@ osl_relation_p clan_relation_not(osl_relation_p relation) {
     // AND it to the previously negated parts.
     if (not == NULL) {
       not = part;
-    }
-    else {
+    } else {
       clan_relation_and(not, part);
       osl_relation_free(part);
     }
@@ -715,27 +713,25 @@ void clan_relation_extract_bounding(osl_relation_p r,
     if (osl_int_zero(precision, constraint->m[0], depth)) {
       // If it does not involve the loop iterator => notbound set.
       osl_relation_insert_constraints(*notbound, constraint, -1);
-    }
-    else {
-      if (osl_int_zero(precision, constraint->m[0], 0)) {
-        // If this is an equality, separate it into two inequalities, then
-        // put one in bound and the other one in notbound conveniently.
-        osl_int_set_si(precision, constraint->m[0], 0, 1);
-        osl_relation_insert_constraints(*bound, constraint, -1);
-        osl_relation_insert_constraints(*notbound, constraint, -1);
-        if ((lower && osl_int_pos(precision, constraint->m[0], depth)) ||
-            (!lower && osl_int_neg(precision, constraint->m[0], depth)))
-          clan_relation_oppose_row(*notbound, (*notbound)->nb_rows - 1);
-        else
-          clan_relation_oppose_row(*bound, (*bound)->nb_rows - 1);
+    } else if (osl_int_zero(precision, constraint->m[0], 0)) {
+      // If this is an equality, separate it into two inequalities, then
+      // put one in bound and the other one in notbound conveniently.
+      osl_int_set_si(precision, constraint->m[0], 0, 1);
+      osl_relation_insert_constraints(*bound, constraint, -1);
+      osl_relation_insert_constraints(*notbound, constraint, -1);
+      if ((lower && osl_int_pos(precision, constraint->m[0], depth)) ||
+          (!lower && osl_int_neg(precision, constraint->m[0], depth))) {
+        clan_relation_oppose_row(*notbound, (*notbound)->nb_rows - 1);
+      } else {
+        clan_relation_oppose_row(*bound, (*bound)->nb_rows - 1);
       }
-      else {
-        // If it is an inequality, drive it to the right set.
-        if ((lower && osl_int_pos(precision, constraint->m[0], depth)) ||
-            (!lower && osl_int_neg(precision, constraint->m[0], depth)))
-          osl_relation_insert_constraints(*bound, constraint, -1);
-        else
-          osl_relation_insert_constraints(*notbound, constraint, -1);
+    } else {
+      // If it is an inequality, drive it to the right set.
+      if ((lower && osl_int_pos(precision, constraint->m[0], depth)) ||
+          (!lower && osl_int_neg(precision, constraint->m[0], depth))) {
+        osl_relation_insert_constraints(*bound, constraint, -1);
+      } else {
+        osl_relation_insert_constraints(*notbound, constraint, -1);
       }
     }
     osl_relation_free(constraint);
@@ -835,8 +831,7 @@ osl_relation_p clan_relation_stride(osl_relation_p r, int depth, int stride) {
           osl_int_add_si(precision,
                          bound->m[i - 1], bound->nb_columns - 1,
                          bound->m[i - 1], bound->nb_columns - 1, 1);
-        }
-        else {
+        } else {
           osl_int_add_si(precision,
                          bound->m[i - 1], bound->nb_columns - 1,
                          bound->m[i - 1], bound->nb_columns - 1, -1);
@@ -866,8 +861,7 @@ osl_relation_p clan_relation_stride(osl_relation_p r, int depth, int stride) {
       if (lower) {
         osl_int_set_si(precision,
                        contribution->m[contribution->nb_rows - 1], depth, 1);
-      }
-      else {
+      } else {
         osl_int_set_si(precision,
                        contribution->m[contribution->nb_rows - 1], depth, -1);
       }
@@ -977,12 +971,12 @@ void clan_relation_gaussian_elimination(osl_relation_p relation,
         osl_int_assign(precision,
             current_coef, 0, relation->m[i], pivot_column);
         if (same_sign) {
-          if (osl_int_zero(precision, relation->m[pivot_row], 0))
+          if (osl_int_zero(precision, relation->m[pivot_row], 0)) {
             osl_int_oppose(precision, current_coef, 0, current_coef, 0);
-          else
+          } else {
             osl_int_oppose(precision, pivot_coef, 0, pivot_coef, 0);
-        }
-        else {
+          }
+        } else {
           osl_int_abs(precision, pivot_coef, 0, pivot_coef, 0);
           osl_int_abs(precision, current_coef, 0, current_coef, 0);
         }
@@ -996,8 +990,7 @@ void clan_relation_gaussian_elimination(osl_relation_p relation,
           osl_int_add(precision,
               relation->m[i], j, relation->m[i], j, temp, 0); 
         }
-      }
-      else {
+      } else {
         // In the case of two inequalities of the same sign, check whether they
         // are identical and if yes, zero the current row.
         identical = 1;
@@ -1043,8 +1036,7 @@ void clan_relation_simplify_parts(osl_relation_p relation) {
           relation->next = test;
         temp->next = NULL;
         osl_relation_free(temp);
-      }
-      else {
+      } else {
         test = test->next;
       }
     }

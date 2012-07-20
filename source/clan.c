@@ -66,8 +66,7 @@ int main(int argc, char* argv[]) {
     if (!options->autopragma) {
       // Generation of the .scop output file.
       clan_scop_print(output, scop, options);
-    }
-    else {
+    } else {
       // Output the file with inserted SCoP pragmas.
       if ((autopragma = fopen(CLAN_AUTOPRAGMA_FILE, "r")) == NULL)
         CLAN_error("cannot create the temporary file");

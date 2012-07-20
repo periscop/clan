@@ -249,82 +249,63 @@ clan_options_p clan_options_read(int argv, char** argc,
         // "-" alone is a special option to set input to standard input.
         input_is_set = 1;
 	*input = stdin;
-      }
-      else
-      if (strcmp(argc[i], "-castle") == 0)
+      } else if (strcmp(argc[i], "-castle") == 0) {
         clan_options_set(&(options)->castle, argv, argc, &i);
-      else
-      if (strcmp(argc[i], "-structure") == 0)
+      } else if (strcmp(argc[i], "-structure") == 0) {
         options->structure = 1;
-      else
-      if (strcmp(argc[i], "-autoscop") == 0)
+      } else if (strcmp(argc[i], "-autoscop") == 0) {
         options->autoscop = 1;
-      else
-      if (strcmp(argc[i], "-autopragma") == 0)
+      } else if (strcmp(argc[i], "-autopragma") == 0) {
         options->autopragma = 1;
-      else
-      if (strcmp(argc[i], "-inputscop") == 0)
+      } else if (strcmp(argc[i], "-inputscop") == 0) {
         options->inputscop = 1;
-      else
-      if (strcmp(argc[i], "-boundedctxt") == 0)
+      } else if (strcmp(argc[i], "-boundedctxt") == 0) {
         options->bounded_context = 1;
-      else
-      if (strcmp(argc[i], "-noloopctxt") == 0)
+      } else if (strcmp(argc[i], "-noloopctxt") == 0) {
         options->noloopcontext = 1;
-      else
-      if (strcmp(argc[i], "-nosimplify") == 0)
+      } else if (strcmp(argc[i], "-nosimplify") == 0) {
         options->nosimplify = 1;
-      else
-      if (strcmp(argc[i], "-outscoplib") == 0)
+      } else if (strcmp(argc[i], "-outscoplib") == 0) {
         options->outscoplib = 1;
-      else
-      if (strcmp(argc[i], "-precision") == 0)
+      } else if (strcmp(argc[i], "-precision") == 0) {
         clan_options_set(&(options)->precision, argv, argc, &i);
-      else
-      if ((strcmp(argc[i], "--help") == 0) || (strcmp(argc[i], "-h") == 0)) {
+      } else if ((strcmp(argc[i], "--help") == 0) ||
+               (strcmp(argc[i], "-h") == 0)) {
         clan_options_help();
         infos = 1;
-      }
-      else
-      if ((strcmp(argc[i],"--version") == 0) || (strcmp(argc[i],"-v") == 0)) {
+      } else if ((strcmp(argc[i],"--version") == 0) ||
+                 (strcmp(argc[i],"-v") == 0)) {
         clan_options_version();
         infos = 1;
-      }
-      else
-      if (strcmp(argc[i], "-o") == 0) {
+      } else if (strcmp(argc[i], "-o") == 0) {
         if (i+1 >= argv)
           CLAN_error("no output name for -o option");
 
         // stdout is a special value to set output to standard output.
         if (strcmp(argc[i+1], "stdout") == 0) {
           *output = stdout;
-        }
-        else {
+        } else {
 	  *output = fopen(argc[i+1], "w");
           if (*output == NULL)
             CLAN_error("cannot open the output file");
         }
         i++;
-      }
-      else {
+      } else {
         fprintf(stderr, "[Clan] Warning: unknown %s option.\n", argc[i]);
       }
-    }
-    else {
+    } else {
       if (!input_is_set) {
         input_is_set = 1;
         options->name = argc[i];
         // stdin is a special value to set input to standard input.
         if (strcmp(argc[i], "stdin") == 0) {
           *input = stdin;
-        }
-        else {
+        } else {
 	  *input = fopen(argc[i], "r");
           if (*input == NULL)
             CLAN_error("cannot open the input file");
         }
-      }
-      else {
+      } else {
         CLAN_error("multiple input files");
       }
     }

@@ -51,7 +51,7 @@
 #include <clan/symbol.h>
 
 
-void yyerror(char *);
+void yyerror(char*);
 
 
 /*+****************************************************************************
@@ -70,8 +70,7 @@ void yyerror(char *);
  * \param[in] symbol The symbol whose information have to be printed.
  * \param[in] level  Number of spaces before printing, for each line.
  */
-void clan_symbol_print_structure(FILE * file, clan_symbol_p symbol,
-                                 int level) {
+void clan_symbol_print_structure(FILE* file, clan_symbol_p symbol, int level) {
   int i, j, first = 1, number = 1;
 
   if (symbol != NULL) {
@@ -79,8 +78,7 @@ void clan_symbol_print_structure(FILE * file, clan_symbol_p symbol,
     for(j = 0; j < level; j++)
       fprintf(file, "|\t");
     fprintf(file, "+-- clan_symbol_t (node %d)\n", number);
-  }
-  else {
+  } else {
     // Go to the right level.
     for(j = 0; j < level; j++)
       fprintf(file, "|\t");
@@ -93,9 +91,9 @@ void clan_symbol_print_structure(FILE * file, clan_symbol_p symbol,
       for (j = 0; j < level; j++)
         fprintf(file, "|\t");
       fprintf(file, "|   clan_symbol_t (node %d)\n", number);
-    }
-    else
+    } else {
       first = 0;
+    }
 
     // A blank line.
     for (j = 0; j <= level + 1; j++)
@@ -177,7 +175,7 @@ void clan_symbol_print_structure(FILE * file, clan_symbol_p symbol,
  * \param[in] file   File where informations are printed.
  * \param[in] symbol The symbol whose information have to be printed.
  */
-void clan_symbol_print(FILE * file, clan_symbol_p symbol) {
+void clan_symbol_print(FILE* file, clan_symbol_p symbol) {
   clan_symbol_print_structure(file, symbol, 0);
 }
 
@@ -239,7 +237,7 @@ void clan_symbol_free(clan_symbol_p symbol) {
  * \param[in] identifier The identifier we are looking for.
  * \return The symbol corresponding to identifier, NULL if it doesn't exist.
  */
-clan_symbol_p clan_symbol_lookup(clan_symbol_p symbol, char * identifier) {
+clan_symbol_p clan_symbol_lookup(clan_symbol_p symbol, char* identifier) {
   while (symbol != NULL) {
     if (strcmp(symbol->identifier, identifier) == 0)
       return symbol;
@@ -300,7 +298,7 @@ int clan_symbol_generate_new_key(clan_symbol_p table) {
  * \param[in]     identifier The identifier of the symbol we want to add.
  * \param[in]     type       The new symbol type.
  */
-clan_symbol_p clan_symbol_add(clan_symbol_p * table, char * identifier,
+clan_symbol_p clan_symbol_add(clan_symbol_p* table, char* identifier,
                               int type) {
   clan_symbol_p symbol, tmp = *table;
 
@@ -318,8 +316,7 @@ clan_symbol_p clan_symbol_add(clan_symbol_p * table, char * identifier,
   // We put the new symbol at the end of the table.
   if (*table == NULL) {
     *table = symbol;
-  }
-  else {
+  } else {
     while (tmp->next != NULL)
       tmp = tmp->next;
     tmp->next = symbol;
@@ -338,7 +335,7 @@ clan_symbol_p clan_symbol_add(clan_symbol_p * table, char * identifier,
  * \param[in] identifier The identifier we want to know the key.
  * \return The key corresponding to the identifier or CLAN_UNDEFINED.
  */
-int clan_symbol_get_key(clan_symbol_p symbol, char * identifier) {
+int clan_symbol_get_key(clan_symbol_p symbol, char* identifier) {
   while (symbol != NULL) {
     if (strcmp(symbol->identifier,identifier) == 0)
       return symbol->key;
@@ -358,7 +355,7 @@ int clan_symbol_get_key(clan_symbol_p symbol, char * identifier) {
  * \param[in] identifier The identifier we want to know the key.
  * \return The rank corresponding to the identifier or CLAN_UNDEFINED.
  */
-int clan_symbol_get_rank(clan_symbol_p symbol, char * identifier) {
+int clan_symbol_get_rank(clan_symbol_p symbol, char* identifier) {
   while (symbol != NULL) {
     if (strcmp(symbol->identifier,identifier) == 0)
       return symbol->rank;
@@ -378,7 +375,7 @@ int clan_symbol_get_rank(clan_symbol_p symbol, char * identifier) {
  * \param[in] identifier The identifier we want to know the type.
  * \return The type of the symbol corresponding to the identifier.
  */
-int clan_symbol_get_type(clan_symbol_p symbol, char * identifier) {
+int clan_symbol_get_type(clan_symbol_p symbol, char* identifier) {
   while (symbol != NULL) {
     if (strcmp(symbol->identifier,identifier) == 0)
       return symbol->type;
@@ -399,20 +396,20 @@ int clan_symbol_get_type(clan_symbol_p symbol, char * identifier) {
  * \param[in] size   The size of the symbol array.
  * \return An osl_strings_t containing all the symbol strings.
  */
-osl_strings_p clan_symbol_array_to_strings(clan_symbol_p *sarray, int size) {
+osl_strings_p clan_symbol_array_to_strings(clan_symbol_p* sarray, int size) {
   int i, length;
-  char **identifiers = NULL;
+  char** identifiers = NULL;
   osl_strings_p strings;
 
   // Allocate, initialize and NULL-terminate the array of strings.
-  CLAN_malloc(identifiers, char **, (size + 1) * sizeof(char *));
+  CLAN_malloc(identifiers, char**, (size + 1) * sizeof(char *));
   for (i = 0; i <= size; i++)
     identifiers[i] = NULL;
 
   // Fill the array of strings.
   for (i = 0; i < size; i++) {
     length = strlen((sarray[i])->identifier) + 1;
-    CLAN_malloc(identifiers[i], char *, length * sizeof(char));
+    CLAN_malloc(identifiers[i], char*, length * sizeof(char));
     strcpy(identifiers[i], (sarray[i])->identifier);
   }
 
@@ -459,7 +456,7 @@ int clan_symbol_nb_of_type(clan_symbol_p symbol, int type) {
  */
 osl_generic_p clan_symbol_to_strings(clan_symbol_p symbol, int type) {
   int i, length, nb_identifiers = 0;
-  char **identifiers = NULL;
+  char** identifiers = NULL;
   osl_strings_p strings;
   osl_generic_p generic;
 
@@ -468,7 +465,7 @@ osl_generic_p clan_symbol_to_strings(clan_symbol_p symbol, int type) {
     return NULL;
 
   // Allocate, initialize and NULL-terminate the array.
-  CLAN_malloc(identifiers, char **, (nb_identifiers + 1) * sizeof(char *));
+  CLAN_malloc(identifiers, char**, (nb_identifiers + 1) * sizeof(char *));
   for (i = 0; i <= nb_identifiers; i++)
     identifiers[i] = NULL;
 
@@ -478,7 +475,7 @@ osl_generic_p clan_symbol_to_strings(clan_symbol_p symbol, int type) {
   while (symbol != NULL) {
     if (symbol->type == type) {
       length = strlen(symbol->identifier) + 1;
-      CLAN_malloc(identifiers[i], char *, length * sizeof(char));
+      CLAN_malloc(identifiers[i], char*, length * sizeof(char));
       strcpy(identifiers[i], symbol->identifier);
       i++;
     }
@@ -538,8 +535,8 @@ osl_generic_p clan_symbol_to_arrays(clan_symbol_p symbol) {
   // Build the arrays extension.
   if (nb_arrays > 0) {
     arrays = osl_arrays_malloc();
-    CLAN_malloc(arrays->id, int *, nb_arrays * sizeof(int));
-    CLAN_malloc(arrays->names, char **, nb_arrays * sizeof(char *));
+    CLAN_malloc(arrays->id, int*, nb_arrays * sizeof(int));
+    CLAN_malloc(arrays->names, char**, nb_arrays * sizeof(char *));
     arrays->nb_names = nb_arrays;
     symbol = top;
     i = 0;
@@ -570,8 +567,8 @@ osl_generic_p clan_symbol_to_arrays(clan_symbol_p symbol) {
  * \param[in]     depth The current loop depth.
  * \return 1 on success, 0 on failure.
  */
-int clan_symbol_new_iterator(clan_symbol_p * table, clan_symbol_p * array,
-                              char * id, int depth) {
+int clan_symbol_new_iterator(clan_symbol_p* table, clan_symbol_p* array,
+                             char* id, int depth) {
   clan_symbol_p symbol;
   symbol = clan_symbol_add(table, id, CLAN_TYPE_ITERATOR);
 

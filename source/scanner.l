@@ -205,8 +205,7 @@ IS ((u|U)|(u|U)?(l|L|ll|LL)|(l|L|ll|LL)(u|U))
                                 scanner_parsing = CLAN_FALSE;
                                 CLAN_debug("pragma scop: stop parsing");
                                 return PRAGMA; // Force a parse error.
-                              }
-                              else {
+                              } else {
                                 scanner_parsing = CLAN_TRUE;
                                 CLAN_debug("pragma scop: start parsing");
                               }
@@ -220,8 +219,7 @@ IS ((u|U)|(u|U)?(l|L|ll|LL)|(l|L|ll|LL)(u|U))
                                 scanner_parsing = CLAN_TRUE;
                                 CLAN_debug("pragma endscop: start parsing");
                                 return PRAGMA; // Force a parse error.
-                              }
-                              else {
+                              } else {
                                 scanner_parsing = CLAN_FALSE;
                                 CLAN_debug("pragma endscop: stop parsing");
                                 return IGNORE;
@@ -355,11 +353,9 @@ void clan_scanner_count() {
     if (yytext[i] == '\n') {
       scanner_line++;
       scanner_column = 1;
-    }
-    else if (yytext[i] == '\t') {
+    } else if (yytext[i] == '\t') {
       scanner_column += 8 - (scanner_column % 8);
-    }
-    else {
+    } else {
       scanner_column++;
     }
   }

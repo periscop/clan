@@ -314,6 +314,9 @@ statement:
         parser_line_start = scanner_line;
         parser_column_start = scanner_column_LALR;
         parser_autoscop = CLAN_TRUE;
+        // Reinitialize the symbol table.
+        clan_symbol_free(parser_symbol);
+        parser_symbol = NULL;
         if (CLAN_DEBUG)
           fprintf(stderr, "Autoscop start: line %3d column %3d\n",
                   parser_line_start, parser_column_start);
@@ -1770,8 +1773,7 @@ void clan_parser_state_malloc(int precision) {
  * exception of the parser_scop.
  */
 void clan_parser_state_free() {
-  if (parser_symbol != NULL)
-    clan_symbol_free(parser_symbol);
+  clan_symbol_free(parser_symbol);
   free(parser_scattering);
   free(parser_iterators);
   free(parser_nb_local_dims);

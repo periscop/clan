@@ -1788,11 +1788,8 @@ void clan_parser_state_free() {
  * the exception of parser_scop.
  */
 void clan_parser_state_initialize(clan_options_p options) {
-  int i, nb_columns, depth;
+  int i;
 
-  nb_columns           = CLAN_MAX_DEPTH + CLAN_MAX_LOCAL_DIMS +
-                         CLAN_MAX_PARAMETERS + 2;
-  depth                = CLAN_MAX_DEPTH;
   parser_symbol        = NULL;
   parser_loop_depth    = 0;
   parser_options       = options;
@@ -1812,12 +1809,12 @@ void clan_parser_state_initialize(clan_options_p options) {
   parser_column_end    = 1;
   parser_nb_parameters = 0;
 
-  for (i = 0; i < depth; i++) {
+  for (i = 0; i < CLAN_MAX_DEPTH; i++) {
     parser_nb_local_dims[i] = 0;
     parser_valid_else[i] = 0;
   }
 
-  for (i = 0; i < 2 * depth + 1; i++)
+  for (i = 0; i < 2 * CLAN_MAX_DEPTH + 1; i++)
     parser_scattering[i] = 0;
 }
 

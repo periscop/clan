@@ -40,6 +40,7 @@
 # define CLAN_SCOP_H
 
 # include <stdio.h>
+# include <clan/macros.h>
 # include <clan/options.h>
 
 # if defined(__cplusplus)

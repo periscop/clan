@@ -116,10 +116,10 @@ b=0;
 <coordinates>
 # File name
 ./tests/unitary/clay.c
-# Starting line
-1
-# Ending line
-7
+# Starting line and column
+2 0
+# Ending line and column
+7 0
 # Indentation
 0
 </coordinates>

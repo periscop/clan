@@ -222,8 +222,10 @@ void clan_scop_generate_coordinates(osl_scop_p scop, char* name) {
   // Build the coordinates extension
   coordinates = osl_coordinates_malloc();
   CLAN_strdup(coordinates->name, name);
-  coordinates->start  = scanner_scop_start;
-  coordinates->end    = scanner_scop_end;
+  coordinates->line_start   = scanner_scop_start + 1;
+  coordinates->line_end     = scanner_scop_end;
+  coordinates->column_start = 0;
+  coordinates->column_end   = 0;
   coordinates->indent = (parser_indent != CLAN_UNDEFINED) ? parser_indent : 0;
 
   // Build the generic extension and insert it to the extension list.
@@ -283,8 +285,10 @@ void clan_scop_update_coordinates(osl_scop_p scop,
     old = osl_generic_lookup(scop->extension, OSL_URI_COORDINATES);
     if (old == NULL)
       CLAN_error("coordinates extension not present");
-    old->start = coordinates[0][i];
-    old->end   = coordinates[1][i];
+    old->line_start   = coordinates[0][i];
+    old->line_end     = coordinates[1][i];
+    old->column_start = coordinates[2][i];
+    old->column_end   = coordinates[3][i];
     i++;
     scop = scop->next;
   }
@@ -305,7 +309,7 @@ void clan_scop_update_coordinates(osl_scop_p scop,
  */
 void clan_scop_print_autopragma(FILE* input, int nb_scops,
                                 int coordinates[5][CLAN_MAX_SCOPS]) {
-  int i, line, column;
+  int i, j, line, column;
   char c;
   FILE* autopragma;
   
@@ -316,10 +320,15 @@ void clan_scop_print_autopragma(FILE* input, int nb_scops,
   i = 0;
   while ((c = fgetc(input)) != EOF) {
     if (nb_scops > 0) {
-      if ((line == coordinates[0][i]) && (column == coordinates[2][i]))
+      if ((line == coordinates[0][i]) && (column == coordinates[2][i])) {
 	fprintf(autopragma, "\n#pragma scop\n");
+        for (j = 0; j < coordinates[2][i] - 1; j++)
+          fprintf(autopragma, " ");
+      }
       if ((line == coordinates[1][i]) && (column == coordinates[3][i])) {
 	fprintf(autopragma, "\n#pragma endscop\n");
+        for (j = 0; j < coordinates[3][i] - 1; j++)
+          fprintf(autopragma, " ");
 	if (i < nb_scops - 1) {
 	  do
 	    i++;

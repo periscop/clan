@@ -312,7 +312,16 @@ void clan_scop_print_autopragma(FILE* input, int nb_scops,
   int i, j, line, column;
   char c;
   FILE* autopragma;
-  
+ 
+  if (CLAN_DEBUG) {
+    CLAN_debug("coordinates:");
+    for (i = 0; i < 5; i++) {
+      for (j = 0; j < nb_scops; j++)
+        printf("%3d ", coordinates[i][j]);
+      printf("\n");
+    }
+  }
+
   if ((autopragma = fopen(CLAN_AUTOPRAGMA_FILE, "w")) == NULL)
     CLAN_error("cannot create the autopragma file");
   line = 1;
@@ -344,6 +353,126 @@ void clan_scop_print_autopragma(FILE* input, int nb_scops,
     }
   }
   fclose(autopragma);
+}
+
+
+/**
+ * clan_scop_no_pragma function:
+ * this function returns CLAN_FALSE if there is a "#pragma scop" at the
+ * beginning of the line number "line_start" of the file "filename",
+ * CLAN_TRUE otherwise.
+ * \param[in] filename   Name of the file to be checked.
+ * \param[in] line_start Line number to check.
+ * \return 0 if filename's line_start line starts with "#pragma scop", resp. 1.
+ */
+static
+int clan_scop_no_pragma(char * filename, int line_start) {
+  int lines = 0;
+  int read = 1;
+  char c;
+  FILE* file;
+  char s1[CLAN_MAX_STRING];
+  char s2[CLAN_MAX_STRING];
+  
+  if (line_start < 0)
+    CLAN_error("negative line number");
+
+  if (!(file = fopen(filename, "r")))
+    CLAN_error("unable to read the file");
+
+  // Go to line_start in the file.
+  while ((lines < line_start - 1) && (read != EOF)) {
+    read = fscanf(file, "%c", &c);
+    if (read != EOF) {
+      if (c == '\n')
+        lines ++;
+    }
+  }
+
+  if (lines != line_start - 1) {
+    fclose(file);
+    CLAN_error("not enough lines in the file");
+  }
+
+  if (fscanf(file, " %s %s", s1, s2) != 2) {
+    fclose(file);
+    CLAN_debug("pragma not found: cannot read the two chains");
+    return CLAN_TRUE;
+  }
+
+  fclose(file);
+  if (strcmp(s1, "#pragma") || strcmp(s2, "scop")) {
+    CLAN_debug("pragma not found: do not match \"#pragma scop\"");
+    return CLAN_TRUE;
+  }
+
+  CLAN_debug("pragma found");
+  return CLAN_FALSE;
+}
+
+
+/**
+ * clan_scop_insert_pragmas function:
+ * inserts "#pragma scop" and "#pragma endscop" in a source file
+ * around the SCoPs related in the input SCoP list that have no
+ * surrounding pragmas in the file.
+ * \param[in] scop     The list of SCoPS.
+ * \param[in] filename Name of the file where to insert pragmas.
+ * \param[in] test     0 to insert, 1 to leave the result in the
+ *                     CLAN_AUTOPRAGMA_FILE temporary file.
+ */
+void clan_scop_insert_pragmas(osl_scop_p scop, char* filename, int test) {
+  int i, j, n = 0;
+  int infos[5][CLAN_MAX_SCOPS];
+  int tmp[5];
+  osl_coordinates_p coordinates;
+  FILE* file;
+  
+  // Get coordinate information from the list of SCoPS.
+  while (scop != NULL) {
+    coordinates = osl_generic_lookup(scop->extension, OSL_URI_COORDINATES);
+    infos[0][n] = coordinates->line_start;
+    infos[1][n] = coordinates->line_end;
+    infos[2][n] = coordinates->column_start;
+    infos[3][n] = coordinates->column_end;
+    infos[4][n] = clan_scop_no_pragma(filename, coordinates->line_start);
+    n++;
+    scop = scop->next;
+  }
+
+  // Dirty and inefficient bubble sort to ensure the SCoP ordering is correct
+  // (this is ensured in Clan, but not if it is called from outside...).
+  for (i = n - 2; i >= 0; i--) {
+    for (j = 0; j <= i; j++) {
+      if (infos[0][j] > infos[0][j+1]) {
+        tmp[0]=infos[0][j]; infos[0][j]=infos[0][j+1]; infos[0][j+1]=tmp[0];
+        tmp[1]=infos[1][j]; infos[1][j]=infos[1][j+1]; infos[1][j+1]=tmp[1];
+        tmp[2]=infos[2][j]; infos[2][j]=infos[2][j+1]; infos[2][j+1]=tmp[2];
+        tmp[3]=infos[3][j]; infos[3][j]=infos[3][j+1]; infos[3][j+1]=tmp[3];
+        tmp[4]=infos[4][j]; infos[4][j]=infos[4][j+1]; infos[4][j+1]=tmp[4];
+      }
+    }
+  }
+
+  // Quick check that there is no scop interleaving.
+  for (i = 0; i < n - 1; i++)
+    if (infos[1][i] > infos[0][i+1])
+      CLAN_error("SCoP interleaving");
+
+  // Generate the temporary file with the pragma inserted.
+  if (!(file = fopen(filename, "r")))
+    CLAN_error("unable to read the file");
+  clan_scop_print_autopragma(file, n, infos);
+  fclose(file);
+
+  // Replace the original file, or keep the temporary file.
+  if (!test) {
+    if (remove(filename))
+      CLAN_error("cannot delete original file");
+
+    if (rename(CLAN_AUTOPRAGMA_FILE, filename))
+      CLAN_error("cannot rename temporary file");
+  }
 }
 
 

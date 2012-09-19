@@ -649,6 +649,7 @@ input file @code{basic.c} with default options by typing:
 * Output::
 * Autoscop::
 * Autopragma::
+* Autoinsert::
 * Inputscop::
 * Precision::
 * Bounded Context::
@@ -685,6 +686,13 @@ copy of the input file with SCoP pragmas inserted around
 automatically detected SCoPs. This options works in the same way
 as Autoscop (@pxref{Autoscop}), but outputs a code instead of the
 OpenScop representation.
+
+@node Autoinsert
+@subsection Autoinsert @code{-autoinsert}
+
+@code{-autoinsert}: this option is equivalent to @code{-autopragma}
+but it inserts SCoP pragmas directly in the input file. Use with care:
+check with @code{-autopragma} first.
 
 @node Inputscop
 @subsection Inputscop @code{-inputscop}
@@ -815,6 +823,7 @@ The default values for the various fields set by the
 
 @menu
 * clan_scop_extract::
+* clan_scop_insert_pragmas::
 * clan_scop_print::
 * Allocation and Initialization Functions::
 * Memory Deallocation Functions::
@@ -838,6 +847,22 @@ provided thanks to the pointer @code{options} to a @code{clan_options_t}
 data structure (@pxref{clan_options_t}). It returns a pointer to the
 extracted SCoP, translated into
 an @code{osl_scop_t} data structure (@pxref{Bas12}).
+
+@node clan_scop_insert_pragmas
+@subsection clan_scop_insert_pragmas
+@example
+@group
+void clan_scop_insert_pragmas(osl_scop_p scop, char* file, int test);
+@end group
+@end example
+
+@noindent The @code{clan_scop_insert_pragmas} function inserts SCoP
+pragmas (@code{#pragma scop} and @code{#pragma endscop}) in the file
+named @code{file} around the SCoPs described in the @code{scop} list,
+except if they are already surrounded with such pragmas. The boolean
+@code{test}, when set to 1, allows to only test the function and to
+generate a temporary file (the name of the file is in the
+@code{CLAN_AUTOPRAGMA} file) instead of modifying @code{file}.
 
 @node clan_scop_print
 @subsection clan_scop_print

@@ -57,8 +57,9 @@ struct clan_options
   int castle;     /**< 1 to put the Clan castle in output, 0 otherwise. */
   int structure;  /**< 1 to print the clan_scop structure, 0 otherwise. */
   int autoscop;   /**< 1 to extract SCoPs automatically, 0 otherwise. */
-  int autopragma; /**< 1 to insert SCoP pragmas in the code automatically,
-                       0 otherwise. */
+  int autopragma; /**< 1 to output the same code as input but with SCoP
+                       pragmas automatically inserted, 0 otherwise. */
+  int autoinsert; /**< Same as autopragma, but the original code is updated. */
   int inputscop;  /**< 1 to read a .scop on the input, 0 to read a
                       source file (default). */
   int precision;  /**< 0 for GMP, 32 for 32 bits, 64 for 64 bits. */

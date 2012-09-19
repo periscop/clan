@@ -69,6 +69,7 @@ void clan_options_print(FILE* foo, clan_options_p options) {
   fprintf(foo, "structure       = %3d.\n", options->structure);
   fprintf(foo, "autoscop        = %3d.\n", options->autoscop);
   fprintf(foo, "autopragma      = %3d.\n", options->autopragma);
+  fprintf(foo, "autoinsert      = %3d.\n", options->autoinsert);
   fprintf(foo, "inputscop       = %3d.\n", options->inputscop);
   fprintf(foo, "bounded_context = %3d.\n", options->bounded_context);
   fprintf(foo, "noloopcontext   = %3d.\n", options->noloopcontext);
@@ -107,19 +108,20 @@ void clan_options_help() {
   "Usage: clan [ options | file ] ...\n");
   printf(
   "\nGeneral options:\n"
-  "  -o <output>           Name of the output file; 'stdout' is a special\n"
-  "                        value: when used, output is standard output\n"
-  "                        (default setting: stdout).\n"
-  "  -autoscop             Automatic SCoP extraction.\n"
-  "  -autopragma           Automatic insertion of SCoP pragmas in the code.\n"
-  "  -inputscop            Read a .scop as the input.\n"
-  "  -precision <value>    32 to work in 32 bits, 64 for 64 bits, 0 for GMP.\n"
-  "  -boundedctxt          Bound all global parameters to be >= -1.\n"
-  "  -noloopctxt           Do not include loop context (simplifies domains).\n"
-  "  -nosimplify           Do not simplify iteration domains.\n"
-  "  -outscoplib           Print to the SCoPLib format.\n"
-  "  -v, --version         Display the release information (and more).\n"
-  "  -h, --help            Display this information.\n\n");
+  "  -o <output>          Name of the output file; 'stdout' is a special\n"
+  "                       value: when used, output is standard output\n"
+  "                       (default setting: stdout).\n"
+  "  -autoscop            Automatic SCoP extraction.\n"
+  "  -autopragma          Automatic insertion of SCoP pragmas in input code.\n"
+  "  -autoinsert          Automatic insertion of SCoP pragmas in input file.\n"
+  "  -inputscop           Read a .scop as the input.\n"
+  "  -precision <value>   32 to work in 32 bits, 64 for 64 bits, 0 for GMP.\n"
+  "  -boundedctxt         Bound all global parameters to be >= -1.\n"
+  "  -noloopctxt          Do not include loop context (simplifies domains).\n"
+  "  -nosimplify          Do not simplify iteration domains.\n"
+  "  -outscoplib          Print to the SCoPLib format.\n"
+  "  -v, --version        Display the release information (and more).\n"
+  "  -h, --help           Display this information.\n\n");
   printf(
   "The special value 'stdin' for 'file' or the special option '-' makes clan\n"
   "to read data on standard input.\n\n"
@@ -210,7 +212,8 @@ clan_options_p clan_options_malloc(void) {
   options->castle     = 1;     // Do print the Clan McCloog castle in output.
   options->structure  = 0;     // Don't print internal structure.
   options->autoscop   = 0;     // Do not extract SCoPs automatically.
-  options->autopragma = 0;     // Do not insert SCoP pragmas automatically.
+  options->autopragma = 0;     // Do not insert SCoP pragmas in the input code.
+  options->autoinsert = 0;     // Do not insert SCoP pragmas in the input file.
   options->inputscop  = 0;     // Default input is a source file, not a .scop.
   options->precision  = 64;    // Work in 64 bits by default.
   options->bounded_context = 0;// Don't bound the global parameters. 
@@ -256,7 +259,11 @@ clan_options_p clan_options_read(int argv, char** argc,
       } else if (strcmp(argc[i], "-autoscop") == 0) {
         options->autoscop = 1;
       } else if (strcmp(argc[i], "-autopragma") == 0) {
+        options->autoscop = 1;
         options->autopragma = 1;
+      } else if (strcmp(argc[i], "-autoinsert") == 0) {
+        options->autoscop = 1;
+        options->autoinsert = 1;
       } else if (strcmp(argc[i], "-inputscop") == 0) {
         options->inputscop = 1;
       } else if (strcmp(argc[i], "-boundedctxt") == 0) {
@@ -316,12 +323,9 @@ clan_options_p clan_options_read(int argv, char** argc,
       (options->precision != OSL_PRECISION_DP))
     CLAN_error("invalid precision (use 32, 64 or 0 for GMP)");
 
-  if (options->autoscop && options->autopragma)
-    CLAN_error("autoscop and autopragma options cannot be used together");
-
-  if ((options->autoscop || options->autopragma) &&
+  if ((options->autoscop || options->autopragma || options->autoinsert) &&
       ((options->name == NULL) || !strcmp(options->name, "stdin")))
-    CLAN_error("autoscop and autopragma options need an input file");
+    CLAN_error("autoscop/autopragma/autoinsert options need an input file");
 
   if (!input_is_set && !infos)
     CLAN_error("no input file (-h for help)");

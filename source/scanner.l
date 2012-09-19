@@ -199,8 +199,7 @@ IS ((u|U)|(u|U)?(l|L|ll|LL)|(l|L|ll|LL)(u|U))
 "#pragma"[ ]+"scop"         { 
                               clan_scanner_count();
                               scanner_scop_start = scanner_line;
-                              if (parser_options->autoscop ||
-                                  parser_options->autopragma) {
+                              if (parser_options->autoscop) {
                                 scanner_pragma = CLAN_TRUE;
                                 scanner_parsing = CLAN_FALSE;
                                 CLAN_debug("pragma scop: stop parsing");
@@ -213,8 +212,7 @@ IS ((u|U)|(u|U)?(l|L|ll|LL)|(l|L|ll|LL)(u|U))
 "#pragma"[ ]+"endscop"      {
                               clan_scanner_count();
                               scanner_scop_end = scanner_line;
-                              if (parser_options->autoscop ||
-                                  parser_options->autopragma) {
+                              if (parser_options->autoscop) {
                                 scanner_pragma = CLAN_FALSE;
                                 scanner_parsing = CLAN_TRUE;
                                 CLAN_debug("pragma endscop: start parsing");

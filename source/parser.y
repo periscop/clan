@@ -309,8 +309,7 @@ statement:
   | expression_statement     { $$ = $1; }
   | selection_statement      { $$ = $1; }
   | {
-      if ((parser_options->autoscop || parser_options->autopragma) &&
-          !parser_autoscop && !parser_loop_depth) {
+      if (parser_options->autoscop && !parser_autoscop && !parser_loop_depth) {
         parser_line_start = scanner_line;
         parser_column_start = scanner_column_LALR;
         parser_autoscop = CLAN_TRUE;
@@ -325,8 +324,7 @@ statement:
     iteration_statement
     {
       $$ = $2;
-      if ((parser_options->autoscop || parser_options->autopragma) &&
-          parser_autoscop && !parser_loop_depth) {
+      if (parser_options->autoscop && parser_autoscop && !parser_loop_depth) {
         parser_line_end = scanner_line;
         parser_column_end = scanner_column;
         if (CLAN_DEBUG)
@@ -1673,7 +1671,7 @@ void yyerror(char *s) {
  
   CLAN_debug("parse error notified");
 
-  if (!parser_options->autoscop && !parser_options->autopragma) {
+  if (!parser_options->autoscop) {
     fprintf(stderr, "[Clan] Error: %s at line %d, column %d.\n", s,
         scanner_line, scanner_column - 1);
 
@@ -1942,20 +1940,22 @@ void clan_parser_autoscop() {
   rewind(yyin);
   clan_scop_print_autopragma(yyin, nb_scops, coordinates);
 
-  // If the autoscop option is set, use the temporary file for usual parsing.
-  if (parser_options->autoscop) {
-    scanner_line = 1;
-    scanner_column = 1;
-    scanner_pragma = CLAN_FALSE;
-    parser_options->autoscop = CLAN_FALSE;
-    if ((yyin = fopen(CLAN_AUTOPRAGMA_FILE, "r")) == NULL)
-      CLAN_error("cannot create the temporary file");
-    yyparse();
-    fclose(yyin);
-    // Update the SCoP coordinates with those of the original file.
-    clan_scop_update_coordinates(parser_scop, coordinates);
-    parser_options->autoscop = CLAN_TRUE;
-  }
+  // Use the temporary file for usual parsing.
+  scanner_line = 1;
+  scanner_column = 1;
+  scanner_pragma = CLAN_FALSE;
+  parser_options->autoscop = CLAN_FALSE;
+  if ((yyin = fopen(CLAN_AUTOPRAGMA_FILE, "r")) == NULL)
+    CLAN_error("cannot create the temporary file");
+  yyparse();
+  fclose(yyin);
+
+  // Update the SCoP coordinates with those of the original file.
+  clan_scop_update_coordinates(parser_scop, coordinates);
+  parser_options->autoscop = CLAN_TRUE;
+  
+  if (remove(CLAN_AUTOPRAGMA_FILE))
+    CLAN_warning("cannot delete temporary file");
 }
 
 
@@ -1975,7 +1975,7 @@ osl_scop_p clan_parse(FILE* input, clan_options_p options) {
   clan_scanner_initialize();
   parser_scop = NULL;
 
-  if (!options->autoscop && !options->autopragma)
+  if (!options->autoscop)
     yyparse();
   else
     clan_parser_autoscop();
@@ -1983,8 +1983,8 @@ osl_scop_p clan_parse(FILE* input, clan_options_p options) {
   CLAN_debug("parsing done");
 
   clan_scanner_free();
-
-  if (!parser_error && !parser_options->autopragma)
+  
+  if (!parser_error)
     scop = parser_scop;
   else
     scop = NULL;

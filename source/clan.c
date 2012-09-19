@@ -52,12 +52,15 @@ int main(int argc, char* argv[]) {
 
   // Extraction of the polyhedral representation of the SCoP from the input.
   if (input != NULL) {
-    if (options->inputscop)
+    if (options->inputscop) {
       // Input is a .scop file.
       scop = osl_scop_read(input);
-    else
+    }
+    else {
       // Input is a source code.
       scop = clan_scop_extract(input, options);
+      fclose(input);
+    }
 
     // Printing of the internal data structure of the SCoP if asked.
     if (options->structure)

@@ -1944,7 +1944,6 @@ void clan_parser_autoscop() {
 
   // If the autoscop option is set, use the temporary file for usual parsing.
   if (parser_options->autoscop) {
-    fclose(yyin);
     scanner_line = 1;
     scanner_column = 1;
     scanner_pragma = CLAN_FALSE;
@@ -1952,6 +1951,7 @@ void clan_parser_autoscop() {
     if ((yyin = fopen(CLAN_AUTOPRAGMA_FILE, "r")) == NULL)
       CLAN_error("cannot create the temporary file");
     yyparse();
+    fclose(yyin);
     // Update the SCoP coordinates with those of the original file.
     clan_scop_update_coordinates(parser_scop, coordinates);
     parser_options->autoscop = CLAN_TRUE;
@@ -1982,7 +1982,6 @@ osl_scop_p clan_parse(FILE* input, clan_options_p options) {
 
   CLAN_debug("parsing done");
 
-  fclose(yyin);
   clan_scanner_free();
 
   if (!parser_error && !parser_options->autopragma)

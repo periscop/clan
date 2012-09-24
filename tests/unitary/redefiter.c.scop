@@ -90,7 +90,7 @@ WRITE
 # List of original iterators
 t i j
 # Statement body expression
-Ca=0;
+Ca = 0;
 </body>
 
 # =============================================== Statement 2
@@ -132,7 +132,7 @@ WRITE
 # List of original iterators
 t j
 # Statement body expression
-b=0;
+b = 0;
 </body>
 
 # =============================================== Extensions

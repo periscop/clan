@@ -81,7 +81,7 @@ WRITE
 # List of original iterators
 i1
 # Statement body expression
-a1=0;
+a1 = 0;
 </body>
 
 # =============================================== Extensions
@@ -158,7 +158,7 @@ WRITE
 # Number of original iterators
 0
 # Statement body expression
-a2=0;
+a2 = 0;
 </body>
 
 # =============================================== Statement 2
@@ -196,7 +196,7 @@ WRITE
 # List of original iterators
 i2
 # Statement body expression
-a2=0;
+a2 = 0;
 </body>
 
 # =============================================== Extensions
@@ -273,7 +273,7 @@ WRITE
 # Number of original iterators
 0
 # Statement body expression
-a3=0;
+a3 = 0;
 </body>
 
 # =============================================== Statement 2
@@ -311,7 +311,7 @@ WRITE
 # List of original iterators
 i3
 # Statement body expression
-a3=0;
+a3 = 0;
 </body>
 
 # =============================================== Statement 3
@@ -341,7 +341,7 @@ WRITE
 # Number of original iterators
 0
 # Statement body expression
-a3=0;
+a3 = 0;
 </body>
 
 # =============================================== Extensions

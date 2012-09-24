@@ -77,6 +77,7 @@ IS ((u|U)|(u|U)?(l|L|ll|LL)|(l|L|ll|LL)(u|U))
    int   scanner_scop_start;               /**< SCoP starting line */
    int   scanner_scop_end;                 /**< SCoP ending line */
    int   scanner_pragma;                   /**< Between SCoP pragmas or not? */
+   int   scanner_space;                    /**< Are we reading spaces or not?*/
 %}
 
 %option noyywrap
@@ -292,7 +293,27 @@ L?\"(\\.|[^\\"\n])*\"       { return clan_scanner(STRING_LITERAL, "STRING"); }
 "^"                         { return clan_scanner('^', "^"); }
 "|"                         { return clan_scanner('|', "|"); }
 "?"                         { return clan_scanner('?', "?"); }
-[ \t\v\n\f]                 { clan_scanner_count(); }
+[ \t\v\n\f]                 { clan_scanner_count();
+                              // A list of separators is translated to a
+                              // single space. We proceed one by one to
+                              // compute precise coordinates.
+                              if (parser_record &&
+                                  parser_recording &&
+                                  !scanner_space) {
+                                char* space;
+                                CLAN_malloc(space, char*, 2);
+                                CLAN_realloc(parser_record, char*,
+                                             (strlen(parser_record) + 2) *
+                                             sizeof(char));
+                                space[0] = ' ';
+                                space[1] = '\0';
+                                // FIXME: just to please valgrind, I'm not
+                                // using strcat(parser_record, " "). Strange.
+                                strcat(parser_record, space);
+                                free(space);
+                                scanner_space = CLAN_TRUE;
+                              }
+                            }
 .                           { 
                               scanner_column++;
                               CLAN_debug("unmatched characters by Lex");
@@ -315,6 +336,7 @@ void clan_scanner_initialize() {
   scanner_column = 1;
   scanner_column_LALR = 1;
   scanner_pragma = CLAN_FALSE;
+  scanner_space = CLAN_FALSE;
   scanner_scop_start = CLAN_UNDEFINED;
   scanner_scop_end = CLAN_UNDEFINED;
 }
@@ -398,6 +420,7 @@ int clan_scanner(int token, char* message) {
     CLAN_realloc(parser_record, char*,
                  (strlen(parser_record) + strlen(yytext) + 1) * sizeof(char));
     strcat(parser_record, yytext);
+    scanner_space = CLAN_FALSE;
   }
   
   if (scanner_parsing == CLAN_TRUE)

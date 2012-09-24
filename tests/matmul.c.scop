@@ -87,7 +87,7 @@ WRITE
 # List of original iterators
 i j
 # Statement body expression
-c[i][j]=0.0;
+c[i][j] = 0.0;
 </body>
 
 # =============================================== Statement 2
@@ -156,7 +156,7 @@ READ
 # List of original iterators
 i j k
 # Statement body expression
-c[i][j]=c[i][j]+a[i][k]*b[k][j];
+c[i][j] = c[i][j] + a[i][k]*b[k][j];
 </body>
 
 # =============================================== Extensions

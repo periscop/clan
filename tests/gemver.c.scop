@@ -118,7 +118,7 @@ READ
 # List of original iterators
 i j
 # Statement body expression
-A[i][j]=A[i][j]+u1[i]*v1[j]+u2[i]*v2[j];
+A[i][j] = A[i][j] + u1[i]*v1[j] + u2[i]*v2[j];
 </body>
 
 # =============================================== Statement 2
@@ -185,7 +185,7 @@ READ
 # List of original iterators
 i j
 # Statement body expression
-x[i]=x[i]+beta*A[i][j]*y[j];
+x[i] = x[i] + beta* A[i][j]*y[j];
 </body>
 
 # =============================================== Statement 3
@@ -236,7 +236,7 @@ READ
 # List of original iterators
 i
 # Statement body expression
-x[i]=x[i]+z[i];
+x[i] = x[i] + z[i];
 </body>
 
 # =============================================== Statement 4
@@ -303,7 +303,7 @@ READ
 # List of original iterators
 i j
 # Statement body expression
-w[i]=w[i]+alpha*A[i][j]*x[j];
+w[i] = w[i] + alpha* A[i][j]*x[j];
 </body>
 
 # =============================================== Extensions

@@ -114,7 +114,7 @@ READ
 # List of original iterators
 i j k
 # Statement body expression
-C[i][j]=_C_[i][j]+A[i][k]*B[k][j];
+C[i][j] = _C_[i][j] + A[i][k] * B[k][j];
 </body>
 
 # =============================================== Extensions

@@ -87,7 +87,7 @@ READ
 # List of original iterators
 i
 # Statement body expression
-a.b=c;
+a.b = c;
 </body>
 
 # =============================================== Statement 2
@@ -124,7 +124,7 @@ READ
 # Number of original iterators
 0
 # Statement body expression
-c.d=a.b;
+c.d = a.b;
 </body>
 
 # =============================================== Extensions

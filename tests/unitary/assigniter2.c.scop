@@ -102,7 +102,7 @@ READ
 # List of original iterators
 i j
 # Statement body expression
-A[i][j]=(i*j)/N;
+A[i][j] = (i * j) / N;
 </body>
 
 # =============================================== Extensions

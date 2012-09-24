@@ -78,7 +78,7 @@ READ
 # Number of original iterators
 0
 # Statement body expression
-a=m;
+a = m;
 </body>
 
 # =============================================== Statement 2
@@ -117,7 +117,7 @@ WRITE
 # List of original iterators
 i
 # Statement body expression
-b[i]=0;
+b[i] = 0;
 </body>
 
 # =============================================== Extensions

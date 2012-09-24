@@ -96,7 +96,7 @@ READ
 # List of original iterators
 i j
 # Statement body expression
-A[i]=i*j;
+A[i] = i * j;
 </body>
 
 # =============================================== Extensions

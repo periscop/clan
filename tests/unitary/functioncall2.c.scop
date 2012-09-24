@@ -93,7 +93,7 @@ READ
 # List of original iterators
 i
 # Statement body expression
-ntaps_filter_ffd(&lp_21_conf,1,&fm_qd_buffer[i],&band_21[i]);
+ntaps_filter_ffd (&lp_21_conf, 1, &fm_qd_buffer[i], &band_21[i]);
 </body>
 
 # =============================================== Extensions

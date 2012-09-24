@@ -81,7 +81,7 @@ READ
 # Number of original iterators
 0
 # Statement body expression
-a+=b;
+a += b;
 </body>
 
 # =============================================== Statement 2

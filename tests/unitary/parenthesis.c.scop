@@ -88,7 +88,7 @@ READ
 # List of original iterators
 i
 # Statement body expression
-A[i]=B[2*(i)+1];
+A[i] = B[2 * (i) + 1];
 </body>
 
 # =============================================== Extensions

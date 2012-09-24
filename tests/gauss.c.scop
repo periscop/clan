@@ -88,7 +88,7 @@ READ
 # List of original iterators
 k
 # Statement body expression
-s=1/a[k][k];
+s = 1/a[k][k];
 </body>
 
 # =============================================== Statement 2
@@ -145,7 +145,7 @@ READ
 # List of original iterators
 k l
 # Statement body expression
-a[l][k]=a[l][k]*s;
+a[l][k] = a[l][k]*s;
 </body>
 
 # =============================================== Statement 3
@@ -215,7 +215,7 @@ READ
 # List of original iterators
 k j i
 # Statement body expression
-a[i][j]=a[i][j]-a[k][j]*a[i][k];
+a[i][j] = a[i][j] - a[k][j] * a[i][k];
 </body>
 
 # =============================================== Extensions

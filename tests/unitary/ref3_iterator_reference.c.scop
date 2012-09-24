@@ -86,7 +86,7 @@ READ
 # List of original iterators
 i
 # Statement body expression
-a=i;
+a = i;
 </body>
 
 # =============================================== Extensions

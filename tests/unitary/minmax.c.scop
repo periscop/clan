@@ -146,7 +146,7 @@ WRITE
 # List of original iterators
 i j
 # Statement body expression
-a=0;
+a = 0;
 </body>
 
 # =============================================== Extensions

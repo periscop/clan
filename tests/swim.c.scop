@@ -86,7 +86,7 @@ READ
 # List of original iterators
 t
 # Statement body expression
-FSDX=4/DX;
+FSDX = 4/DX;
 </body>
 
 # =============================================== Statement 2
@@ -129,7 +129,7 @@ READ
 # List of original iterators
 t
 # Statement body expression
-FSDY=4/DY;
+FSDY = 4/DY;
 </body>
 
 # =============================================== Statement 3
@@ -200,7 +200,7 @@ READ
 # List of original iterators
 t i j
 # Statement body expression
-CU[i+1][j]=0.5*(P[i+1][j]+P[i][j])*U[i+1][j];
+CU[i+1][j] = 0.5*(P[i+1][j]+P[i][j])*U[i+1][j];
 </body>
 
 # =============================================== Statement 4
@@ -271,7 +271,7 @@ READ
 # List of original iterators
 t i j
 # Statement body expression
-CV[i][j+1]=0.5*(P[i][j+1]+P[i][j])*V[i][j+1];
+CV[i][j+1] = 0.5*(P[i][j+1]+P[i][j])*V[i][j+1];
 </body>
 
 # =============================================== Statement 5
@@ -387,7 +387,7 @@ READ
 # List of original iterators
 t i j
 # Statement body expression
-Z[i+1][j+1]=(FSDX*(V[i+1][j+1]-V[i][j+1])-FSDY*(U[i+1][j+1]-U[i+1][j]))/(P[i][j]+P[i+1][j]+P[i+1][j+1]+P[i][j+1]);
+Z[i+1][j+1] = (FSDX*(V[i+1][j+1]-V[i][j+1])-FSDY*(U[i+1][j+1] -U[i+1][j]))/(P[i][j]+P[i+1][j]+P[i+1][j+1]+P[i][j+1]);
 </body>
 
 # =============================================== Statement 6
@@ -500,7 +500,7 @@ READ
 # List of original iterators
 t i j
 # Statement body expression
-H[i][j]=P[i][j]+0.25*(U[i+1][j]*U[i+1][j]+U[i][j]*U[i][j]+V[i][j+1]*V[i][j+1]+V[i][j]*V[i][j]);
+H[i][j] = P[i][j]+0.25*(U[i+1][j]*U[i+1][j]+U[i][j]*U[i][j] +V[i][j+1]*V[i][j+1]+V[i][j]*V[i][j]);
 </body>
 
 # =============================================== Statement 7
@@ -552,7 +552,7 @@ READ
 # List of original iterators
 t j
 # Statement body expression
-CU[0][j]=CU[M+1][j];
+CU[0][j] = CU[M+1][j];
 </body>
 
 # =============================================== Statement 8
@@ -604,7 +604,7 @@ READ
 # List of original iterators
 t j
 # Statement body expression
-CV[M][j+1]=CV[0][j+1];
+CV[M][j+1] = CV[0][j+1];
 </body>
 
 # =============================================== Statement 9
@@ -656,7 +656,7 @@ READ
 # List of original iterators
 t j
 # Statement body expression
-Z[0][j+1]=Z[M][j+1];
+Z[0][j+1] = Z[M][j+1];
 </body>
 
 # =============================================== Statement 10
@@ -708,7 +708,7 @@ READ
 # List of original iterators
 t j
 # Statement body expression
-H[M][j]=H[0][j];
+H[M][j] = H[0][j];
 </body>
 
 # =============================================== Statement 11
@@ -760,7 +760,7 @@ READ
 # List of original iterators
 t i
 # Statement body expression
-CU[i+1][N]=CU[i+1][0];
+CU[i+1][N] = CU[i+1][0];
 </body>
 
 # =============================================== Statement 12
@@ -812,7 +812,7 @@ READ
 # List of original iterators
 t i
 # Statement body expression
-CV[i][0]=CV[i][N];
+CV[i][0] = CV[i][N];
 </body>
 
 # =============================================== Statement 13
@@ -864,7 +864,7 @@ READ
 # List of original iterators
 t i
 # Statement body expression
-Z[i+1][0]=Z[i+1][N];
+Z[i+1][0] = Z[i+1][N];
 </body>
 
 # =============================================== Statement 14
@@ -916,7 +916,7 @@ READ
 # List of original iterators
 t i
 # Statement body expression
-H[i][N]=H[i][0];
+H[i][N] = H[i][0];
 </body>
 
 # =============================================== Statement 15
@@ -963,7 +963,7 @@ READ
 # List of original iterators
 t
 # Statement body expression
-CU[0][N]=CU[M][0];
+CU[0][N] = CU[M][0];
 </body>
 
 # =============================================== Statement 16
@@ -1010,7 +1010,7 @@ READ
 # List of original iterators
 t
 # Statement body expression
-CV[M][0]=CV[0][N];
+CV[M][0] = CV[0][N];
 </body>
 
 # =============================================== Statement 17
@@ -1057,7 +1057,7 @@ READ
 # List of original iterators
 t
 # Statement body expression
-Z[0][0]=Z[M][N];
+Z[0][0] = Z[M][N];
 </body>
 
 # =============================================== Statement 18
@@ -1104,7 +1104,7 @@ READ
 # List of original iterators
 t
 # Statement body expression
-H[M][N]=H[0][0];
+H[M][N] = H[0][0];
 </body>
 
 # =============================================== Statement 19
@@ -1147,7 +1147,7 @@ READ
 # List of original iterators
 t
 # Statement body expression
-TDTS8=TDT/8;
+TDTS8 = TDT/8;
 </body>
 
 # =============================================== Statement 20
@@ -1195,7 +1195,7 @@ READ
 # List of original iterators
 t
 # Statement body expression
-TDTSDX=TDT/DX;
+TDTSDX = TDT/DX;
 </body>
 
 # =============================================== Statement 21
@@ -1243,7 +1243,7 @@ READ
 # List of original iterators
 t
 # Statement body expression
-TDTSDY=TDT/DY;
+TDTSDY = TDT/DY;
 </body>
 
 # =============================================== Statement 22
@@ -1366,7 +1366,7 @@ READ
 # List of original iterators
 t i j
 # Statement body expression
-UNEW[i+1][j]=UOLD[i+1][j]+TDTS8*(Z[i+1][j+1]+Z[i+1][j])*(CV[i+1][j+1]+CV[i][j+1]+CV[i][j]+CV[i+1][j])-TDTSDX*(H[i+1][j]-H[i][j]);
+UNEW[i+1][j] = UOLD[i+1][j]+ TDTS8*(Z[i+1][j+1]+Z[i+1][j])*(CV[i+1][j+1]+CV[i][j+1]+CV[i][j] +CV[i+1][j])-TDTSDX*(H[i+1][j]-H[i][j]);
 </body>
 
 # =============================================== Statement 23
@@ -1489,7 +1489,7 @@ READ
 # List of original iterators
 t i j
 # Statement body expression
-VNEW[i][j+1]=VOLD[i][j+1]-TDTS8*(Z[i+1][j+1]+Z[i][j+1])*(CU[i+1][j+1]+CU[i][j+1]+CU[i][j]+CU[i+1][j])-TDTSDY*(H[i][j+1]-H[i][j]);
+VNEW[i][j+1] = VOLD[i][j+1]-TDTS8*(Z[i+1][j+1]+Z[i][j+1]) *(CU[i+1][j+1]+CU[i][j+1]+CU[i][j]+CU[i+1][j]) -TDTSDY*(H[i][j+1]-H[i][j]);
 </body>
 
 # =============================================== Statement 24
@@ -1584,7 +1584,7 @@ READ
 # List of original iterators
 t i j
 # Statement body expression
-PNEW[i][j]=POLD[i][j]-TDTSDX*(CU[i+1][j]-CU[i][j])-TDTSDY*(CV[i][j+1]-CV[i][j]);
+PNEW[i][j] = POLD[i][j]-TDTSDX*(CU[i+1][j]-CU[i][j]) -TDTSDY*(CV[i][j+1]-CV[i][j]);
 </body>
 
 # =============================================== Statement 25
@@ -1636,7 +1636,7 @@ READ
 # List of original iterators
 t j
 # Statement body expression
-UNEW[0][j]=UNEW[M][j];
+UNEW[0][j] = UNEW[M][j];
 </body>
 
 # =============================================== Statement 26
@@ -1688,7 +1688,7 @@ READ
 # List of original iterators
 t j
 # Statement body expression
-VNEW[M][j+1]=VNEW[0][j+1];
+VNEW[M][j+1] = VNEW[0][j+1];
 </body>
 
 # =============================================== Statement 27
@@ -1740,7 +1740,7 @@ READ
 # List of original iterators
 t j
 # Statement body expression
-PNEW[M][j]=PNEW[0][j];
+PNEW[M][j] = PNEW[0][j];
 </body>
 
 # =============================================== Statement 28
@@ -1792,7 +1792,7 @@ READ
 # List of original iterators
 t i
 # Statement body expression
-UNEW[i+1][N]=UNEW[i+1][0];
+UNEW[i+1][N] = UNEW[i+1][0];
 </body>
 
 # =============================================== Statement 29
@@ -1844,7 +1844,7 @@ READ
 # List of original iterators
 t i
 # Statement body expression
-VNEW[i][0]=VNEW[i][N];
+VNEW[i][0] = VNEW[i][N];
 </body>
 
 # =============================================== Statement 30
@@ -1896,7 +1896,7 @@ READ
 # List of original iterators
 t i
 # Statement body expression
-PNEW[i][N]=PNEW[i][0];
+PNEW[i][N] = PNEW[i][0];
 </body>
 
 # =============================================== Statement 31
@@ -1943,7 +1943,7 @@ READ
 # List of original iterators
 t
 # Statement body expression
-UNEW[0][N]=UNEW[M][0];
+UNEW[0][N] = UNEW[M][0];
 </body>
 
 # =============================================== Statement 32
@@ -1990,7 +1990,7 @@ READ
 # List of original iterators
 t
 # Statement body expression
-VNEW[M][0]=VNEW[0][N];
+VNEW[M][0] = VNEW[0][N];
 </body>
 
 # =============================================== Statement 33
@@ -2037,7 +2037,7 @@ READ
 # List of original iterators
 t
 # Statement body expression
-PNEW[M][N]=PNEW[0][0];
+PNEW[M][N] = PNEW[0][0];
 </body>
 
 # =============================================== Statement 34
@@ -2085,7 +2085,7 @@ READ
 # List of original iterators
 t
 # Statement body expression
-time=time+DT;
+time = time + DT;
 </body>
 
 # =============================================== Statement 35
@@ -2168,7 +2168,7 @@ READ
 # List of original iterators
 t i j
 # Statement body expression
-UOLD[i][j]=U[i][j]+ALPHA*(UNEW[i][j]-2*U[i][j]+UOLD[i][j]);
+UOLD[i][j] = U[i][j]+ALPHA*(UNEW[i][j]-2*U[i][j]+UOLD[i][j]);
 </body>
 
 # =============================================== Statement 36
@@ -2251,7 +2251,7 @@ READ
 # List of original iterators
 t i j
 # Statement body expression
-VOLD[i][j]=V[i][j]+ALPHA*(VNEW[i][j]-2*V[i][j]+VOLD[i][j]);
+VOLD[i][j] = V[i][j]+ALPHA*(VNEW[i][j]-2*V[i][j]+VOLD[i][j]);
 </body>
 
 # =============================================== Statement 37
@@ -2334,7 +2334,7 @@ READ
 # List of original iterators
 t i j
 # Statement body expression
-POLD[i][j]=P[i][j]+ALPHA*(PNEW[i][j]-2*P[i][j]+POLD[i][j]);
+POLD[i][j] = P[i][j]+ALPHA*(PNEW[i][j]-2*P[i][j]+POLD[i][j]);
 </body>
 
 # =============================================== Statement 38
@@ -2391,7 +2391,7 @@ READ
 # List of original iterators
 t i j
 # Statement body expression
-U[i][j]=UNEW[i][j];
+U[i][j] = UNEW[i][j];
 </body>
 
 # =============================================== Statement 39
@@ -2448,7 +2448,7 @@ READ
 # List of original iterators
 t i j
 # Statement body expression
-V[i][j]=VNEW[i][j];
+V[i][j] = VNEW[i][j];
 </body>
 
 # =============================================== Statement 40
@@ -2505,7 +2505,7 @@ READ
 # List of original iterators
 t i j
 # Statement body expression
-P[i][j]=PNEW[i][j];
+P[i][j] = PNEW[i][j];
 </body>
 
 # =============================================== Statement 41
@@ -2557,7 +2557,7 @@ READ
 # List of original iterators
 t j
 # Statement body expression
-UOLD[M][j]=UOLD[0][j];
+UOLD[M][j] = UOLD[0][j];
 </body>
 
 # =============================================== Statement 42
@@ -2609,7 +2609,7 @@ READ
 # List of original iterators
 t j
 # Statement body expression
-VOLD[M][j]=VOLD[0][j];
+VOLD[M][j] = VOLD[0][j];
 </body>
 
 # =============================================== Statement 43
@@ -2661,7 +2661,7 @@ READ
 # List of original iterators
 t j
 # Statement body expression
-POLD[M][j]=POLD[0][j];
+POLD[M][j] = POLD[0][j];
 </body>
 
 # =============================================== Statement 44
@@ -2713,7 +2713,7 @@ READ
 # List of original iterators
 t j
 # Statement body expression
-U[M][j]=U[0][j];
+U[M][j] = U[0][j];
 </body>
 
 # =============================================== Statement 45
@@ -2765,7 +2765,7 @@ READ
 # List of original iterators
 t j
 # Statement body expression
-V[M][j]=V[0][j];
+V[M][j] = V[0][j];
 </body>
 
 # =============================================== Statement 46
@@ -2817,7 +2817,7 @@ READ
 # List of original iterators
 t j
 # Statement body expression
-P[M][j]=P[0][j];
+P[M][j] = P[0][j];
 </body>
 
 # =============================================== Statement 47
@@ -2869,7 +2869,7 @@ READ
 # List of original iterators
 t i
 # Statement body expression
-UOLD[i][N]=UOLD[i][0];
+UOLD[i][N] = UOLD[i][0];
 </body>
 
 # =============================================== Statement 48
@@ -2921,7 +2921,7 @@ READ
 # List of original iterators
 t i
 # Statement body expression
-VOLD[i][N]=VOLD[i][0];
+VOLD[i][N] = VOLD[i][0];
 </body>
 
 # =============================================== Statement 49
@@ -2973,7 +2973,7 @@ READ
 # List of original iterators
 t i
 # Statement body expression
-POLD[i][N]=POLD[i][0];
+POLD[i][N] = POLD[i][0];
 </body>
 
 # =============================================== Statement 50
@@ -3025,7 +3025,7 @@ READ
 # List of original iterators
 t i
 # Statement body expression
-U[i][N]=U[i][0];
+U[i][N] = U[i][0];
 </body>
 
 # =============================================== Statement 51
@@ -3077,7 +3077,7 @@ READ
 # List of original iterators
 t i
 # Statement body expression
-V[i][N]=V[i][0];
+V[i][N] = V[i][0];
 </body>
 
 # =============================================== Statement 52
@@ -3129,7 +3129,7 @@ READ
 # List of original iterators
 t i
 # Statement body expression
-P[i][N]=P[i][0];
+P[i][N] = P[i][0];
 </body>
 
 # =============================================== Statement 53
@@ -3176,7 +3176,7 @@ READ
 # List of original iterators
 t
 # Statement body expression
-UOLD[M][N]=UOLD[0][0];
+UOLD[M][N] = UOLD[0][0];
 </body>
 
 # =============================================== Statement 54
@@ -3223,7 +3223,7 @@ READ
 # List of original iterators
 t
 # Statement body expression
-VOLD[M][N]=VOLD[0][0];
+VOLD[M][N] = VOLD[0][0];
 </body>
 
 # =============================================== Statement 55
@@ -3270,7 +3270,7 @@ READ
 # List of original iterators
 t
 # Statement body expression
-POLD[M][N]=POLD[0][0];
+POLD[M][N] = POLD[0][0];
 </body>
 
 # =============================================== Statement 56
@@ -3317,7 +3317,7 @@ READ
 # List of original iterators
 t
 # Statement body expression
-U[M][N]=U[0][0];
+U[M][N] = U[0][0];
 </body>
 
 # =============================================== Statement 57
@@ -3364,7 +3364,7 @@ READ
 # List of original iterators
 t
 # Statement body expression
-V[M][N]=V[0][0];
+V[M][N] = V[0][0];
 </body>
 
 # =============================================== Statement 58
@@ -3411,7 +3411,7 @@ READ
 # List of original iterators
 t
 # Statement body expression
-P[M][N]=P[0][0];
+P[M][N] = P[0][0];
 </body>
 
 # =============================================== Extensions

@@ -94,7 +94,7 @@ WRITE
 # List of original iterators
 i j k
 # Statement body expression
-a[i][j][k]=0;
+a[i][j][k] = 0;
 </body>
 
 # =============================================== Extensions

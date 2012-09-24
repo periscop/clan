@@ -81,7 +81,7 @@ WRITE
 # List of original iterators
 i1
 # Statement body expression
-a1=0;
+a1 = 0;
 </body>
 
 # =============================================== Extensions
@@ -166,7 +166,7 @@ WRITE
 # List of original iterators
 i2
 # Statement body expression
-a2=0;
+a2 = 0;
 </body>
 
 # =============================================== Extensions

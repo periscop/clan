@@ -82,7 +82,7 @@ WRITE
 # List of original iterators
 i
 # Statement body expression
-c[i]=0;
+c[i] = 0;
 </body>
 
 # =============================================== Extensions

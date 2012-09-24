@@ -71,7 +71,7 @@ WRITE
 # Number of original iterators
 0
 # Statement body expression
-a=0.6f;
+a = 0.6f;
 </body>
 
 # =============================================== Statement 2
@@ -101,7 +101,7 @@ WRITE
 # Number of original iterators
 0
 # Statement body expression
-b=120.7234234E1;
+b = 120.7234234E1;
 </body>
 
 # =============================================== Statement 3
@@ -131,7 +131,7 @@ WRITE
 # Number of original iterators
 0
 # Statement body expression
-c=4.0;
+c = 4.0;
 </body>
 
 # =============================================== Statement 4
@@ -161,7 +161,7 @@ WRITE
 # Number of original iterators
 0
 # Statement body expression
-d=5;
+d = 5;
 </body>
 
 # =============================================== Extensions

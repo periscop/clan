@@ -195,7 +195,7 @@ READ
 # List of original iterators
 i j
 # Statement body expression
-a[i][j]=i;
+a[i][j] = i;
 </body>
 
 # =============================================== Extensions

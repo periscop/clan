@@ -286,7 +286,7 @@ READ
 # List of original iterators
 k
 # Statement body expression
-c[i][j]=c[i][j]+a[i][k]*b[k][j];
+c[i][j] = c[i][j] + a[i][k]*b[k][j];
 </body>
 
 # =============================================== Extensions

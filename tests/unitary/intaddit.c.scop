@@ -108,7 +108,7 @@ READ
 # List of original iterators
 i j
 # Statement body expression
-b[i][j]=0.2*(a[i][j]+a[i][j-1]+a[i][1+1]);
+b[i][j]= 0.2*(a[i][j]+a[i][j-1]+a[i][1+1]);
 </body>
 
 # =============================================== Extensions

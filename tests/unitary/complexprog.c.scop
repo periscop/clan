@@ -104,7 +104,7 @@ READ
 # List of original iterators
 i
 # Statement body expression
-a[i]=pow(b,c);
+a[i] = pow(b,c);
 </body>
 
 # =============================================== Statement 2
@@ -159,7 +159,7 @@ READ
 # List of original iterators
 i
 # Statement body expression
-c=c+1;
+c = c + 1;
 </body>
 
 # =============================================== Statement 3
@@ -197,7 +197,7 @@ READ
 # Number of original iterators
 0
 # Statement body expression
-a[0]=c;
+a[0] = c;
 </body>
 
 # =============================================== Extensions

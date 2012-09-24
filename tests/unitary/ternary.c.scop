@@ -91,7 +91,7 @@ READ
 # Number of original iterators
 0
 # Statement body expression
-b=c<d?a+1:2*b;
+b = c < d ? a + 1 : 2 * b;
 </body>
 
 # =============================================== Extensions

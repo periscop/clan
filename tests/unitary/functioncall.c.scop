@@ -88,7 +88,7 @@ READ
 # List of original iterators
 i
 # Statement body expression
-printf(a[i+1],b[n]);
+printf (a[i+1],b[n]);
 </body>
 
 # =============================================== Extensions

@@ -82,7 +82,7 @@ WRITE
 # List of original iterators
 i
 # Statement body expression
-a=0;
+a = 0;
 </body>
 
 # =============================================== Statement 2
@@ -120,7 +120,7 @@ WRITE
 # List of original iterators
 i
 # Statement body expression
-b=0;
+b = 0;
 </body>
 
 # =============================================== Statement 3
@@ -160,7 +160,7 @@ WRITE
 # List of original iterators
 i
 # Statement body expression
-c=0;
+c = 0;
 </body>
 
 # =============================================== Statement 4
@@ -199,7 +199,7 @@ WRITE
 # List of original iterators
 i
 # Statement body expression
-d=0;
+d = 0;
 </body>
 
 # =============================================== Extensions

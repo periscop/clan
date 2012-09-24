@@ -86,7 +86,7 @@ READ
 # List of original iterators
 k
 # Statement body expression
-alpha=-sum;
+alpha = -sum;
 </body>
 
 # =============================================== Extensions

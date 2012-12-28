@@ -12,7 +12,12 @@ endif()
 
 find_path(CLAN_INCLUDE_DIR NAMES clan/clan.h)
 find_library(CLAN_LIBRARY NAMES clan)
-message (STATUS "Library clan found =) ${CLAN_LIBRARY}")
+
+if (CLAN_LIBRARY AND CLAN_INCLUDE_DIR)
+	message(STATUS "Library clan found =) ${CLAN_LIBRARY}")
+else()
+	message(STATUS "Library clan not found =(")
+endif()
 
 include(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(CLAN DEFAULT_MSG CLAN_INCLUDE_DIR CLAN_LIBRARY)

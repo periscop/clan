@@ -34,8 +34,20 @@
 # * Written by Cedric Bastoul, Cedric.Bastoul@u-psud.fr                       *
 # *                                                                           *
 # *****************************************************************************/
-#
 
-install procedure:
+Install with Makefile
+---------------------
 
 ...
+
+
+Alternative: Install with CMake
+-------------------------------
+
+$> mkdir build
+$> cd build
+$> cmake .. # -DCMAKE_INSTALL_PREFIX="/your/install/directory"
+$> make
+$> make test
+$> # make install # sudo make install # su -c "make install"
+$> make doc

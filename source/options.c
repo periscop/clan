@@ -88,6 +88,7 @@ void clan_options_print(FILE* foo, clan_options_p options) {
  * \param options Option structure to be freed.
  */
 void clan_options_free(clan_options_p options) {
+  free(options->name);
   free(options);
 }
 
@@ -303,7 +304,7 @@ clan_options_p clan_options_read(int argv, char** argc,
     } else {
       if (!input_is_set) {
         input_is_set = 1;
-        options->name = argc[i];
+        CLAN_strdup(options->name, argc[i]);
         // stdin is a special value to set input to standard input.
         if (strcmp(argc[i], "stdin") == 0) {
           *input = stdin;

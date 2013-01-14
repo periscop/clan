@@ -44,7 +44,7 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 	find_package(BISON)
 	find_package(FLEX)
 	BISON_TARGET(clan_parser source/parser.y ${CMAKE_CURRENT_BINARY_DIR}/parser.c)
-	FLEX_TARGET(clan_scanner source/scanner.l  ${CMAKE_CURRENT_BINARY_DIR}/scanner.c)
+	FLEX_TARGET(clan_scanner source/scanner.l ${CMAKE_CURRENT_BINARY_DIR}/scanner.c)
 	ADD_FLEX_BISON_DEPENDENCY(clan_scanner clan_parser)
 	include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
@@ -114,13 +114,24 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 	foreach(test ${tests})
 		message(STATUS "Add Test ${test}")
-		add_test(
-			${test}
-			"${CMAKE_CURRENT_SOURCE_DIR}/tests/check_source_result.py"
-			"${test}"
-			"${test}.scop"
-			"${CMAKE_CURRENT_BINARY_DIR}/clan"
-		)
+		if("${test}" MATCHES "autoscop")
+			add_test(
+				${test}
+				"${CMAKE_CURRENT_SOURCE_DIR}/tests/check_source_result.py"
+				"${test}"
+				"${test}.scop"
+				"${CMAKE_CURRENT_BINARY_DIR}/clan"
+				"-autoscop"
+			)
+		else()
+			add_test(
+				${test}
+				"${CMAKE_CURRENT_SOURCE_DIR}/tests/check_source_result.py"
+				"${test}"
+				"${test}.scop"
+				"${CMAKE_CURRENT_BINARY_DIR}/clan"
+			)
+		endif()
 		endforeach()
 		
 	message(STATUS "---")
@@ -130,6 +141,7 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 	install(TARGETS clan LIBRARY DESTINATION lib)
 	install(DIRECTORY include/ DESTINATION include FILES_MATCHING PATTERN "*.h")
+	install(DIRECTORY include/ DESTINATION include FILES_MATCHING PATTERN "*.hpp")
 	install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/include/" DESTINATION include FILES_MATCHING PATTERN "*.h")
 	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/parser.h" DESTINATION include/clan)
 	install(FILES clan-config.cmake DESTINATION lib/clan)

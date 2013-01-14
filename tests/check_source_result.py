@@ -9,7 +9,7 @@ import string
 
 # Check arguments
 if (len(sys.argv) < 3):
-	print 'Usage:', sys.argv[0], 'source.c source.c.scop [clan_path]'
+	print 'Usage:', sys.argv[0], 'source.c source.c.scop [clan_path] [clan options...]'
 	sys.exit(2)
 
 # Get arguments
@@ -29,14 +29,23 @@ if (os.path.exists(scop_filename) == False):
 
 # Custom clan
 clan = ""
-if (len(sys.argv) >= 4 and os.path.exists(sys.argv[3]) and os.access(sys.argv[3], os.X_OK)):
+if (len(sys.argv) >= 4):# and os.path.exists(sys.argv[3]) and os.access(sys.argv[3], os.X_OK)):
 	clan = sys.argv[3]
 else:
 	clan = "clan"
+# clan options
+clan_options = []
+if (len(sys.argv) > 4):
+	i = 4
+	while (i < len(sys.argv)):
+		clan_options += [sys.argv[i]]
+		i += 1
+# Final clan
+print "clan =", clan, clan_options
 
 
 # Get scop form clan
-clan_output,error = subprocess.Popen([clan, source_filename], stdout = subprocess.PIPE).communicate()
+clan_output,error = subprocess.Popen([clan, source_filename] + clan_options, stdout = subprocess.PIPE).communicate()
 #print clan_output
 
 # Get scop

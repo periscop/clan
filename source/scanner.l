@@ -373,8 +373,6 @@ void clan_scanner_count() {
     if (yytext[i] == '\n') {
       scanner_line++;
       scanner_column = 1;
-    } else if (yytext[i] == '\t') {
-      scanner_column += 8 - (scanner_column % 8);
     } else {
       scanner_column++;
     }

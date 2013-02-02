@@ -444,8 +444,8 @@ iteration_statement:
       // Generate the set of constraints contributed by the initialization.
       iterator_term = clan_vector_term(parser_symbol, 0, NULL,
                                        parser_options->precision);
-      osl_int_set_si(parser_options->precision, iterator_term->v,
-          parser_loop_depth, 1); 
+      osl_int_set_si(parser_options->precision,
+                     &iterator_term->v[parser_loop_depth], 1); 
       iterator_relation = osl_relation_from_vector(iterator_term);
       if ($5 > 0)
 	init_constraints = clan_relation_greater(iterator_relation, $3, 0);
@@ -500,8 +500,8 @@ iteration_statement:
       iterator_term = clan_vector_term(parser_symbol, 0, NULL,
                                        parser_options->precision);
       osl_int_set_si(parser_options->precision,
-                     iterator_term->v, parser_loop_depth, 1); 
-      osl_int_set_si(parser_options->precision, iterator_term->v, 0, 1); 
+                     &iterator_term->v[parser_loop_depth], 1); 
+      osl_int_set_si(parser_options->precision, &iterator_term->v[0], 1); 
       iterator_relation = osl_relation_from_vector(iterator_term);
       
       // Add it to the domain stack.
@@ -748,10 +748,10 @@ affine_relation:
       CLAN_debug("rule affine_relation.5: <affex> == <affex>");
       // Warning: cases like ceild(M,32) == ceild(N,32) are not handled.
       // Assert if we encounter such a case.
-      assert ((osl_int_zero(parser_options->precision, $1->v, 0) ||
-	       osl_int_one(parser_options->precision,  $1->v, 0)) &&
-	      (osl_int_zero(parser_options->precision, $3->v, 0) ||
-	       osl_int_one(parser_options->precision,  $3->v, 0)));
+      assert ((osl_int_zero(parser_options->precision, $1->v[0]) ||
+	       osl_int_one(parser_options->precision,  $1->v[0])) &&
+	      (osl_int_zero(parser_options->precision, $3->v[0]) ||
+	       osl_int_one(parser_options->precision,  $3->v[0])));
       res = osl_vector_sub($1, $3);
       osl_vector_tag_equality(res);
       $$ = osl_relation_from_vector(res);
@@ -791,10 +791,10 @@ affine_relation:
     {
       CLAN_debug("rule affine_relation.8: "
 	         "affine_expression %% INTEGER == INTEGER");
-      osl_int_set_si(parser_options->precision, $1->v,
-	             CLAN_MAX_DEPTH + 1 + clan_parser_nb_ld(), -$3);
+      osl_int_set_si(parser_options->precision,
+                     &($1->v[CLAN_MAX_DEPTH + 1 + clan_parser_nb_ld()]), -$3);
       osl_int_add_si(parser_options->precision,
-	             $1->v, $1->size - 1, $1->v, $1->size - 1, -$5);
+	             &($1->v[$1->size - 1]), $1->v[$1->size - 1], -$5);
       clan_parser_add_ld();
       $$ = osl_relation_from_vector($1);
       osl_vector_free($1);
@@ -929,10 +929,10 @@ affine_multiplicative_expression:
       }
 
       if (osl_vector_is_scalar($1)) {
-        coef = osl_int_get_si($1->precision, $1->v, $1->size - 1);
+        coef = osl_int_get_si($1->precision, $1->v[$1->size - 1]);
         $$ = osl_vector_mul_scalar($3, coef);
       } else {
-        coef = osl_int_get_si($3->precision, $3->v, $3->size - 1);
+        coef = osl_int_get_si($3->precision, $3->v[$3->size - 1]);
         $$ = osl_vector_mul_scalar($1, coef);
       }
       osl_vector_free($1);
@@ -951,8 +951,8 @@ affine_multiplicative_expression:
         yyerror("non-affine expression");
 	YYABORT;
       }
-      val1 = osl_int_get_si($1->precision, $1->v, $1->size - 1);
-      val2 = osl_int_get_si($3->precision, $3->v, $3->size - 1);
+      val1 = osl_int_get_si($1->precision, $1->v[$1->size - 1]);
+      val2 = osl_int_get_si($3->precision, $3->v[$3->size - 1]);
       $$ = clan_vector_term(parser_symbol, val1 / val2, NULL,
                             parser_options->precision);
       osl_vector_free($1);
@@ -1002,7 +1002,7 @@ affine_ceildfloord_expression:
     {
       CLAN_debug("affine_ceildfloord_expression.2: "
                  "ceildfloord ( affine_expression , INTEGER )");
-      osl_int_set_si(parser_options->precision, $3->v, 0, $5);
+      osl_int_set_si(parser_options->precision, &($3->v[0]), $5);
       $$ = $3;
       CLAN_debug_call(osl_vector_dump(stderr, $$));
     }
@@ -1026,7 +1026,7 @@ affine_ceild_expression:
     {
       CLAN_debug("affine_ceil_expression.2: "
                  "CEILD ( affine_expression , INTEGER )");
-      osl_int_set_si(parser_options->precision, $3->v, 0, $5);
+      osl_int_set_si(parser_options->precision, &($3->v[0]), $5);
       $$ = $3;
       CLAN_debug_call(osl_vector_dump(stderr, $$));
     }
@@ -1044,7 +1044,7 @@ affine_floord_expression:
     {
       CLAN_debug("affine_floor_expression.2: "
                  "FLOORD ( affine_expression , INTEGER )");
-      osl_int_set_si(parser_options->precision, $3->v, 0, $5);
+      osl_int_set_si(parser_options->precision, &($3->v[0]), $5);
       $$ = $3;
       CLAN_debug_call(osl_vector_dump(stderr, $$));
     }

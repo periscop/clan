@@ -74,16 +74,17 @@ osl_vector_p clan_vector_term(clan_symbol_p symbol, int coefficient,
 
   if (identifier == NULL) {
     // The term is a constant.
-    osl_int_set_si(precision, vector->v, size - 1, coefficient);
+    osl_int_set_si(precision, &vector->v[size - 1], coefficient);
   } else {
     // The term is an iterator or a parameter coefficient
     rank = clan_symbol_get_rank(symbol, identifier);
 
     if (clan_symbol_get_type(symbol, identifier) == CLAN_TYPE_ITERATOR)
-      osl_int_set_si(precision, vector->v, rank, coefficient);
+      osl_int_set_si(precision, &vector->v[rank], coefficient);
     else
-      osl_int_set_si(precision, vector->v,
-                     CLAN_MAX_DEPTH + CLAN_MAX_LOCAL_DIMS + rank, coefficient);
+      osl_int_set_si(precision,
+                     &vector->v[CLAN_MAX_DEPTH + CLAN_MAX_LOCAL_DIMS + rank],
+                     coefficient);
   }
   return vector;
 }

@@ -424,11 +424,11 @@ b0 i b1 j b2
 
 <coordinates>
 # File name
-./autoscop/gramschmidt.c
+./tests/autoscop/gramschmidt.c
 # Starting line and column
 51 3
 # Ending line and column
-67 6
+67 5
 # Indentation
 2
 </coordinates>
@@ -869,9 +869,9 @@ b0 k b1 j b2 i b3
 
 <coordinates>
 # File name
-./autoscop/gramschmidt.c
+./tests/autoscop/gramschmidt.c
 # Starting line and column
-84 0
+85 0
 # Ending line and column
 102 0
 # Indentation

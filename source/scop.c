@@ -285,10 +285,13 @@ void clan_scop_update_coordinates(osl_scop_p scop,
     old = osl_generic_lookup(scop->extension, OSL_URI_COORDINATES);
     if (old == NULL)
       CLAN_error("coordinates extension not present");
-    old->line_start   = coordinates[0][i];
+    // When columns are at 0, it means the scop has not been autodetected.
+    // - The line starts at +1 (after the pragma scop) if no autodetection,
+    // - The column stops at -1 (previous read char) if autodetection.
+    old->line_start   = coordinates[0][i] + ((coordinates[2][i] == 0)? 1 : 0);
     old->line_end     = coordinates[1][i];
     old->column_start = coordinates[2][i];
-    old->column_end   = coordinates[3][i];
+    old->column_end   = coordinates[3][i] - ((coordinates[3][i] > 0)? 1 : 0);
     i++;
     scop = scop->next;
   }

@@ -108,7 +108,7 @@ b0 j b1
 # Starting line and column
 12 5
 # Ending line and column
-13 29
+13 28
 # Indentation
 4
 </coordinates>
@@ -201,7 +201,7 @@ b0 i b1 j b2
 # Starting line and column
 18 3
 # Ending line and column
-20 29
+20 28
 # Indentation
 2
 </coordinates>
@@ -313,7 +313,7 @@ b0 k b1
 # Starting line and column
 30 7
 # Ending line and column
-31 45
+31 44
 # Indentation
 6
 </coordinates>
@@ -441,7 +441,7 @@ b0 i b1 j b2
 # Starting line and column
 35 3
 # Ending line and column
-40 4
+40 3
 # Indentation
 2
 </coordinates>

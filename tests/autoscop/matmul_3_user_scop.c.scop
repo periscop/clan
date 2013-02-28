@@ -157,7 +157,7 @@ b0 i b1 j b2
 # Starting line and column
 11 3
 # Ending line and column
-18 29
+18 28
 # Indentation
 2
 </coordinates>
@@ -319,7 +319,7 @@ b0 i b1 j b2 k b3
 # File name
 ./tests/autoscop/matmul_3_user_scop.c
 # Starting line and column
-21 0
+22 0
 # Ending line and column
 29 0
 # Indentation
@@ -449,7 +449,7 @@ b0 i b1 j b2
 # Starting line and column
 32 3
 # Ending line and column
-37 4
+37 3
 # Indentation
 2
 </coordinates>

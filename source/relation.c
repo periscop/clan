@@ -341,6 +341,8 @@ osl_relation_p clan_relation_greater(osl_relation_p min, osl_relation_p max,
     CLAN_error("cannot compose relations");
   
   precision = min->precision;
+  osl_int_init(precision, &a_max);
+  osl_int_init(precision, &b_min);
   r = osl_relation_pmalloc(precision,
                            min->nb_rows * max->nb_rows, min->nb_columns);
   
@@ -385,6 +387,8 @@ osl_relation_p clan_relation_greater(osl_relation_p min, osl_relation_p max,
     }
   }
   
+  osl_int_clear(precision, &a_max);
+  osl_int_clear(precision, &b_min);
   return r;
 }
 

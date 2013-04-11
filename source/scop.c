@@ -50,6 +50,7 @@
 #include <osl/extensions/arrays.h>
 #include <osl/extensions/coordinates.h>
 #include <osl/extensions/clay.h>
+#include <osl/extensions/extbody.h>
 #include <osl/generic.h>
 #include <osl/body.h>
 #include <osl/scop.h>
@@ -174,7 +175,10 @@ void clan_scop_generate_scatnames(osl_scop_p scop) {
     if (current->domain->nb_output_dims > max_depth) {
       max_depth = current->domain->nb_output_dims;
       deepest = current;
-      iterators = ((osl_body_p)(deepest->body->data))->iterators;
+      if (osl_generic_has_URI(deepest->body, OSL_URI_EXTBODY))
+        iterators = ((osl_extbody_p)(deepest->body->data))->body->iterators;
+      else
+        iterators = ((osl_body_p)(deepest->body->data))->iterators;
     }
     current = current->next;
   }

@@ -655,6 +655,7 @@ input file @code{basic.c} with default options by typing:
 * Bounded Context::
 * No Loop Context::
 * No Domain Simplify::
+* Extbody::
 * Help::
 * Version ::
 @end menu
@@ -735,6 +736,13 @@ simplify the iteration domains. Clan is not linked to a polyhedral
 library, hence it is just able to remove trivially redundant
 constraints and union parts. However, for debugging or time
 saving reason, this step can be disabled using this option.
+
+@node Extbody
+@subsection Extbody @code{-extbody}
+
+@code{-extbody}: this option asks Clan to use the extbody extension
+(see OpenScop's documentation) instead of the basic body for
+each statement.
 
 @node Help
 @subsection Help @code{--help} or @code{-h}

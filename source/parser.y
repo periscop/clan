@@ -58,6 +58,7 @@
    #include <osl/generic.h>
    #include <osl/body.h>
    #include <osl/extensions/arrays.h>
+   #include <osl/extensions/extbody.h>
    #include <osl/scop.h>
    #include <clan/macros.h>
    #include <clan/vector.h>
@@ -123,6 +124,11 @@
 
    // Ugly global variable to keep/read Clan options during parsing.
    clan_options_p  parser_options;
+
+   // Variables to generate the extbody
+   osl_extbody_p  parser_access_extbody; /**< The extbody struct */
+   int            parser_access_start;   /**< Start coordinates */
+   int            parser_access_length;  /**< Length of the access string*/
 %}
 
 /* We expect the if-then-else shift/reduce to be there, nothing else. */
@@ -1067,13 +1073,27 @@ primary_expression:
       CLAN_debug("rule primary_expression.1: ID");
       symbol = clan_symbol_add(&parser_symbol, $1, CLAN_UNDEFINED);
       nb_columns = CLAN_MAX_DEPTH + CLAN_MAX_LOCAL_DIMS +
-	           CLAN_MAX_PARAMETERS + 2;
+	                 CLAN_MAX_PARAMETERS + 2;
       id = osl_relation_pmalloc(parser_options->precision, 0, nb_columns);
       osl_relation_set_attributes(id, 0, parser_loop_depth, 0,
                                   CLAN_MAX_PARAMETERS);
       clan_relation_tag_array(id, symbol->key);
       list = osl_relation_list_malloc();
       list->elt = id;
+
+      // add the id to the extbody
+      if (parser_options->extbody) {
+        if (parser_access_start != -1) {
+          osl_extbody_add(parser_access_extbody,
+                          parser_access_start,
+                          parser_access_length);
+        }
+
+        int len = strlen(parser_record);
+        parser_access_start = len - strlen($1);
+        parser_access_length = len - parser_access_start;
+      }
+
       free($1);
       $$ = list;
       CLAN_debug_call(osl_relation_list_dump(stderr, $$));
@@ -1094,6 +1114,9 @@ postfix_expression:
     { $$ = $1; }
   | postfix_expression '[' affine_expression ']' // ANSI: expression
     {
+      if (parser_options->extbody)
+        parser_access_length = strlen(parser_record) - parser_access_start;
+
       CLAN_debug("rule postfix_expression.2: postfix_expression [ <affex> ]");
       if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_ARRAY))
         YYABORT;
@@ -1104,20 +1127,37 @@ postfix_expression:
     }
   | postfix_expression '(' ')'
     { 
+      // don't save access name of a function
+      if (parser_options->extbody) {
+        parser_access_extbody->nb_access -= osl_relation_list_count($1) - 1;
+        parser_access_start = -1;
+      }
+
       if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_FUNCTION))
         YYABORT;
       osl_relation_list_free($1);
       $$ = NULL;
     }
-  | postfix_expression '(' argument_expression_list ')'
+  | postfix_expression '('
+    {
+      // don't save access name of a function
+      if (parser_options->extbody) {
+        parser_access_extbody->nb_access -= osl_relation_list_count($1) - 1;
+        parser_access_start = -1;
+      }
+    }
+    argument_expression_list ')'
     {
       if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_FUNCTION))
         YYABORT;
       osl_relation_list_free($1);
-      $$ = $3;
+      $$ = $4;
     }
   | postfix_expression '.' ID
     {
+      if (parser_options->extbody)
+        parser_access_length = strlen(parser_record) - parser_access_start;
+
       clan_symbol_p symbol;
 
       CLAN_debug("rule postfix_expression.4: postfix_expression . ID");
@@ -1131,6 +1171,9 @@ postfix_expression:
     }
   | postfix_expression PTR_OP ID
     {
+      if (parser_options->extbody)
+        parser_access_length = strlen(parser_record) - parser_access_start;
+
       clan_symbol_p symbol;
 
       CLAN_debug("rule postfix_expression.5: postfix_expression -> ID");
@@ -1153,13 +1196,18 @@ postfix_expression:
       list = $1;
       // The last reference in the list is also written.
       if (list != NULL) {
-	while (list->next != NULL)
-	  list = list->next;
-	list->next = osl_relation_list_node(list->elt);
-	list->next->elt->type = OSL_TYPE_WRITE;
+        while (list->next != NULL)
+          list = list->next;
+        list->next = osl_relation_list_node(list->elt);
+        list->next->elt->type = OSL_TYPE_WRITE;
       }
       $$ = $1;
       CLAN_debug_call(osl_relation_list_dump(stderr, $$));
+
+      // add an empty line in the extbody
+      if (parser_options->extbody) {
+        osl_extbody_add(parser_access_extbody, -1, -1);
+      }
     }
   ;
 
@@ -1187,13 +1235,18 @@ unary_expression:
       list = $2;
       // The last reference in the list is also written.
       if (list != NULL) {
-	while (list->next != NULL)
-	  list = list->next;
-	list->next = osl_relation_list_node(list->elt);
-	list->next->elt->type = OSL_TYPE_WRITE;
+        while (list->next != NULL)
+          list = list->next;
+        list->next = osl_relation_list_node(list->elt);
+        list->next->elt->type = OSL_TYPE_WRITE;
       }
       $$ = $2;
       CLAN_debug_call(osl_relation_list_dump(stderr, $$));
+
+      // add an empty line in the extbody
+      if (parser_options->extbody) {
+        osl_extbody_add(parser_access_extbody, -1, -1);
+      }
     }
   | unary_operator cast_expression
     { $$ = $2; }
@@ -1396,10 +1449,15 @@ assignment_expression:
       clan_relation_list_define_type($$, OSL_TYPE_READ);
       list = $$;
       while (list->next != NULL)
-	list = list->next;
+        list = list->next;
       if ($2 == CLAN_TYPE_RDWR) {
-	list->next = osl_relation_list_node(list->elt);
-	list = list->next;
+        list->next = osl_relation_list_node(list->elt);
+        list = list->next;
+
+        // add an empty line in the extbody
+        if (parser_options->extbody) {
+          osl_extbody_add(parser_access_extbody, -1, -1);
+        }
       }
       osl_relation_set_type(list->elt, OSL_TYPE_WRITE);
       osl_relation_list_add(&$$, $3);
@@ -1446,6 +1504,11 @@ expression_statement:
     }
   | 
     {
+      if (parser_options->extbody) {
+        parser_access_start = -1;
+        parser_access_extbody = osl_extbody_malloc();
+      }
+
       CLAN_strdup(parser_record, scanner_latest_text);
       parser_recording = CLAN_TRUE;
     }
@@ -1473,11 +1536,30 @@ expression_statement:
       // - 4. Body.
       body = osl_body_malloc();
       body->iterators = clan_symbol_array_to_strings(parser_iterators,
-	                                             parser_loop_depth);
+                                                     parser_loop_depth);
       body->expression = osl_strings_encapsulate(parser_record);
       statement->body = osl_generic_malloc();
-      statement->body->interface = osl_body_interface();
-      statement->body->data = body;
+
+      if (parser_options->extbody) {
+        // Extended body
+
+        // add the last access
+        if (parser_access_start != -1) {
+          osl_extbody_add(parser_access_extbody,
+                          parser_access_start,
+                          parser_access_length);
+        }
+
+        parser_access_extbody->body = body;
+        statement->body->interface = osl_extbody_interface();
+        statement->body->data = parser_access_extbody;
+
+      } else {
+        // Basic Body
+        statement->body->interface = osl_body_interface();
+        statement->body->data = body;
+      }
+
       parser_recording = CLAN_FALSE;
       parser_record = NULL;
       

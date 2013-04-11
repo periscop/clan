@@ -74,6 +74,7 @@ void clan_options_print(FILE* foo, clan_options_p options) {
   fprintf(foo, "bounded_context = %3d.\n", options->bounded_context);
   fprintf(foo, "noloopcontext   = %3d.\n", options->noloopcontext);
   fprintf(foo, "nosimplify      = %3d.\n", options->nosimplify);
+  fprintf(foo, "extbody         = %3d.\n", options->extbody);
 }
 
 
@@ -121,6 +122,7 @@ void clan_options_help() {
   "  -noloopctxt          Do not include loop context (simplifies domains).\n"
   "  -nosimplify          Do not simplify iteration domains.\n"
   "  -outscoplib          Print to the SCoPLib format.\n"
+  "  -extbody             Will generate the extbody.\n"
   "  -v, --version        Display the release information (and more).\n"
   "  -h, --help           Display this information.\n\n");
   printf(
@@ -221,6 +223,7 @@ clan_options_p clan_options_malloc(void) {
   options->noloopcontext   = 0;// Do include loop context in domains. 
   options->nosimplify      = 0;// Do simplify iteration domains. 
   options->outscoplib      = 0;// Default OpenScop format
+  options->extbody         = 0;// Don't generate the extbody
   return options;
 }
 
@@ -275,6 +278,8 @@ clan_options_p clan_options_read(int argv, char** argc,
         options->nosimplify = 1;
       } else if (strcmp(argc[i], "-outscoplib") == 0) {
         options->outscoplib = 1;
+      } else if (strcmp(argc[i], "-extbody") == 0) {
+        options->extbody = 1;
       } else if (strcmp(argc[i], "-precision") == 0) {
         clan_options_set(&(options)->precision, argv, argc, &i);
       } else if ((strcmp(argc[i], "--help") == 0) ||

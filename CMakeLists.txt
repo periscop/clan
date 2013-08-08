@@ -21,7 +21,7 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 	endif()
 
 # User's settings - General C Flags
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -pedantic -std=c99")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -std=c99 -pedantic")
 
 
 # Build doxygen
@@ -192,7 +192,6 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 	install(TARGETS clan LIBRARY DESTINATION lib)
 	install(TARGETS clan_static ARCHIVE DESTINATION lib)
 	install(DIRECTORY include/ DESTINATION include FILES_MATCHING PATTERN "*.h")
-	install(DIRECTORY include/ DESTINATION include FILES_MATCHING PATTERN "*.hpp")
 	install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/include/" DESTINATION include FILES_MATCHING PATTERN "*.h")
 	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/parser.h" DESTINATION include/clan)
 	install(FILES clan-config.cmake DESTINATION lib/clan)

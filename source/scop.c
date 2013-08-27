@@ -433,7 +433,9 @@ void clan_scop_insert_pragmas(osl_scop_p scop, char* filename, int test) {
   int infos[5][CLAN_MAX_SCOPS];
   int tmp[5];
   osl_coordinates_p coordinates;
-  FILE* file;
+  FILE* input, *output;
+  size_t size;
+  char buffer[BUFSIZ];
   
   // Get coordinate information from the list of SCoPS.
   while (scop != NULL) {
@@ -467,18 +469,25 @@ void clan_scop_insert_pragmas(osl_scop_p scop, char* filename, int test) {
       CLAN_error("SCoP interleaving");
 
   // Generate the temporary file with the pragma inserted.
-  if (!(file = fopen(filename, "r")))
-    CLAN_error("unable to read the file");
-  clan_scop_print_autopragma(file, n, infos);
-  fclose(file);
+  if (!(input = fopen(filename, "r")))
+    CLAN_error("unable to read the input file");
+  clan_scop_print_autopragma(input, n, infos);
+  fclose(input);
 
   // Replace the original file, or keep the temporary file.
   if (!test) {
-    if (remove(filename))
-      CLAN_error("cannot delete original file");
+    if (!(input = fopen(CLAN_AUTOPRAGMA_FILE, "rb")))
+      CLAN_error("unable to read the temporary file");
 
-    if (rename(CLAN_AUTOPRAGMA_FILE, filename))
-      CLAN_error("cannot rename temporary file");
+    if (!(output = fopen(filename, "wb")))
+      CLAN_error("unable to write the output file");
+
+    while ((size = fread(buffer, 1, BUFSIZ, input))) {
+        fwrite(buffer, 1, size, output);
+    }
+
+    fclose(input);
+    fclose(output);
   }
 }
 

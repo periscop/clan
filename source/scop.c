@@ -443,7 +443,7 @@ void clan_scop_insert_pragmas(osl_scop_p scop, char* filename, int test) {
     infos[0][n] = coordinates->line_start;
     infos[1][n] = coordinates->line_end;
     infos[2][n] = coordinates->column_start;
-    infos[3][n] = coordinates->column_end;
+    infos[3][n] = coordinates->column_end + 1;
     infos[4][n] = clan_scop_no_pragma(filename, coordinates->line_start);
     n++;
     scop = scop->next;

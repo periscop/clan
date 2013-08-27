@@ -54,7 +54,7 @@ TESTS_ENVIRONMENT       = top_builddir=$(top_builddir) SRCDIR=$(srcdir)
 EXTRA_DIST              = checker.sh
 
 check_SCRIPTS		= check_unitary.sh check_complex.sh \
-			  check_fail.sh check_autoscop.sh
+			  check_fail.sh check_autoscop.sh check_autoinsert.sh
 
 ## Replace by program names when needed
 # check_PROGRAMS = ...
@@ -149,10 +149,17 @@ AUTOSCOP_TEST_FILES = \
 	$(top_srcdir)/tests/autoscop/matmul_2_non_static_fences.c \
 	$(top_srcdir)/tests/autoscop/matmul_3_user_scop.c
 
+AUTOINSERT_TEST_FILES = \
+	$(top_srcdir)/tests/autoinsert/trivial.c \
+	$(top_srcdir)/tests/autoinsert/braces.c \
+	$(top_srcdir)/tests/autoinsert/multiple.c \
+	$(top_srcdir)/tests/autoinsert/weird_format.c
+
 TEST_FILES_REF = $(TEST_FILES:.c=.c.scop)
 UNITARY_TEST_FILES_REF = $(UNITARY_TEST_FILES:.c=.c.scop)
 FAIL_TEST_FILES_REF = $(FAIL_TEST_FILES:.c=.c.scop)
 AUTOSCOP_TEST_FILES_REF = $(AUTOSCOP_TEST_FILES:.c=.c.scop)
+AUTOINSERT_TEST_FILES_REF = $(AUTOINSERT_TEST_FILES:.c=.c.orig)
 
 TEST_FILES_CLEAN = $(TEST_FILES:.c=.c.test)
 UNITARY_TEST_FILES_CLEAN = $(UNITARY_TEST_FILES:.c=.c.test)
@@ -174,6 +181,8 @@ EXTRA_DIST += \
 	$(FAIL_TEST_FILES_REF) \
 	$(AUTOSCOP_TEST_FILES) \
 	$(AUTOSCOP_TEST_FILES_REF) \
+	$(AUTOINSERT_TEST_FILES) \
+	$(AUTOSCOP_TEST_FILES_REF) \
 	$(check_SCRIPTS)
 
 TESTS_ENVIRONMENT += \
@@ -181,4 +190,5 @@ TESTS_ENVIRONMENT += \
 	TEST_FILES="$(TEST_FILES)" \
 	UNITARY_TEST_FILES="$(UNITARY_TEST_FILES)" \
 	FAIL_TEST_FILES="$(FAIL_TEST_FILES)" \
-	AUTOSCOP_TEST_FILES="$(AUTOSCOP_TEST_FILES)"
+	AUTOSCOP_TEST_FILES="$(AUTOSCOP_TEST_FILES)" \
+	AUTOINSERT_TEST_FILES="$(AUTOINSERT_TEST_FILES)"

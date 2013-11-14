@@ -326,6 +326,10 @@ L?\"(\\.|[^\\"\n])*\"       { return clan_scanner(STRING_LITERAL, "STRING"); }
  * this function initialises the scanner global variables with default values.
  */
 void clan_scanner_initialize() {
+  yy_buffer_stack_top = 0;
+  yy_buffer_stack = 0;
+  //yyensure_buffer_stack (); //deleted in scanner_clean
+
   yy_flush_buffer(YY_CURRENT_BUFFER);
   scanner_parsing = CLAN_FALSE;
   scanner_comment = 0;
@@ -352,8 +356,8 @@ void clan_scanner_initialize() {
  * \param[in] column The initialization value of scanner_column.
  */
 void clan_scanner_reinitialize(int pragma, int line, int column) {
-  free(scanner_latest_text);
-  free(scanner_clay);
+  if(scanner_latest_text) free(scanner_latest_text);
+  if(scanner_clay) free(scanner_clay);
   clan_scanner_initialize();
   scanner_pragma = pragma;
   scanner_line = line;
@@ -391,8 +395,8 @@ void clan_scanner_free() {
 
   yy_delete_buffer(YY_CURRENT_BUFFER);
   free(yy_buffer_stack);
-  free(scanner_latest_text);
-  free(scanner_clay);
+  free(scanner_latest_text); scanner_latest_text=NULL;
+  free(scanner_clay); scanner_clay=NULL;
 }
 
 

@@ -239,23 +239,29 @@ clan_options_p clan_options_malloc(void) {
  * \param output  Output file (modified by the function).
  */
 clan_options_p clan_options_read(int argv, char** argc,
-                                 FILE** input, FILE** output) {
-  int i, infos=0, input_is_set=0;
+                                 char*** input_filenames, FILE** output) {
+  int i, infos=0, input_is_stdin=0;
   clan_options_p options;
+  int nb_input_files = 0;
 
   // clan_options_t structure allocation and initialization.
   options = clan_options_malloc();
 
   // The default output is the standard output.
   *output = stdout;
-  *input = NULL;
+  *input_filenames = NULL;
 
   for (i=1; i < argv; i++) {
     if (argc[i][0] == '-') {
       if (argc[i][1] == '\0') {
         // "-" alone is a special option to set input to standard input.
-        input_is_set = 1;
-	*input = stdin;
+        nb_input_files++;
+        input_is_stdin = 1;
+        CLAN_realloc(*input_filenames, char**, sizeof(char*)*(nb_input_files+1) );
+        CLAN_strdup((*input_filenames)[nb_input_files-1], "stdin");
+        (*input_filenames)[nb_input_files] = NULL;
+        nb_input_files++;
+
       } else if (strcmp(argc[i], "-castle") == 0) {
         clan_options_set(&(options)->castle, argv, argc, &i);
       } else if (strcmp(argc[i], "-structure") == 0) {
@@ -307,19 +313,18 @@ clan_options_p clan_options_read(int argv, char** argc,
         fprintf(stderr, "[Clan] Warning: unknown %s option.\n", argc[i]);
       }
     } else {
-      if (!input_is_set) {
-        input_is_set = 1;
-        CLAN_strdup(options->name, argc[i]);
+      if (!input_is_stdin) {
+        nb_input_files++;
+        CLAN_realloc(*input_filenames, char**, sizeof(char*)*(nb_input_files+1) );
+        CLAN_strdup((*input_filenames)[nb_input_files-1], argc[i]);
+        (*input_filenames)[nb_input_files] = NULL;
         // stdin is a special value to set input to standard input.
         if (strcmp(argc[i], "stdin") == 0) {
-          *input = stdin;
-        } else {
-	  *input = fopen(argc[i], "r");
-          if (*input == NULL)
-            CLAN_error("cannot open the input file");
+          input_is_stdin = 1;
         }
-      } else {
-        CLAN_error("multiple input files");
+      }
+      else {
+        CLAN_error("Cannot have multiple input files with stdin");
       }
     }
   }
@@ -330,10 +335,10 @@ clan_options_p clan_options_read(int argv, char** argc,
     CLAN_error("invalid precision (use 32, 64 or 0 for GMP)");
 
   if ((options->autoscop || options->autopragma || options->autoinsert) &&
-      ((options->name == NULL) || !strcmp(options->name, "stdin")))
+      !nb_input_files )
     CLAN_error("autoscop/autopragma/autoinsert options need an input file");
 
-  if (!input_is_set && !infos)
+  if (!input_is_stdin && !nb_input_files && !infos)
     CLAN_error("no input file (-h for help)");
 
   return options;

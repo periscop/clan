@@ -71,6 +71,7 @@
 
    int  yylex(void);
    void yyerror(char*);
+   void yyrestart(FILE*);
    void clan_scanner_initialize();
    void clan_scanner_reinitialize(int, int, int);
    void clan_scanner_free();
@@ -2006,8 +2007,10 @@ void clan_parser_autoscop() {
     }
 
     // Reinitialize the scanner and the parser for a clean restart.
+    clan_scanner_free();
     clan_scanner_reinitialize(scanner_pragma, restart_line, restart_column);
     clan_parser_reinitialize();
+    yyrestart(yyin);
 
     // Check whether we reached the end of file or not.
     position = ftell(yyin);
@@ -2055,6 +2058,7 @@ osl_scop_p clan_parse(FILE* input, clan_options_p options) {
   clan_parser_state_malloc(options->precision);
   clan_parser_state_initialize(options);
   clan_scanner_initialize();
+  yyrestart(yyin);  //restart scanning another file
   parser_scop = NULL;
 
   if (!options->autoscop)

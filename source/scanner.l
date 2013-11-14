@@ -326,6 +326,8 @@ L?\"(\\.|[^\\"\n])*\"       { return clan_scanner(STRING_LITERAL, "STRING"); }
  * this function initialises the scanner global variables with default values.
  */
 void clan_scanner_initialize() {
+  yy_buffer_stack_top = 0;
+  yy_buffer_stack = 0;
   yy_flush_buffer(YY_CURRENT_BUFFER);
   scanner_parsing = CLAN_FALSE;
   scanner_comment = 0;
@@ -388,11 +390,12 @@ void clan_scanner_count() {
  * WARNING: this is probably *not* portable...
  */
 void clan_scanner_free() {
-
   yy_delete_buffer(YY_CURRENT_BUFFER);
   free(yy_buffer_stack);
   free(scanner_latest_text);
+  scanner_latest_text = NULL;
   free(scanner_clay);
+  scanner_clay = NULL;
 }
 
 

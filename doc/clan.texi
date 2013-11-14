@@ -626,14 +626,15 @@ directly @pxref{Bas12}.
 @section Calling Clan
 Clan is called by the following command:
 @example
-       clan [ options | file ]
+       clan [ options | file... ]
 @end example
 The default behavior of Clan is to read the input source code from a file and
 to print the generated OpenScop file on the standard output.
 Clan's behavior and the output file are under the user control thanks
 to some options which will be detailed momentarily (@pxref{Clan Options}).
-@code{file} is the input file. @code{stdin} is a special value: when used,
-input is standard input. For instance, we can call Clan to process the
+@code{file} is the input file list (Clan may extract SCoPs from several input files).
+@code{stdin} is a special value: when used, input is the standard input and no
+other input file can be provided. For instance, we can call Clan to process the
 input file @code{basic.c} with default options by typing:
 @code{clan basic.c} or @code{more basic.c | clan stdin}
 (usual @code{more basic.c | clan -} works too).

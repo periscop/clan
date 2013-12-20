@@ -68,6 +68,9 @@ pkginclude_HEADERS =                    \
 	include/clan/scop.h             \
 	include/clan/symbol.h
 
+# Add dependence on parser.h needed by source/scop.c
+BUILT_SOURCES = parser.h
+
 DEFAULT_INCLUDES = -I.
 INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include
 AM_CFLAGS = $(CFLAGS_WARN)

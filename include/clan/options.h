@@ -91,7 +91,7 @@ void           clan_options_free(clan_options_p);
 /*+****************************************************************************
  *                               Reading function                             *
  ******************************************************************************/
-clan_options_p clan_options_read(int, char**, FILE**, FILE**);
+clan_options_p clan_options_read(int, char**, char***, FILE**);
 
 
 /*+****************************************************************************

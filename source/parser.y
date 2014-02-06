@@ -174,6 +174,7 @@
 %type <setex>  loop_initialization
 %type <setex>  loop_condition
 %type <value>  loop_stride
+%type <symbol> idparent
 
 %type <setex>  affine_minmax_expression
 %type <setex>  affine_min_expression
@@ -569,16 +570,21 @@ loop_condition:
 // TODO: we should check that ID corresponds to the current loop iterator.
 //
 loop_stride:
-    ID INC_OP             { $$ =  1;  free($1); }
-  | ID DEC_OP             { $$ = -1;  free($1); }
-  | INC_OP ID             { $$ =  1;  free($2); }
-  | DEC_OP ID             { $$ = -1;  free($2); }
-  | ID '=' ID '+' INTEGER { $$ =  $5; free($1); free($3); }
-  | ID '=' ID '-' INTEGER { $$ = -$5; free($1); free($3); }
-  | ID ADD_ASSIGN INTEGER { $$ =  $3; free($1); }
-  | ID SUB_ASSIGN INTEGER { $$ = -$3; free($1); }
+    idparent INC_OP             { $$ =  1;  free($1); }
+  | idparent DEC_OP             { $$ = -1;  free($1); }
+  | INC_OP idparent             { $$ =  1;  free($2); }
+  | DEC_OP idparent             { $$ = -1;  free($2); }
+  | idparent '=' idparent '+' INTEGER { $$ =  $5; free($1); free($3); }
+  | idparent '=' idparent '-' INTEGER { $$ = -$5; free($1); free($3); }
+  | idparent ADD_ASSIGN INTEGER { $$ =  $3; free($1); }
+  | idparent SUB_ASSIGN INTEGER { $$ = -$3; free($1); }
   ;
 
+idparent:
+    ID { $$ = $1; }
+  | '(' idparent ')'
+    { $$ = $2; }
+ ;
 
 loop_infinite:
     WHILE '(' INTEGER ')'

@@ -133,7 +133,8 @@ UNITARY_TEST_FILES = \
 	$(top_srcdir)/tests/unitary/field.c \
 	$(top_srcdir)/tests/unitary/object.c \
 	$(top_srcdir)/tests/unitary/nestedcurly.c \
-	$(top_srcdir)/tests/unitary/float.c
+	$(top_srcdir)/tests/unitary/float.c \
+	$(top_srcdir)/tests/unitary/iterinparent.c
 
 FAIL_TEST_FILES = \
 	$(top_srcdir)/tests/must_fail/array_in_affex.c \

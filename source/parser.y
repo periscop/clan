@@ -857,6 +857,9 @@ affine_primary_expression:
       // An id in an affex can be either an iterator or a parameter. If it is
       // an unknown (embeds read-only variables), it is updated to a parameter.
       if (id->type == CLAN_UNDEFINED) {
+        if ((parser_nb_parameters + 1) > CLAN_MAX_PARAMETERS)
+	        CLAN_error("CLAN_MAX_PARAMETERS reached,"
+                             "recompile with a higher value");
         id->type = CLAN_TYPE_PARAMETER;
         id->rank = ++parser_nb_parameters;
       }

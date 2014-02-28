@@ -164,6 +164,7 @@ void clan_scop_generate_scatnames(osl_scop_p scop) {
   osl_strings_p iterators = NULL;
   osl_strings_p names;
   osl_generic_p extension;
+  osl_body_p body = NULL;
   char ** string;
   char buffer[CLAN_MAX_STRING];
   int max_depth = -1;
@@ -175,10 +176,9 @@ void clan_scop_generate_scatnames(osl_scop_p scop) {
     if (current->domain->nb_output_dims > max_depth) {
       max_depth = current->domain->nb_output_dims;
       deepest = current;
-      if (osl_generic_has_URI(deepest->body, OSL_URI_EXTBODY))
-        iterators = ((osl_extbody_p)(deepest->body->data))->body->iterators;
-      else
-        iterators = ((osl_body_p)(deepest->body->data))->iterators;
+      body = (osl_body_p)osl_generic_lookup(deepest->extension, OSL_URI_BODY);
+      if (body)
+        iterators = body->iterators;
     }
     current = current->next;
   }

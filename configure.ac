@@ -43,6 +43,18 @@ m4_define([version_minor], [7])
 m4_define([version_revision], [1])
 
 AC_PREREQ(2.53)
+
+dnl AC_PROG_SED is only available from version 2.6 (released in 2003). CentosOS
+dnl 5.10 still has an ancient version. The actual AC_PROG_SED macro does
+dnl functional checks, but here
+dnl we define a trivial local version for times when we are running on
+dnl obsoldete autoconf.
+ifdef([AC_PROG_SED], [], [
+  AC_DEFUN([AC_PROG_SED], [
+    AC_CHECK_PROG(SED, sed, sed)
+  ])
+])
+
 dnl Fill here the @bug email adress.
 AC_INIT([clan], [version_major.version_minor.version_revision],
         [cedric.bastoul@u-psud.fr,pouchet@cse.ohio-state.edu])
@@ -70,10 +82,81 @@ AC_PROG_MAKE_SET
 AC_CHECK_PROG(CD, cd)
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
+AC_PROG_SED
+AC_PROG_AWK
 AC_PROG_LEX
 AC_PROG_YACC
 AC_CHECK_PROGS(DOXYGEN,doxygen,doxygen)
   
+
+AC_MSG_CHECKING(flex version)
+flex_good=1
+if $LEX --version | grep "flex" >/dev/null; then
+  flex_version=`$ac_cv_prog_LEX --version | sed 's/version//g' | awk '/flex/ {print $2}'`
+  flex_major=`echo $flex_version| cut -d . -f 1`
+  flex_minor=`echo $flex_version| cut -d . -f 2`
+  flex_rev=`echo $flex_version| cut -d . -f 3`
+   
+  if test "$flex_major" -gt "2"; then
+    flex_good=1
+  else 
+    if test "$flex_major" -eq "2" -a "$flex_minor" -gt "5"; then
+    flex_good=1
+    else 
+      if test "$flex_major" -eq "2" -a "$flex_minor" -eq "5" -a "$flex_rev" -ge "35"; then
+      flex_good=1
+      else
+      flex_good=0
+      fi
+    fi
+  fi
+
+else
+  AC_MSG_ERROR([flex not found.
+  Version 2.5.35 or greater is required.])
+fi
+
+if test $flex_good = 0; then
+  AC_MSG_ERROR([flex version $flex_version found.
+  Version 2.5.35 or greater is required. Please, consider to upgrade 
+  flex.])
+else
+  AC_MSG_RESULT([$flex_version. OK])
+fi
+
+
+
+AC_MSG_CHECKING(bison version)
+bison_good=1
+if echo "$YACC" | grep bison > /dev/null; then
+# NOTE: m4 removes [], that's why it needs to be escaped
+ bison_version=[`$YACC --version | head -n 1 | sed -e 's/[^0-9.]*\([-0-9.]\+\)$/\1/'`]
+ bison_version_major=`echo $bison_version | cut -d. -f1`
+ bison_version_minor=`echo $bison_version | cut -d. -f2`
+ if test "$bison_version_major" -lt 2; then
+ bison_good=0
+ else
+   if test "$bison_version_major" -eq 2 -a "$bison_version_minor" -lt 4; then
+   bison_good=0
+   else
+   bison_good=1
+   fi
+ fi
+
+ if test $bison_good = 0; then
+  AC_MSG_ERROR([bison version $bison_version found.
+Version 2.4 or greater is required. Please, consider to upgrade 
+bison.])
+ else
+  AC_MSG_RESULT([$bison_version. OK])
+ fi
+
+else
+  AC_MSG_ERROR([bison not found.
+  Version 2.4 or greater is required.])
+fi
+
+
 AX_CC_MAXOPT
 AC_SUBST(CFLAGS_WARN)
 AX_CFLAGS_WARN_ALL(CFLAGS_WARN)

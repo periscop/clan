@@ -593,7 +593,8 @@ iterator value. Let @code{i} be a loop iterator and @code{x} an integer
 (a literal like @code{42}, not an integer variable),
 the following forms are accepted for the loop step part:
 @code{i++}, @code{++i}, @code{i--}, @code{--i}, @code{i += x}, @code{i -= x},
-@code{i = i+x} and @code{i = i-x}.
+@code{i = i+x} and @code{i = i-x}. The iterator can optionally be enclosed
+in parentheses in this part: @code{++(i)}.
 
 @node Array Subscript
 @subsubsection Array Subscript

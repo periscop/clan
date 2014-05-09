@@ -1526,6 +1526,7 @@ expression_statement:
     {
       osl_statement_p statement;
       osl_body_p body;
+      osl_generic_p gen;
       
       CLAN_debug("rule expression_statement.2: expression ;");
       statement = osl_statement_malloc();
@@ -1548,7 +1549,8 @@ expression_statement:
       body->iterators = clan_symbol_array_to_strings(parser_iterators,
                                                      parser_loop_depth);
       body->expression = osl_strings_encapsulate(parser_record);
-      statement->body = osl_generic_malloc();
+      gen = osl_generic_shell(body, osl_body_interface());
+      osl_generic_add(&statement->extension, gen);
 
       if (parser_options->extbody) {
         // Extended body
@@ -1560,14 +1562,9 @@ expression_statement:
                           parser_access_length);
         }
 
-        parser_access_extbody->body = body;
-        statement->body->interface = osl_extbody_interface();
-        statement->body->data = parser_access_extbody;
-
-      } else {
-        // Basic Body
-        statement->body->interface = osl_body_interface();
-        statement->body->data = body;
+        parser_access_extbody->body = osl_body_clone(body);
+        gen = osl_generic_shell(parser_access_extbody, osl_extbody_interface());
+        osl_generic_add(&statement->extension, gen);
       }
 
       parser_recording = CLAN_FALSE;

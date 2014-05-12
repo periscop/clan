@@ -78,8 +78,8 @@ READ
    0    0   -1    0    1    0    0    0    ## [1] == i
    0    0    0   -1    0    1    0    0    ## [2] == j
 
-# ----------------------------------------------  1.4 Body
-# Statement body is provided
+# ----------------------------------------------  1.4 Statement Extensions
+# Number of Statement Extensions
 1
 <body>
 # Number of original iterators
@@ -122,8 +122,8 @@ READ
    0    0   -1    0    1    0    0    0    ## [1] == i
    0    0    0   -1    0    1    0    0    ## [2] == j
 
-# ----------------------------------------------  2.4 Body
-# Statement body is provided
+# ----------------------------------------------  2.4 Statement Extensions
+# Number of Statement Extensions
 1
 <body>
 # Number of original iterators
@@ -166,8 +166,8 @@ WRITE
    0    0   -1    0    1    0    0    0    ## [1] == i
    0    0    0   -1    0    1    0    0    ## [2] == j
 
-# ----------------------------------------------  3.4 Body
-# Statement body is provided
+# ----------------------------------------------  3.4 Statement Extensions
+# Number of Statement Extensions
 1
 <body>
 # Number of original iterators
@@ -235,8 +235,8 @@ READ
    0    0   -1    0    0    0    1    0    0    ## [1] == k
    0    0    0   -1    0    1    0    0    0    ## [2] == j
 
-# ----------------------------------------------  4.4 Body
-# Statement body is provided
+# ----------------------------------------------  4.4 Statement Extensions
+# Number of Statement Extensions
 1
 <body>
 # Number of original iterators
@@ -279,8 +279,8 @@ READ
    0    0   -1    0    1    0    0    0    ## [1] == i
    0    0    0   -1    0    1    0    0    ## [2] == j
 
-# ----------------------------------------------  5.4 Body
-# Statement body is provided
+# ----------------------------------------------  5.4 Statement Extensions
+# Number of Statement Extensions
 1
 <body>
 # Number of original iterators
@@ -314,8 +314,8 @@ SCATTERING
 # ----------------------------------------------  6.3 Access
 # NULL relation list
 
-# ----------------------------------------------  6.4 Body
-# Statement body is provided
+# ----------------------------------------------  6.4 Statement Extensions
+# Number of Statement Extensions
 1
 <body>
 # Number of original iterators

@@ -74,8 +74,8 @@ WRITE
    0   -1    0    0    0    3    ## Arr == a
    0    0   -1    1    0    0    ## [1] == i
 
-# ----------------------------------------------  1.4 Body
-# Statement body is provided
+# ----------------------------------------------  1.4 Statement Extensions
+# Number of Statement Extensions
 1
 <body>
 # Number of original iterators

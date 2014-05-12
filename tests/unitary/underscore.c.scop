@@ -105,8 +105,8 @@ READ
    0    0   -1    0    0    0    1    0    0    0    0    ## [1] == k
    0    0    0   -1    0    1    0    0    0    0    0    ## [2] == j
 
-# ----------------------------------------------  1.4 Body
-# Statement body is provided
+# ----------------------------------------------  1.4 Statement Extensions
+# Number of Statement Extensions
 1
 <body>
 # Number of original iterators

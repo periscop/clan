@@ -64,8 +64,8 @@ WRITE
 # e/i| Arr|  1  
    0   -1    1    ## Arr == a
 
-# ----------------------------------------------  1.4 Body
-# Statement body is provided
+# ----------------------------------------------  1.4 Statement Extensions
+# Number of Statement Extensions
 1
 <body>
 # Number of original iterators
@@ -94,8 +94,8 @@ WRITE
 # e/i| Arr|  1  
    0   -1    2    ## Arr == b
 
-# ----------------------------------------------  2.4 Body
-# Statement body is provided
+# ----------------------------------------------  2.4 Statement Extensions
+# Number of Statement Extensions
 1
 <body>
 # Number of original iterators
@@ -124,8 +124,8 @@ WRITE
 # e/i| Arr|  1  
    0   -1    3    ## Arr == c
 
-# ----------------------------------------------  3.4 Body
-# Statement body is provided
+# ----------------------------------------------  3.4 Statement Extensions
+# Number of Statement Extensions
 1
 <body>
 # Number of original iterators
@@ -154,8 +154,8 @@ WRITE
 # e/i| Arr|  1  
    0   -1    4    ## Arr == d
 
-# ----------------------------------------------  4.4 Body
-# Statement body is provided
+# ----------------------------------------------  4.4 Statement Extensions
+# Number of Statement Extensions
 1
 <body>
 # Number of original iterators

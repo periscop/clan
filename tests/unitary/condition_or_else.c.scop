@@ -84,8 +84,8 @@ SCATTERING
 # ----------------------------------------------  1.3 Access
 # NULL relation list
 
-# ----------------------------------------------  1.4 Body
-# Statement body is provided
+# ----------------------------------------------  1.4 Statement Extensions
+# Number of Statement Extensions
 1
 <body>
 # Number of original iterators
@@ -138,8 +138,8 @@ SCATTERING
 # ----------------------------------------------  2.3 Access
 # NULL relation list
 
-# ----------------------------------------------  2.4 Body
-# Statement body is provided
+# ----------------------------------------------  2.4 Statement Extensions
+# Number of Statement Extensions
 1
 <body>
 # Number of original iterators

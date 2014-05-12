@@ -81,8 +81,8 @@ WRITE
 # e/i| Arr|  t    i    j |  N    M |  1  
    0   -1    0    0    0    0    0    6    ## Arr == Ca
 
-# ----------------------------------------------  1.4 Body
-# Statement body is provided
+# ----------------------------------------------  1.4 Statement Extensions
+# Number of Statement Extensions
 1
 <body>
 # Number of original iterators
@@ -123,8 +123,8 @@ WRITE
 # e/i| Arr|  t    j |  N    M |  1  
    0   -1    0    0    0    0    7    ## Arr == b
 
-# ----------------------------------------------  2.4 Body
-# Statement body is provided
+# ----------------------------------------------  2.4 Statement Extensions
+# Number of Statement Extensions
 1
 <body>
 # Number of original iterators

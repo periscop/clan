@@ -72,8 +72,8 @@ READ
    0   -1    0    0    0    0    0    2    ## Arr == input
    0    0   -1    1    0    0    0    0    ## [1] == i
 
-# ----------------------------------------------  1.4 Body
-# Statement body is provided
+# ----------------------------------------------  1.4 Statement Extensions
+# Number of Statement Extensions
 1
 <body>
 # Number of original iterators
@@ -116,8 +116,8 @@ READ
    0    0    0   -1    0    1    0    0    0    0    0    ## [2] == j
    0    0    0    0   -1    0    0    0    0    0    0    ## [3] == 0
 
-# ----------------------------------------------  2.4 Body
-# Statement body is provided
+# ----------------------------------------------  2.4 Statement Extensions
+# Number of Statement Extensions
 1
 <body>
 # Number of original iterators
@@ -162,8 +162,8 @@ READ
    0    0    0   -1    0    1    0    0    0    0    0    ## [2] == j
    0    0    0    0   -1    0    0    0    0    0    1    ## [3] == 1
 
-# ----------------------------------------------  3.4 Body
-# Statement body is provided
+# ----------------------------------------------  3.4 Statement Extensions
+# Number of Statement Extensions
 1
 <body>
 # Number of original iterators
@@ -237,8 +237,8 @@ READ
    0    0    0   -1    0    1    0    0    0    0    0    ## [2] == j
    0    0    0    0   -1    0    0    0    0    0    1    ## [3] == 1
 
-# ----------------------------------------------  4.4 Body
-# Statement body is provided
+# ----------------------------------------------  4.4 Statement Extensions
+# Number of Statement Extensions
 1
 <body>
 # Number of original iterators
@@ -286,8 +286,8 @@ READ
    0    0    0   -1    0    1    0    0    0    0    0    ## [2] == j
    0    0    0    0   -1    0    0    0    0    0    1    ## [3] == 1
 
-# ----------------------------------------------  5.4 Body
-# Statement body is provided
+# ----------------------------------------------  5.4 Statement Extensions
+# Number of Statement Extensions
 1
 <body>
 # Number of original iterators
@@ -332,8 +332,8 @@ READ
 # e/i| Arr|  j |  i  NSE. imo. imo.|  1  
    0   -1    0    0    0    0    0    1    ## Arr == sum
 
-# ----------------------------------------------  6.4 Body
-# Statement body is provided
+# ----------------------------------------------  6.4 Statement Extensions
+# Number of Statement Extensions
 1
 <body>
 # Number of original iterators
@@ -401,8 +401,8 @@ READ
    0    0    0   -1    0    1    0    0    0    0    0    ## [2] == j
    0    0    0    0   -1    0    0    0    0    0    3    ## [3] == 3
 
-# ----------------------------------------------  7.4 Body
-# Statement body is provided
+# ----------------------------------------------  7.4 Statement Extensions
+# Number of Statement Extensions
 1
 <body>
 # Number of original iterators
@@ -439,8 +439,8 @@ READ
 # e/i| Arr|  i  NSE. imo. imo.|  1  
    0   -1    0    0    0    0    1    ## Arr == sum
 
-# ----------------------------------------------  8.4 Body
-# Statement body is provided
+# ----------------------------------------------  8.4 Statement Extensions
+# Number of Statement Extensions
 1
 <body>
 # Number of original iterators

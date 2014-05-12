@@ -76,8 +76,8 @@ READ
 # e/i| Arr|  i    j |  n |  1  
    0   -1    0    0    0    4    ## Arr == a
 
-# ----------------------------------------------  1.4 Body
-# Statement body is provided
+# ----------------------------------------------  1.4 Statement Extensions
+# Number of Statement Extensions
 1
 <body>
 # Number of original iterators
@@ -114,8 +114,8 @@ READ
 # e/i| Arr|  i |  n |  1  
    0   -1    0    0    5    ## Arr == c
 
-# ----------------------------------------------  2.4 Body
-# Statement body is provided
+# ----------------------------------------------  2.4 Statement Extensions
+# Number of Statement Extensions
 1
 <body>
 # Number of original iterators

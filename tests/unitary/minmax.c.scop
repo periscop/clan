@@ -137,8 +137,8 @@ WRITE
 # e/i| Arr|  i    j |  n    m    p |  1  
    0   -1    0    0    0    0    0    6    ## Arr == a
 
-# ----------------------------------------------  1.4 Body
-# Statement body is provided
+# ----------------------------------------------  1.4 Statement Extensions
+# Number of Statement Extensions
 1
 <body>
 # Number of original iterators

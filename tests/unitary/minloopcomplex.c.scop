@@ -80,8 +80,8 @@ WRITE
 # e/i| Arr|  i |  m    q    n    p    o |  1  
    0   -1    0    0    0    0    0    0    7    ## Arr == a
 
-# ----------------------------------------------  1.4 Body
-# Statement body is provided
+# ----------------------------------------------  1.4 Statement Extensions
+# Number of Statement Extensions
 1
 <body>
 # Number of original iterators

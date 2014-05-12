@@ -87,8 +87,8 @@ READ
    0   -1    0    0    1    ## Arr == a
    0    0   -1    1    0    ## [1] == n
 
-# ----------------------------------------------  1.4 Body
-# Statement body is provided
+# ----------------------------------------------  1.4 Statement Extensions
+# Number of Statement Extensions
 1
 <body>
 # Number of original iterators

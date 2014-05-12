@@ -93,8 +93,8 @@ READ
 # e/i| Arr|  i    j |  N |  1  
    0   -1    0    0    0    2    ## Arr == N
 
-# ----------------------------------------------  1.4 Body
-# Statement body is provided
+# ----------------------------------------------  1.4 Statement Extensions
+# Number of Statement Extensions
 1
 <body>
 # Number of original iterators

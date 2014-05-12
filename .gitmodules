@@ -1,3 +1,3 @@
 [submodule "osl"]
 	path = osl
-	url = git://repo.or.cz/openscop.git
+	url = https://github.com/periscop/openscop.git

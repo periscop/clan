@@ -46,8 +46,9 @@ if BUNDLED_OSL
     OSL_LA = $(top_builddir)/osl/libosl.la
 endif
 
-SUBDIRS         = $(MAYBE_OSL) doc tests
-DIST_SUBDIRS    = $(MAYBE_OSL) doc tests
+#AUTOMAKE_OPTIONS = subdir-objects # then: BUILT_SOURCES = source/parser.h
+SUBDIRS         = $(MAYBE_OSL) . doc tests
+DIST_SUBDIRS    = $(MAYBE_OSL) . doc tests
 ACLOCAL_AMFLAGS = -I m4
 
 #############################################################################
@@ -74,7 +75,7 @@ BUILT_SOURCES = parser.h
 DEFAULT_INCLUDES = -I.
 INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include
 AM_CFLAGS = $(CFLAGS_WARN)
-YFLAGS = -y -d
+AM_YFLAGS = -y -d
 
 #############################################################################
 

@@ -86,8 +86,10 @@ AC_PROG_SED
 AC_PROG_AWK
 AC_PROG_LEX
 AC_PROG_YACC
-AC_CHECK_PROGS(DOXYGEN,doxygen,doxygen)
-  
+
+AC_CHECK_PROGS(DOXYGEN, doxygen, doxygen, [])
+AC_CHECK_PROGS(TEXI2PDF, texi2pdf, texi2pdf, [])
+AM_CONDITIONAL(GENERATE_DOC, test -n "$TEXI2PDF" -a -n "$DOXYGEN")
 
 AC_MSG_CHECKING(flex version)
 flex_good=1

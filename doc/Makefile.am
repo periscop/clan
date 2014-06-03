@@ -39,22 +39,38 @@
 # Makefile.am is not a makefile, you must run the 'autogen.sh' THEN the
 # configure shellscript to generate the Makefile thanks to this file.
 
-
-
-#############################################################################
-SUBDIRS 		=
-
 #############################################################################
 
-MAINTAINERCLEANFILES	= Makefile.in
+MAINTAINERCLEANFILES	=			\
+	Makefile.in				\
+	htmldoc.tar.gz				\
+	clan.pdf				\
+	clan.cp					\
+	clan.fn					\
+	clan.info				\
+	clan.ky					\
+	clan.pg					\
+	clan.toc				\
+	clan.tp					\
+	clan.vr					\
+	clan.aux				\
+	clan.log				\
+	clan.doc
+
+clean-local:
+	-rm -rf htmldoc
 
 EXTRA_DIST		=			\
 	htmldoc.tar.gz				\
-	clan.pdf				\
-	ascii-art.txt
+	clan.pdf
 
-info_TEXINFOS		= clan.texi
-AM_MAKEINFOHTMLFLAGS    = --no-headers --no-split
+if GENERATE_DOC
+# Unfortunately the following is not supported conditionaly
+#info_TEXINFOS		= clan.texi
+#AM_MAKEINFOHTMLFLAGS    = --no-headers --no-split
+
+clan.pdf: clan.texi
+	$(TEXI2PDF) clan.texi
 
 DOCDIR			= htmldoc
 DOXYFILE		= Doxyfile
@@ -69,3 +85,4 @@ htmldoc.tar.gz:
 	mkdir -p $(top_srcdir)/doc/htmldoc
 	$(DOXYGEN) $(DOXYFILE)
 	tar czf htmldoc.tar.gz htmldoc
+endif

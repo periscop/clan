@@ -23,8 +23,8 @@
 @settitle Clan - a polyhedral representation extractor for high level programs
 
 @set EDITION 1.0
-@set VERSION 0.7.1
-@set UPDATED January 19th 2012
+@set VERSION 0.8.0
+@set UPDATED June 3rd 2014
 @c @set UPDATED Coming soon
 @setchapternewpage odd
 

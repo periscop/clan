@@ -38,7 +38,9 @@
 Install with Makefile
 ---------------------
 
-...
+./configure
+make
+make install
 
 
 Alternative: Install with CMake

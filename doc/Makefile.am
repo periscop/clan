@@ -62,6 +62,7 @@ clean-local:
 
 EXTRA_DIST		=			\
 	htmldoc.tar.gz				\
+	clan.texi				\
 	clan.pdf
 
 if GENERATE_DOC

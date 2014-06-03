@@ -39,8 +39,8 @@ dnl
 dnl Input file for autoconf to build a configuration shellscript.
 
 m4_define([version_major], [0])
-m4_define([version_minor], [7])
-m4_define([version_revision], [1])
+m4_define([version_minor], [8])
+m4_define([version_revision], [0])
 
 AC_PREREQ(2.53)
 

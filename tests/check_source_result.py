@@ -25,7 +25,7 @@ if (os.path.exists(source_filename) == False):
 	sys.exit(3)
 if (os.path.exists(scop_filename) == False):
 	print 'Error:', scop_filename, ' file does not exist'
-	sys.exit(4)
+	sys.exit(0)
 
 # Custom clan
 clan = ""
@@ -57,23 +57,22 @@ for line in scop_file:
 scop_file.close()
 
 
+# Remove invalid lines
+def clean_lines(lines):
+	r = ''
+	skip_next_line = False
+	for line in string.split(lines, '\n'):
+		if (skip_next_line):
+			skip_next_line = False
+			continue
+		if (line == '# File name'): skip_next_line = True
+		if (line != '' and (string.find(line, 'enerated by') == -1) and ('[Clan] Info' in line == False)): r += line + '\n'
+	return r
+
+
 # Compare clan_output and scop
-s0 = ""
-s1 = ""
-# Remove empty line
-skip_next_line = False
-for line in string.split(clan_output, '\n'):
-	if (skip_next_line):
-		skip_next_line = False
-		continue
-	if (line == '# File name'): skip_next_line = True
-	if line != '' and (string.find(line, 'enerated by') == -1): s0 += line + '\n'
-for line in string.split(scop, '\n'):
-	if (skip_next_line):
-		skip_next_line = False
-		continue
-	if (line == '# File name'): skip_next_line = True
-	if line != '' and (string.find(line, 'enerated by') == -1): s1 += line + '\n'
+s0 = clean_lines(clan_output)
+s1 = clean_lines(scop)
 # Print
 print s0
 print s1

@@ -162,10 +162,9 @@ void clan_scop_generate_scatnames(osl_scop_p scop) {
   osl_statement_p current, deepest;
   osl_scatnames_p scatnames;
   osl_strings_p iterators = NULL;
-  osl_strings_p names;
+  osl_strings_p names = osl_strings_malloc();
   osl_generic_p extension;
   osl_body_p body = NULL;
-  char ** string;
   char buffer[CLAN_MAX_STRING];
   int max_depth = -1;
   int i;
@@ -188,19 +187,15 @@ void clan_scop_generate_scatnames(osl_scop_p scop) {
     return;
 
   // Create the NULL-terminated list of scattering dimension names.
-  CLAN_malloc(string, char**, (2*max_depth + 2) * sizeof(char *));
-  string[2*max_depth + 1] = NULL;
   for (i = 0; i < max_depth; i++) {
     sprintf(buffer, "b%d", i);
-    CLAN_strdup(string[2*i], buffer);
-    CLAN_strdup(string[2*i+1], iterators->string[i]);
+    osl_strings_add(names, buffer);
+    osl_strings_add(names, iterators->string[i]);
   }
   sprintf(buffer, "b%d", max_depth);
-  CLAN_strdup(string[2*max_depth], buffer);
+  osl_strings_add(names, buffer);
 
   // Build the scatnames extension.
-  names = osl_strings_malloc();
-  names->string = string;
   scatnames = osl_scatnames_malloc();
   scatnames->names = names;
 

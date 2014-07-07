@@ -397,25 +397,13 @@ int clan_symbol_get_type(clan_symbol_p symbol, char* identifier) {
  * \return An osl_strings_t containing all the symbol strings.
  */
 osl_strings_p clan_symbol_array_to_strings(clan_symbol_p* sarray, int size) {
-  int i, length;
-  char** identifiers = NULL;
-  osl_strings_p strings;
-
-  // Allocate, initialize and NULL-terminate the array of strings.
-  CLAN_malloc(identifiers, char**, (size + 1) * sizeof(char *));
-  for (i = 0; i <= size; i++)
-    identifiers[i] = NULL;
+  int i;
+  osl_strings_p strings = osl_strings_malloc();
 
   // Fill the array of strings.
   for (i = 0; i < size; i++) {
-    length = strlen((sarray[i])->identifier) + 1;
-    CLAN_malloc(identifiers[i], char*, length * sizeof(char));
-    strcpy(identifiers[i], (sarray[i])->identifier);
+    osl_strings_add(strings, sarray[i]->identifier);
   }
-
-  // Build the osl_strings_t container.
-  strings = osl_strings_malloc();
-  strings->string = identifiers;
 
   return strings;
 }
@@ -455,36 +443,24 @@ int clan_symbol_nb_of_type(clan_symbol_p symbol, int type) {
  * \return An osl_generic_t with the symbol strings of the given type.
  */
 osl_generic_p clan_symbol_to_strings(clan_symbol_p symbol, int type) {
-  int i, length, nb_identifiers = 0;
-  char** identifiers = NULL;
-  osl_strings_p strings;
+  int i, nb_identifiers = 0;
+  osl_strings_p strings = osl_strings_malloc();
   osl_generic_p generic;
 
   nb_identifiers = clan_symbol_nb_of_type(symbol, type);
   if (nb_identifiers == 0)
     return NULL;
 
-  // Allocate, initialize and NULL-terminate the array.
-  CLAN_malloc(identifiers, char**, (nb_identifiers + 1) * sizeof(char *));
-  for (i = 0; i <= nb_identifiers; i++)
-    identifiers[i] = NULL;
-
   // We scan the table a second time to fill the identifier array
   // Not optimal to act this way but overkills are worse!
   i = 0;
   while (symbol != NULL) {
     if (symbol->type == type) {
-      length = strlen(symbol->identifier) + 1;
-      CLAN_malloc(identifiers[i], char*, length * sizeof(char));
-      strcpy(identifiers[i], symbol->identifier);
+      osl_strings_add(strings, symbol->identifier);
       i++;
     }
     symbol = symbol->next;
   }
-
-  // Build the osl_strings_t container.
-  strings = osl_strings_malloc();
-  strings->string = identifiers;
 
   // Embed the strings in a generic shell.
   generic = osl_generic_shell(strings, osl_strings_interface());

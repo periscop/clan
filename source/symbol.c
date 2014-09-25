@@ -443,21 +443,18 @@ int clan_symbol_nb_of_type(clan_symbol_p symbol, int type) {
  * \return An osl_generic_t with the symbol strings of the given type.
  */
 osl_generic_p clan_symbol_to_strings(clan_symbol_p symbol, int type) {
-  int i, nb_identifiers = 0;
-  osl_strings_p strings = osl_strings_malloc();
+  osl_strings_p strings = NULL;
   osl_generic_p generic;
 
-  nb_identifiers = clan_symbol_nb_of_type(symbol, type);
-  if (nb_identifiers == 0)
+  if (clan_symbol_nb_of_type(symbol, type) == 0)
     return NULL;
 
   // We scan the table a second time to fill the identifier array
   // Not optimal to act this way but overkills are worse!
-  i = 0;
+  strings = osl_strings_malloc();
   while (symbol != NULL) {
     if (symbol->type == type) {
       osl_strings_add(strings, symbol->identifier);
-      i++;
     }
     symbol = symbol->next;
   }

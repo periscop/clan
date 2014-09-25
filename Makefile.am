@@ -65,6 +65,7 @@ pkginclude_HEADERS =                    \
 	include/clan/vector.h           \
 	include/clan/relation.h	        \
 	include/clan/relation_list.h    \
+	include/clan/domain.h           \
 	include/clan/macros.h           \
 	include/clan/scop.h             \
 	include/clan/symbol.h
@@ -91,6 +92,7 @@ libclan_la_SOURCES  =                   \
 	source/statement.c              \
 	source/relation.c               \
 	source/relation_list.c          \
+	source/domain.c                 \
 	source/vector.c
 
 #############################################################################

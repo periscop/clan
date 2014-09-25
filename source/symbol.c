@@ -288,6 +288,28 @@ int clan_symbol_generate_new_key(clan_symbol_p table) {
 
 
 /**
+ * clan_symbol_push_at_end function
+ * this function adds a symbol at the end of the symbol table whose address
+ * is provided as a parameter. If the symbol table is empty (NULL), the new
+ * node will become its first element.
+ * \param[in,out] table  The address of the symbol table.
+ * \param[in]     symbol The symbol to add to the table.
+ */
+void clan_symbol_push_at_end(clan_symbol_p* table, clan_symbol_p symbol) {
+  clan_symbol_p tmp = *table;
+
+  // We put the symbol at the end of the table.
+  if (*table == NULL) {
+    *table = symbol;
+  } else {
+    while (tmp->next != NULL)
+      tmp = tmp->next;
+    tmp->next = symbol;
+  }
+}
+
+
+/**
  * clan_symbol_add function:
  * This function adds a new clan_symbol_t in the symbol table whose address
  * is provided as a parameter. If the symbol table is empty (NULL), the new
@@ -300,7 +322,7 @@ int clan_symbol_generate_new_key(clan_symbol_p table) {
  */
 clan_symbol_p clan_symbol_add(clan_symbol_p* table, char* identifier,
                               int type) {
-  clan_symbol_p symbol, tmp = *table;
+  clan_symbol_p symbol;
 
   // If the identifier is already in the table, do nothing.
   symbol = clan_symbol_lookup(*table, identifier);
@@ -314,13 +336,7 @@ clan_symbol_p clan_symbol_add(clan_symbol_p* table, char* identifier,
   symbol->type = type;
 
   // We put the new symbol at the end of the table.
-  if (*table == NULL) {
-    *table = symbol;
-  } else {
-    while (tmp->next != NULL)
-      tmp = tmp->next;
-    tmp->next = symbol;
-  }
+  clan_symbol_push_at_end(table, symbol);
 
   return symbol;
 }
@@ -394,15 +410,37 @@ int clan_symbol_get_type(clan_symbol_p symbol, char* identifier) {
  * in the symbol array.
  * \param[in] sarray The symbol array.
  * \param[in] size   The size of the symbol array.
+ * \param[in] depths The depth of each xfor loop.
+ * \param[in] labels The labels (i.e., the symbol version) of each xfor loop.
  * \return An osl_strings_t containing all the symbol strings.
  */
-osl_strings_p clan_symbol_array_to_strings(clan_symbol_p* sarray, int size) {
-  int i;
+osl_strings_p clan_symbol_array_to_strings(clan_symbol_p* sarray, int size,
+                                           int* depths, int* labels) {
+  int i, j, xfor_index = 0, xfor_index_reuse = 0;
+  clan_symbol_p symbol;
   osl_strings_p strings = osl_strings_malloc();
-
+  
   // Fill the array of strings.
   for (i = 0; i < size; i++) {
-    osl_strings_add(strings, sarray[i]->identifier);
+    symbol = sarray[i];
+    // If symbol has a non-NULL next field, it means it corresponds to
+    // an xfor index that we have to select conveniently:
+    if (symbol->next != NULL) {
+      // -1. Select the convenient symbol thanks to the xfor label.
+      for (j = 0; j < labels[xfor_index]; j++)
+        symbol = symbol->next;
+      
+      // -2. Increment the number of times we used that symbol.
+      xfor_index_reuse++;
+
+      // -3. If we reached the current xfor depth, the next xfor index
+      //     will be found in the next xfor loop nest.
+      if (xfor_index_reuse >= depths[xfor_index]) {
+        xfor_index++;
+        xfor_index_reuse = 0;
+      }
+    }
+    osl_strings_add(strings, symbol->identifier);
   }
 
   return strings;
@@ -555,7 +593,7 @@ int clan_symbol_new_iterator(clan_symbol_p* table, clan_symbol_p* array,
   if (symbol->rank != depth + 1)
     symbol->rank = depth + 1;
 
-  array[depth] = clan_symbol_clone_one(symbol);
+  clan_symbol_push_at_end(&array[depth], clan_symbol_clone_one(symbol));
   return 1;
 }
 

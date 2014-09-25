@@ -92,3 +92,20 @@ void clan_relation_list_define_type(osl_relation_list_p list, int type) {
     list = list->next;
   }
 }
+
+
+/**
+ * clan_relation_list_nb_elements function:
+ * this function returns the number of elements in a relation list.
+ * \param[in] list The list of relation we want to count the nb of elements.
+ * \return The number of elements in the input relation list.
+ */
+int clan_relation_list_nb_elements(osl_relation_list_p list) {
+  int nb_elements = 0;
+
+  while (list != NULL) {
+    nb_elements++;
+    list = list->next;
+  }
+  return nb_elements;
+}

@@ -170,6 +170,7 @@ IS ((u|U)|(u|U)?(l|L|ll|LL)|(l|L|ll|LL)(u|U))
 "enum"                      { return clan_scanner(ENUM, "enum"); }
 "extern"                    { return clan_scanner(EXTERN, "extern"); }
 "float"                     { return clan_scanner(FLOAT, "float"); }
+"xfor"                      { return clan_scanner(XFOR, "xfor"); }
 "for"                       { return clan_scanner(FOR, "for"); }
 "goto"                      { return clan_scanner(GOTO, "goto"); }
 "if"                        { return clan_scanner(IF, "if"); }

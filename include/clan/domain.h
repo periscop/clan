@@ -2,9 +2,9 @@
    /*+------- <| --------------------------------------------------------**
     **         A                     Clan                                **
     **---     /.\   -----------------------------------------------------**
-    **   <|  [""M#              relation_list.h                          **
+    **   <|  [""M#                 domain.h                              **
     **-   A   | #   -----------------------------------------------------**
-    **   /.\ [""M#         First version: 16/04/2011                     **
+    **   /.\ [""M#         First version: 26/09/2014                     **
     **- [""M# | #  U"U#U  -----------------------------------------------**
          | #  | #  \ .:/
          | #  | #___| #
@@ -36,8 +36,11 @@
  ******************************************************************************/
 
 
-#ifndef CLAN_RELATION_LIST_H
-# define CLAN_RELATION_LIST_H
+#ifndef CLAN_DOMAIN_H
+# define CLAN_DOMAIN_H
+
+# include <clan/symbol.h>
+# include <clan/options.h>
 
 # if defined(__cplusplus)
 extern "C"
@@ -46,17 +49,53 @@ extern "C"
 
 
 struct osl_relation_list;
+struct osl_relation;
+
+
+/**
+ * The clan_domain_t structure stores a (NULL-terminated linked)
+ * list of constraint sets, each of them being a relation list.
+ */
+struct clan_domain {
+  struct osl_relation_list* constraints; /**< An element of the domain list. */
+  struct clan_domain* next;              /**< Pointer to the next element. */
+};
+typedef struct clan_domain  clan_domain_t;
+typedef struct clan_domain* clan_domain_p;
+
+
+/*+***************************************************************************
+ *                          Structure display function                       *
+ *****************************************************************************/
+void          clan_domain_idump(FILE*, clan_domain_p, int);
+void          clan_domain_dump(FILE*, clan_domain_p);
+
+
+/*+***************************************************************************
+ *                    Memory allocation/deallocation function                *
+ *****************************************************************************/
+clan_domain_p clan_domain_malloc();
+void          clan_domain_free(clan_domain_p);
 
 
 /*+****************************************************************************
  *                            Processing functions                            *
  ******************************************************************************/
-void clan_relation_list_compact(struct osl_relation_list*, int);
-void clan_relation_list_define_type(struct osl_relation_list*, int);
-int  clan_relation_list_nb_elements(struct osl_relation_list*);
-
+clan_domain_p clan_domain_clone(clan_domain_p);
+void          clan_domain_push(clan_domain_p*, clan_domain_p);
+clan_domain_p clan_domain_pop(clan_domain_p*);
+void          clan_domain_dup(clan_domain_p*);
+void          clan_domain_drop(clan_domain_p*);
+void          clan_domain_and(clan_domain_p, struct osl_relation*);
+void          clan_domain_stride(clan_domain_p, int, int);
+void          clan_domain_for(clan_domain_p, int, clan_symbol_p,
+                          struct osl_relation*, struct osl_relation*,
+                          int, clan_options_p);
+void          clan_domain_xfor(clan_domain_p, int, clan_symbol_p,
+                          struct osl_relation_list*, struct osl_relation_list*,
+		          int*, clan_options_p);
 
 # if defined(__cplusplus)
   }
 # endif
-#endif /* define CLAN_relation_list_H */
+#endif /* define CLAN_DOMAIN_H */

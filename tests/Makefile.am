@@ -41,24 +41,10 @@
 
 
 #############################################################################
-SUBDIRS 		=
+
+MAINTAINERCLEANFILES = Makefile.in
 
 #############################################################################
-
-MAINTAINERCLEANFILES    = Makefile.in
-
-TESTS_ENVIRONMENT       = top_builddir=$(top_builddir) SRCDIR=$(srcdir)
-
-#############################################################################
-
-EXTRA_DIST              = checker.sh
-
-check_SCRIPTS		= check_unitary.sh check_complex.sh \
-			  check_fail.sh check_autoscop.sh check_autoinsert.sh
-
-## Replace by program names when needed
-# check_PROGRAMS = ...
-TESTS			= $(check_SCRIPTS)
 
 TEST_FILES = \
 	$(top_srcdir)/tests/ax-do.c \
@@ -156,6 +142,36 @@ AUTOINSERT_TEST_FILES = \
 	$(top_srcdir)/tests/autoinsert/multiple.c \
 	$(top_srcdir)/tests/autoinsert/weird_format.c
 
+TESTS_ENVIRONMENT = \
+	top_builddir=$(top_builddir) \
+	srcdir=$(srcdir) \
+	EXEEXT=$(EXEEXT) \
+	CHECKER="$(top_srcdir)/tests/checker.sh" \
+	COMPILE="$(COMPILE)" \
+	LINK="$(LINK)" \
+	TEST_FILES="$(TEST_FILES)" \
+	UNITARY_TEST_FILES="$(UNITARY_TEST_FILES)" \
+	FAIL_TEST_FILES="$(FAIL_TEST_FILES)" \
+	AUTOSCOP_TEST_FILES="$(AUTOSCOP_TEST_FILES)" \
+	AUTOINSERT_TEST_FILES="$(AUTOINSERT_TEST_FILES)"
+
+valcheck:
+	$(TESTS_ENVIRONMENT) $(srcdir)/check_unitary.sh valgrind ; \
+	$(TESTS_ENVIRONMENT) $(srcdir)/check_complex.sh valgrind ; \
+	$(TESTS_ENVIRONMENT) $(srcdir)/check_autoscop.sh valgrind ; \
+	$(TESTS_ENVIRONMENT) $(srcdir)/check_autoinsert.sh valgrind
+
+check_SCRIPTS = \
+	check_unitary.sh \
+	check_complex.sh \
+	check_fail.sh \
+	check_autoscop.sh \
+	check_autoinsert.sh
+
+## Replace by program names when needed
+# check_PROGRAMS = ...
+TESTS = $(check_SCRIPTS)
+
 TEST_FILES_REF = $(TEST_FILES:.c=.c.scop)
 UNITARY_TEST_FILES_REF = $(UNITARY_TEST_FILES:.c=.c.scop)
 FAIL_TEST_FILES_REF = $(FAIL_TEST_FILES:.c=.c.scop)
@@ -173,7 +189,9 @@ CLEANFILES = \
 	$(FAIL_TEST_FILES_CLEAN) \
 	$(AUTOSCOP_TEST_FILES_CLEAN)
 
-EXTRA_DIST += \
+EXTRA_DIST = \
+	$(check_SCRIPTS) \
+	$(srcdir)/checker.sh \
 	$(TEST_FILES) \
 	$(TEST_FILES_REF) \
 	$(UNITARY_TEST_FILES) \
@@ -185,11 +203,3 @@ EXTRA_DIST += \
 	$(AUTOINSERT_TEST_FILES) \
 	$(AUTOSCOP_TEST_FILES_REF) \
 	$(check_SCRIPTS)
-
-TESTS_ENVIRONMENT += \
-	CHECKER="$(top_srcdir)/tests/checker.sh" \
-	TEST_FILES="$(TEST_FILES)" \
-	UNITARY_TEST_FILES="$(UNITARY_TEST_FILES)" \
-	FAIL_TEST_FILES="$(FAIL_TEST_FILES)" \
-	AUTOSCOP_TEST_FILES="$(AUTOSCOP_TEST_FILES)" \
-	AUTOINSERT_TEST_FILES="$(AUTOINSERT_TEST_FILES)"

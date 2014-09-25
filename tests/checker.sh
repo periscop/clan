@@ -38,45 +38,85 @@
 
 output=0
 nb_tests=0;
-TEST_FILES="$2";
-TEST_OPTIONS="$3"
-echo "[CHECK] $1";
+
+TEST_NAME="$1"    ## Name of the group of files to test
+
+TEST_FILES="$2"   ## List of test file prefixes and individual options
+
+TEST_OPTION="$3"  ## Option for clan
+
+TEST_TYPE="$4"    ## - "clan" to simply test clan (default)
+                  ## - "valgrind" to test the valgrind output
+
+# Uncomment the following line to print the test script
+#set -x verbose  #echo on
+
+clan=$top_builddir/clan$EXEEXT
+
+echo "[TEST] $TEST_NAME";
+
 for i in $TEST_FILES; do
-    nb_tests=$(($nb_tests + 1))
-    outtemp=0
-    echo "[TEST] Source parser test:== $i ==";
-    $top_builddir/clan $TEST_OPTIONS $i > $i.test 2>/tmp/clanout
-    diff --ignore-matching-lines='/tests/' --ignore-matching-lines='enerated by ' $i.test $i.scop
-    z=`diff --ignore-matching-lines='/tests/' --ignore-matching-lines='enerated by ' $i.test $i.scop 2>&1`
+
+  nb_tests=$(($nb_tests + 1))
+  outtemp=0
+  # Since -autoinsert modifies the input file, we use a random temporary file
+  # before calling clan.
+  input="/tmp/$$.c";
+  cp $i $input;
+
+  if [ "$TEST_TYPE" = "clan" ]; then
+    # Test the basic .scop generation
+    filename=$(basename "$i");
+    echo "[CHECK] Source parser test:== $i ==";
+    $clan $TEST_OPTION $input > $input.scop 2>/tmp/clanout
+    if [ "$TEST_OPTION" = "-autoinsert" ]; then
+      diff --ignore-matching-lines="$filename" \
+           --ignore-matching-lines="$input" \
+           --ignore-matching-lines='enerated' \
+           $input $i.orig;
+      z=$?;
+    else
+      diff --ignore-matching-lines="$filename" \
+           --ignore-matching-lines="$input" \
+           --ignore-matching-lines='enerated' \
+           $input.scop $i.scop;
+      z=$?;
+    fi
     err=`cat /tmp/clanout`;
-    if ! [ -z "$z" ]; then
-	echo "\033[31m[FAIL] Source parser test: Wrong .scop generated\033[0m";
-	outtemp=1;
-	output=1
+    if [ "$z" -ne "0" ]; then
+      echo "\033[31m[FAIL] Source parser test: Wrong output\n$z\033[0m";
+      outtemp=1;
+      output=1
     fi
     if ! [ -z "$err" ]; then
-	echo "\033[33m[INFO] Source parser test stderr output:\n$err\033[0m";
+      echo "\033[33m[INFO] Source parser test stderr output:\n$err\033[0m";
     fi
     if [ $outtemp = "0" ]; then
-	echo "[PASS] Source parser test: .scop OK";
-	rm -f $i.test
+      echo "[PASS] Source parser test: output OK";
     fi
-    rm -f /tmp/clanout
-    echo "[TEST] .SCoP parser test:== $i.scop ==";
-    $top_builddir/clan -inputscop $i.scop > $i.parsetest 
-    z=`diff --ignore-matching-lines='/tests/' --ignore-matching-lines='enerated by ' $i.parsetest $i.scop`
-    if ! [ -z "$z" ]; then
-	echo "\033[31m[FAIL] .SCoP parser test: $i\033[0m";
-	outtemp=1
-	output=1
+  else
+    echo "[VALCHECK] Source parser test:== $i ==";
+    libtool --mode=execute valgrind --error-exitcode=1 $clan $TEST_OPTIONS $input > /dev/null 2> /tmp/clanout;
+    errors=$?;
+    leaks=`grep "in use at exit" /tmp/clanout | cut -f 2 -d ':'`
+    if [ "$errors" = "1" ]; then
+      echo "\033[31mMemory error detected... \033[0m";
+      cat /tmp/clanout;
+      output="1";
+    elif [ "$leaks" != " 0 bytes in 0 blocks" ]; then
+      echo "\033[31mMemory leak detected... \033[0m";
+      cat /tmp/clanout;
+      output="1";
     else
-	echo "[PASS] .SCoP parser test: .scop re-OK";
-	rm -f $i.parsetest
-    fi
+      output="0";
+    fi;
+  fi
+  rm -f $input.scop
+  rm -f /tmp/clanout
 done
 if [ $output = "1" ]; then
-    echo "\033[31m[FAIL] $1\033[0m";
+  echo "\033[31m[FAIL] $1\033[0m";
 else
-    echo "[PASS] $1 ($nb_tests + $nb_tests tests)";
+  echo "[PASS] $1 ($nb_tests tests)";
 fi
 exit $output

@@ -36,41 +36,5 @@
 # *                                                                           *
 # *****************************************************************************/
 
-#./$CHECKER "Autoinsert test suite" "$AUTOINSERT_TEST_FILES" "-autoinsert" "yes"
 
-output=0;
-nb_tests=0;
-name="Autoinsert test suite"
-echo "[CHECK] $name"
-for i in $AUTOINSERT_TEST_FILES; do
-  nb_tests=$(($nb_tests + 1));
-  outiter=0
- echo "[TEST] Source parser test:== $i ==";
-# Since -autoinsert modifies the input file, rename it to some random name
-# before calling clan.
-  fname="/tmp/$$.c";
-  cp $i $fname;
-  $top_builddir/clan -autoinsert $fname 2>/tmp/clanout;
-  z=`diff $i.orig $fname`;
-  err=`cat /tmp/clanout`;
-  if ! [ -z "$z" ]; then
-    echo "\033[31m[FAIL] Source parser test: wrong pragmas inserted\033[0m]";
-    output=1;
-    outiter=1
-  fi
-  if ! [ -z "$err" ]; then
-    echo "\033[33m[INFO] Source parser test stderr output:\n$err\033[0m";
-    outiter=1
-  fi
-  if [ $outiter = "0" ]; then
-    echo "[PASS] Source parser test: correct pragmas inserted";
-    rm -f $fname;
-  fi
-  rm -f /tmp/clanout;
-done;
-if [ $output = "1" ]; then
-  echo "\033[31m[FAIL] $1\033[0m]";
-else
-  echo "[PASS] $name ($nb_tests + $nb_tests tests)";
-fi
-exit $output
+./$CHECKER "Autoinsert test suite" "$AUTOINSERT_TEST_FILES" "-autoinsert" "${1:-clan}"

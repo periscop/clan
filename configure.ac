@@ -49,21 +49,24 @@ dnl 5.10 still has an ancient version. The actual AC_PROG_SED macro does
 dnl functional checks, but here
 dnl we define a trivial local version for times when we are running on
 dnl obsoldete autoconf.
-ifdef([AC_PROG_SED], [], [
-  AC_DEFUN([AC_PROG_SED], [
-    AC_CHECK_PROG(SED, sed, sed)
-  ])
-])
+ifdef([AC_PROG_SED], [],
+      [AC_DEFUN([AC_PROG_SED], [AC_CHECK_PROG(SED, sed, sed)])])
 
 dnl Fill here the @bug email adress.
 AC_INIT([clan], [version_major.version_minor.version_revision],
-        [cedric.bastoul@u-psud.fr,pouchet@cse.ohio-state.edu])
+        [clan-development@googlegroups.com])
 dnl A common file, which serve as a test.
 AC_CONFIG_SRCDIR([include/clan/symbol.h])
 dnl Put as most as possible configuration files to an auxialiry
 dnl directory.
 AC_CONFIG_AUX_DIR(autoconf)
 AC_CONFIG_MACRO_DIR([m4])
+
+VERSION_MAJOR=version_major
+VERSION_MINOR=version_minor
+VERSION_REVISION=version_revision
+AC_SUBST(versioninfo)
+versioninfo=4:0:0
 
 dnl Initialize automake.
 AM_INIT_AUTOMAKE([foreign])
@@ -112,56 +115,43 @@ if $LEX --version | grep "flex" >/dev/null; then
       fi
     fi
   fi
-
 else
-  AC_MSG_ERROR([flex not found.
-  Version 2.5.35 or greater is required.])
+  AC_MSG_ERROR([flex not found. Version 2.5.35 or greater is required.])
 fi
-
 if test $flex_good = 0; then
   AC_MSG_ERROR([flex version $flex_version found.
-  Version 2.5.35 or greater is required. Please, consider to upgrade 
-  flex.])
+		Version 2.5.35 or greater is required.
+		Please consider to upgrade flex.])
 else
   AC_MSG_RESULT([$flex_version. OK])
 fi
-
-
 
 AC_MSG_CHECKING(bison version)
 bison_good=1
 if echo "$YACC" | grep bison > /dev/null; then
 # NOTE: m4 removes [], that's why it needs to be escaped
- bison_version=[`$YACC --version | head -n 1 | sed -e 's/[^0-9.]*\([-0-9.]\+\)$/\1/'`]
- bison_version_major=`echo $bison_version | cut -d. -f1`
- bison_version_minor=`echo $bison_version | cut -d. -f2`
- if test "$bison_version_major" -lt 2; then
- bison_good=0
- else
-   if test "$bison_version_major" -eq 2 -a "$bison_version_minor" -lt 4; then
-   bison_good=0
-   else
-   bison_good=1
-   fi
- fi
-
- if test $bison_good = 0; then
-  AC_MSG_ERROR([bison version $bison_version found.
-Version 2.4 or greater is required. Please, consider to upgrade 
-bison.])
- else
-  AC_MSG_RESULT([$bison_version. OK])
- fi
-
+  bison_version=[`$YACC --version | head -n 1 | sed -e 's/[^0-9.]*\([-0-9.]\+\)$/\1/'`]
+  bison_version_major=`echo $bison_version | cut -d. -f1`
+  bison_version_minor=`echo $bison_version | cut -d. -f2`
+  if test "$bison_version_major" -lt 2; then
+    bison_good=0
+  else
+    if test "$bison_version_major" -eq 2 -a "$bison_version_minor" -lt 4; then
+      bison_good=0
+    else
+      bison_good=1
+    fi
+  fi
+  if test $bison_good = 0; then
+    AC_MSG_ERROR([bison version $bison_version found.
+		  Version 2.4 or greater is required.
+		  Please consider to upgrade bison.])
+  else
+    AC_MSG_RESULT([$bison_version. OK])
+  fi
 else
-  AC_MSG_ERROR([bison not found.
-  Version 2.4 or greater is required.])
+  AC_MSG_ERROR([bison not found. Version 2.4 or greater is required.])
 fi
-
-
-AX_CC_MAXOPT
-AC_SUBST(CFLAGS_WARN)
-AX_CFLAGS_WARN_ALL(CFLAGS_WARN)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -184,29 +174,47 @@ dnl  *                   Where is the OpenScop Library?                       *
 dnl  **************************************************************************/
 
 AX_SUBMODULE(osl,system|build|bundled,bundled)
+AM_CONDITIONAL(BUNDLED_OSL, test $with_osl = bundled)
 
-AC_SUBST(OSL_CPPFLAGS)
-AC_SUBST(OSL_LDFLAGS)
+AC_SUBST(OSL_CFLAGS)
 AC_SUBST(OSL_LIBS)
+AC_SUBST(OSL_LDFLAGS)
 case "$with_osl" in
 bundled)
-	OSL_CPPFLAGS="-I$srcdir/osl/include -Iosl/include"
-	OSL_LIBS="$srcdir/osl/libosl.la"
-	;;
+    OSL_CFLAGS="-I\$(top_srcdir)/osl/include -I\$(top_builddir)/osl/include"
+    OSL_LIBS="$srcdir/osl/libosl.la"
+    ;;
 build)
-	OSL_CPPFLAGS="-I$osl_srcdir/include -I$with_osl_builddir/include"
-	OSL_LIBS="$with_osl_builddir/libosl.la"
-	;;
+    OSL_CFLAGS="-I$osl_srcdir/include -I$with_osl_builddir/include"
+    OSL_LIBS="$with_osl_builddir/libosl.la"
+    OSL_LDFLAGS="-L$with_osl_builddir"
+    dnl ----- Check the headers (without polluting CPPFLAGS)
+    save_CPPFLAGS=$CPPFLAGS
+    CPPFLAGS="$CPPFLAGS $OSL_CFLAGS"
+    AC_CHECK_HEADER(osl/osl.h, [], [AC_MSG_ERROR("Can't find osl headers.")])
+    CPPFLAGS=$save_CPPFLAGS
+    ;;
 system)
-	if test "x$with_osl_prefix" != "x"; then
-		OSL_CPPFLAGS="-I$with_osl_prefix/include"
-	fi
-	if test "x$with_osl_exec_prefix" != "x"; then
-		OSL_LDFLAGS="-L$with_osl_exec_prefix/lib"
-	fi
-	OSL_LIBS="$with_osl_exec_prefix/lib/libosl.la -losl"
+    if test "x$with_osl_prefix" != "x"; then
+	OSL_CFLAGS="-I$with_osl_prefix/include"
+	OSL_LDFLAGS="-L$with_osl_exec_prefix/lib"
+    fi
+    if test "x$with_osl_exec_prefix" != "x"; then
+	OSL_LDFLAGS="-L$with_osl_exec_prefix/lib"
+    fi
+    OSL_LIBS="-losl"
+    dnl ----- Check the headers (without polluting CPPFLAGS)
+    save_CPPFLAGS=$CPPFLAGS
+    CPPFLAGS="$CPPFLAGS $OSL_CFLAGS"
+    AC_CHECK_HEADER(osl/osl.h, [], [AC_MSG_ERROR("Can't find osl headers.")])
+    CPPFLAGS=$save_CPPFLAGS
+    dnl ----- Check the library (without polluting LDFLAGS)
+    save_LDFLAGS=$LDFLAGS
+    LDFLAGS="$LDFLAGS $OSL_LDFLAGS"
+    AC_CHECK_LIB(osl, osl_scop_malloc, [], [AC_MSG_ERROR("Can't find osl library.")])
+    LDFLAGS=$save_LDFLAGS
+    ;;
 esac
-AM_CONDITIONAL(BUNDLED_OSL, test $with_osl = bundled)
 
 
 dnl /**************************************************************************

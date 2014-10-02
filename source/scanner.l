@@ -53,7 +53,7 @@ IS ((u|U)|(u|U)?(l|L|ll|LL)|(l|L|ll|LL)(u|U))
    #include <osl/relation_list.h>
    #include <osl/statement.h>
    #include <osl/scop.h>
-   #include <parser.h>
+   #include <source/parser.h>
    #include <clan/macros.h>
    #include <clan/symbol.h>
    #include <clan/options.h>

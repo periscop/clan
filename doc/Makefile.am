@@ -41,49 +41,49 @@
 
 #############################################################################
 
-MAINTAINERCLEANFILES	=			\
-	Makefile.in				\
-	htmldoc.tar.gz				\
-	clan.pdf				\
-	clan.cp					\
-	clan.fn					\
-	clan.info				\
-	clan.ky					\
-	clan.pg					\
-	clan.toc				\
-	clan.tp					\
-	clan.vr					\
-	clan.aux				\
-	clan.log				\
+MAINTAINERCLEANFILES = \
+	Makefile.in \
+	htmldoc.tar.gz \
+	clan.pdf \
+	clan.cp \
+	clan.fn \
+	clan.info \
+	clan.ky \
+	clan.pg \
+	clan.toc \
+	clan.tp \
+	clan.vr \
+	clan.aux \
+	clan.log \
 	clan.doc
 
 clean-local:
 	-rm -rf htmldoc
 
-EXTRA_DIST		=			\
-	htmldoc.tar.gz				\
-	clan.texi				\
+EXTRA_DIST = \
+	htmldoc.tar.gz \
+	clan.texi \
 	clan.pdf
 
 if GENERATE_DOC
 # Unfortunately the following is not supported conditionaly
-#info_TEXINFOS		= clan.texi
-#AM_MAKEINFOHTMLFLAGS    = --no-headers --no-split
+#info_TEXINFOS = clan.texi
+#AM_MAKEINFOHTMLFLAGS = --no-headers --no-split
 
 clan.pdf: clan.texi
 	$(TEXI2PDF) clan.texi
 
-DOCDIR			= htmldoc
-DOXYFILE		= Doxyfile
-DOXYGEN			= @DOXYGEN@
+DOCDIR = htmldoc
+DOXYFILE = Doxyfile
+DOXYGENTOOL = @DOXYGEN@
 
 # The following requires a fixed version of the Emacs 19.30 etags.
-ETAGS_ARGS		= --lang=none \
+ETAGS_ARGS = --lang=none \
  --regex='/^@node[ \t]+\([^,]+\)/\1/' $(srcdir)/doc/clan.texi
-TAGS_DEPENDENCIES	= clan.texi $(DOXYFILE).in
+TAGS_DEPENDENCIES = clan.texi $(DOXYFILE).in
 
 htmldoc.tar.gz:
 	mkdir -p $(top_srcdir)/doc/htmldoc
-	$(DOXYGEN) $(DOXYFILE)
+	$(DOXYGENTOOL) $(DOXYFILE)
 	tar czf htmldoc.tar.gz htmldoc
 endif

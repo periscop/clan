@@ -54,7 +54,7 @@
 #include <osl/generic.h>
 #include <osl/body.h>
 #include <osl/scop.h>
-#include <parser.h>
+#include <source/parser.h>
 #include <clan/macros.h>
 #include <clan/options.h>
 #include <clan/relation.h>

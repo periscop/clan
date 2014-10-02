@@ -46,9 +46,11 @@ if BUNDLED_OSL
     OSL_LA = $(top_builddir)/osl/libosl.la
 endif
 
-#AUTOMAKE_OPTIONS = subdir-objects # then: BUILT_SOURCES = source/parser.h
-SUBDIRS         = $(MAYBE_OSL) . doc tests
-DIST_SUBDIRS    = $(MAYBE_OSL) . doc tests
+CLAN_INCLUDES = -I. -I$(top_builddir)/include -I$(top_srcdir)/include
+
+AUTOMAKE_OPTIONS = subdir-objects
+SUBDIRS = $(MAYBE_OSL) . doc tests
+DIST_SUBDIRS = $(MAYBE_OSL) . doc tests
 ACLOCAL_AMFLAGS = -I m4
 
 #############################################################################
@@ -58,57 +60,56 @@ lib_LTLIBRARIES = libclan.la
 
 #############################################################################
 
-pkginclude_HEADERS =                    \
-	include/clan/clan.h             \
-	include/clan/options.h          \
-	include/clan/statement.h        \
-	include/clan/vector.h           \
-	include/clan/relation.h	        \
-	include/clan/relation_list.h    \
-	include/clan/domain.h           \
-	include/clan/macros.h           \
-	include/clan/scop.h             \
+pkginclude_HEADERS = \
+	include/clan/clan.h \
+	include/clan/options.h \
+	include/clan/statement.h \
+	include/clan/vector.h \
+	include/clan/relation.h \
+	include/clan/relation_list.h \
+	include/clan/domain.h \
+	include/clan/macros.h \
+	include/clan/scop.h \
 	include/clan/symbol.h
 
 # Add dependence on parser.h needed by source/scop.c
-BUILT_SOURCES = parser.h
+BUILT_SOURCES = source/parser.h
 
-DEFAULT_INCLUDES = -I.
-INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include
+AM_CPPFLAGS = $(CLAN_INCLUDES)
 AM_CFLAGS = $(CFLAGS_WARN)
 AM_YFLAGS = -y -d
 
 #############################################################################
 
-libclan_la_LIBADD   = @OSL_LIBS@ $(OSL_LA)
-libclan_la_CPPFLAGS = @OSL_CPPFLAGS@ -g
-libclan_la_LDFLAGS  = @OSL_LDFLAGS@
-libclan_la_SOURCES  =                   \
-	source/parser.y                 \
-	source/scanner.l                \
-	source/options.c                \
-	source/symbol.c                 \
-	source/scop.c                   \
-	source/statement.c              \
-	source/relation.c               \
-	source/relation_list.c          \
-	source/domain.c                 \
+libclan_la_LIBADD = @OSL_LIBS@ $(OSL_LA)
+libclan_la_CPPFLAGS = $(CLAN_INCLUDES) @OSL_CFLAGS@
+libclan_la_LDFLAGS = @OSL_LDFLAGS@
+libclan_la_SOURCES = \
+	source/parser.y \
+	source/scanner.l \
+	source/options.c \
+	source/symbol.c \
+	source/scop.c \
+	source/statement.c \
+	source/relation.c \
+	source/relation_list.c \
+	source/domain.c \
 	source/vector.c
 
 #############################################################################
 
-LDADD             = @OSL_LIBS@ libclan.la
-clan_CPPFLAGS     = @OSL_CPPFLAGS@ -g
+LDADD = @OSL_LIBS@ $(OSL_LA) libclan.la
+clan_CPPFLAGS = $(CLAN_INCLUDES) @OSL_CFLAGS@
 clan_DEPENDENCIES = libclan.la
-clan_SOURCES      = source/clan.c
+clan_SOURCES = source/clan.c
 
 #############################################################################
 
-MAINTAINERCLEANFILES =                  \
-	Makefile.in                     \
-	aclocal.m4                      \
-	configure                       \
-	source/stamp-h.in               \
+MAINTAINERCLEANFILES = \
+	Makefile.in \
+	aclocal.m4 \
+	configure \
+	source/stamp-h.in \
 	$(AUX_DIST)
 
 #############################################################################
@@ -123,3 +124,10 @@ dist-hook:
 
 valcheck:
 	$(MAKE) valcheck -C tests
+
+#############################################################################
+
+ctags:
+	ctags -R --c++-kinds=+p --fields=+iaS --extra=+q -f$(HOME)/.ctags .
+
+#############################################################################

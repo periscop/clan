@@ -79,6 +79,15 @@ AM_CPPFLAGS = $(CLAN_INCLUDES)
 AM_CFLAGS = $(CFLAGS_WARN)
 AM_YFLAGS = -y -d
 
+EXTRA_DIST = clan-config.cmake
+
+install-data-local:
+	@test -z "$(DESTDIR)$(libdir)/$(PACKAGE_NAME)" || $(mkdir_p) "$(DESTDIR)$(libdir)/$(PACKAGE_NAME)"
+	$(INSTALL_DATA) "$(top_srcdir)/clan-config.cmake" "$(DESTDIR)$(libdir)/$(PACKAGE_NAME)/"
+
+uninstall-local:
+	rm -f "$(DESTDIR)$(libdir)/$(PACKAGE_NAME)/clan-config.cmake"
+
 #############################################################################
 
 libclan_la_LIBADD = @OSL_LIBS@ $(OSL_LA)

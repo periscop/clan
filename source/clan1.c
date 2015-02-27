@@ -38,6 +38,34 @@ osl1_vector_scop_t clan1_scop_extract(FILE* file) {
   osl_scop_t* scop_osl = clan_scop_extract(file, clan_options);
   // Convert
   osl1_vector_scop_t scops = osl_to_osl1(scop_osl);
+  // Get first comments
+  {
+    fpos_t file_pos; fgetpos(file, &file_pos);
+    const osl_scop_t* scop_osl_p = scop_osl;
+    for (size_t i = 0; i < scops.size; ++i) {
+      osl1_scop_t* scop = &scops.array[i];
+      // Get coordinates extension
+      const osl_coordinates_t* const coordinates =
+        osl_generic_lookup(scop_osl_p->extension, "coordinates");
+      // Extension
+      if (coordinates != NULL) {
+        // Extract first comments
+        rewind(file);
+        osl1_extension_comments_t comments =
+          osl1_extension_comments_extract(file,
+                                          (size_t)coordinates->line_start);
+        // Add extension
+        gho_any_t any = osl1_extension_comments_to_any(&comments);
+        gho_vector_any_add(&scop->extensions, &any);
+        gho_any_destroy(&any);
+        // Destroy
+        osl1_extension_comments_destroy(&comments);
+      }
+      // Next
+      scop_osl_p = scop_osl_p->next;
+    }
+    fsetpos(file, &file_pos);
+  }
   // Destroy
   clan_options_free(clan_options); clan_options = NULL;
   osl_scop_free(scop_osl); scop_osl = NULL;

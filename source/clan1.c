@@ -31,7 +31,7 @@
  * @param[in] file A C file
  * @return the osl1_vector_scop_t with the SCoPs extracted
  */
-osl1_vector_scop_t clan1_scop_extract(FILE* file) {
+osl1_vector_scop_t clan1_extract_scops(FILE* file) {
   // Create Clan options
   clan_options_t* clan_options = clan_options_malloc();
   // Extract

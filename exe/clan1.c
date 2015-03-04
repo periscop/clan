@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
   FILE* file = fopen(argv[1], "r");
   
   if (file != NULL) {
-    osl1_vector_scop_t scops = clan1_scop_extract(file);
+    osl1_vector_scop_t scops = clan1_extract_scops(file);
     for (size_t i = 0; i < scops.size; ++i) {
       osl1_scop_print(&scops.array[i]);
     }

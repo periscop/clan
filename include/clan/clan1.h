@@ -32,7 +32,7 @@ extern "C"
 
 
 // Extract
-osl1_vector_scop_t clan1_scop_extract(FILE* file);
+osl1_vector_scop_t clan1_extract_scops(FILE* file);
 
 #if defined(__cplusplus)
 }

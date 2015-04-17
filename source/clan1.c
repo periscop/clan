@@ -66,6 +66,23 @@ osl1_vector_scop_t clan1_extract_scops(FILE* file) {
     }
     fsetpos(file, &file_pos);
   }
+  // Types of output dimensions
+  for (size_t i = 0; i < scops.size; ++i) {
+    osl1_scop_t* scop = &scops.array[i];
+    for (size_t s = 0; s < scop->statements.size; ++s) {
+      osl1_statement_t* statement = &scop->statements.array[s];
+      for (size_t cv = 0; cv < statement->scattering.size; ++cv) {
+        osl1_convex_relation_t* convex_relation =
+          &statement->scattering.array[cv];
+        for (size_t t = 0; t < convex_relation->output_dims_types.size; ++t) {
+          osl1_dimension_type_t* type =
+            &convex_relation->output_dims_types.array[t];
+          if (t % 2 == 0) { type->dimension_type = osl1_dimension_type_beta; }
+          else { type->dimension_type = osl1_dimension_type_alpha; }
+        }
+      }
+    }
+  }
   // Destroy
   clan_options_free(clan_options); clan_options = NULL;
   osl_scop_free(scop_osl); scop_osl = NULL;

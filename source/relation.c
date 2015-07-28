@@ -760,9 +760,9 @@ void clan_relation_to_expressions(osl_relation_p r, int depth) {
     if ((mark != 1) || (coef == 0))
       CLAN_error("you found a bug");
 
-    if (coef > 1)
+    if (coef > 0)
       clan_relation_oppose_row(r, i);
-    
+
     coef = (coef > 0) ? coef : -coef;
     if (coef > 1)
       osl_int_set_si(r->precision, &r->m[i][0], coef);
@@ -809,7 +809,7 @@ osl_relation_p clan_relation_stride(osl_relation_p r, int depth, int stride) {
     // Separate the bounding constraints (bound) which are impacted by the
     // stride from others (notbound) which will be reinjected later.
     clan_relation_extract_bounding(r, &bound, &notbound, depth, lower);
-  
+
     // Change the bounding constraints to a set of linear expressions
     // to make it easy to manipulate them through existing functions.
     clan_relation_to_expressions(bound, depth);
@@ -845,8 +845,8 @@ osl_relation_p clan_relation_stride(osl_relation_p r, int depth, int stride) {
         contribution = clan_relation_greater(bound, constraint, 0);
       osl_relation_remove_row(contribution, i);
 
-      // -4. The iterator i of the current depth is i >= c.
-      //     (Resp. c <= i for the upper case.)
+      // -4. The iterator i of the current depth is i >= c (i.e., i - c >= 0).
+      //     (Resp. i <= c, i.e., -i + c >= 0, for the upper case.)
       //     * 4.1 Put c at the end of the constraint set.
       osl_relation_insert_constraints(contribution, constraint, -1);
       //     * 4.2 Oppose so we have -c.

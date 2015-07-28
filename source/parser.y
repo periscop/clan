@@ -480,7 +480,6 @@ iteration_statement:
     {
       CLAN_debug("rule iteration_statement.1.1: xfor ( init cond stride ) ...");
       parser_xfor_labels[parser_loop_depth] = CLAN_UNDEFINED;
-      clan_parser_increment_loop_depth();
        
       // Check loop bounds and stride consistency and reset sanity sentinels.
       if (!clan_parser_is_loop_sane($3, $4, $5))
@@ -500,9 +499,10 @@ iteration_statement:
 
       // Add the constraints contributed by the xfor loop to the domain stack.
       clan_domain_dup(&parser_stack);
-      clan_domain_xfor(parser_stack, parser_loop_depth, parser_symbol,
+      clan_domain_xfor(parser_stack, parser_loop_depth + 1, parser_symbol,
 	               $3, $4, $5, parser_options);
 
+      clan_parser_increment_loop_depth();
       parser_xfor_depths[parser_xfor_nb_nests]++;
       parser_xfor_index = 0;
       osl_relation_list_free($3);
@@ -526,7 +526,6 @@ iteration_statement:
     {
       CLAN_debug("rule iteration_statement.2.1: for ( init cond stride ) ...");
       parser_xfor_labels[parser_loop_depth] = 0;
-      clan_parser_increment_loop_depth();
      
       // Check there is only one element in each list
       if (parser_xfor_index != 1) {
@@ -543,9 +542,10 @@ iteration_statement:
 
       // Add the constraints contributed by the for loop to the domain stack.
       clan_domain_dup(&parser_stack);
-      clan_domain_for(parser_stack, parser_loop_depth, parser_symbol,
+      clan_domain_for(parser_stack, parser_loop_depth + 1, parser_symbol,
 	              $3->elt, $4->elt, $5[0], parser_options);
 
+      clan_parser_increment_loop_depth();
       parser_xfor_index = 0;
       osl_relation_list_free($3);
       osl_relation_list_free($4);

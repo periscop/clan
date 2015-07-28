@@ -74,6 +74,7 @@ UNITARY_TEST_FILES = \
 	$(top_srcdir)/tests/unitary/stride_neg1.c \
 	$(top_srcdir)/tests/unitary/stride_neg2.c \
 	$(top_srcdir)/tests/unitary/stride_neg3.c \
+	$(top_srcdir)/tests/unitary/stride_ifmod.c \
 	$(top_srcdir)/tests/unitary/infinite_loop1.c \
 	$(top_srcdir)/tests/unitary/infinite_loop2.c \
 	$(top_srcdir)/tests/unitary/infinite_loop3.c \

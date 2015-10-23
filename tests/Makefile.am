@@ -97,6 +97,7 @@ UNITARY_TEST_FILES = \
 	$(top_srcdir)/tests/unitary/multiparenthcond.c \
 	$(top_srcdir)/tests/unitary/maxloopsimple.c \
 	$(top_srcdir)/tests/unitary/maxloopcomplex.c \
+	$(top_srcdir)/tests/unitary/min.c \
 	$(top_srcdir)/tests/unitary/minloopsimple.c \
 	$(top_srcdir)/tests/unitary/minloopcomplex.c \
 	$(top_srcdir)/tests/unitary/minmax.c \

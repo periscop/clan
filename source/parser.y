@@ -187,6 +187,7 @@
 %type <value>  loop_stride
 %type <vecint> loop_stride_list
 %type <symbol> idparent
+%type <symbol> id_or_clan_keyword
 
 %type <setex>  affine_minmax_expression
 %type <setex>  affine_min_expression
@@ -1196,6 +1197,13 @@ affine_floord_expression:
     }
   ;
 
+id_or_clan_keyword:
+    ID { $$ = $1; }
+  | MIN { $$ = strdup("min"); }
+  | MAX { $$ = strdup("max"); }
+  | CEILD { $$ = strdup("ceild"); }
+  | FLOORD { $$ = strdup("floord"); }
+  ;
 
 // +--------------------------------------------------------------------------+
 // |                          QUASI-ANSI C STATEMENTS                         |
@@ -1203,14 +1211,14 @@ affine_floord_expression:
 
 
 primary_expression:
-    ID
+    id_or_clan_keyword
     {
       int nb_columns;
       osl_relation_p id;
       osl_relation_list_p list;
       clan_symbol_p symbol;
 
-      CLAN_debug("rule primary_expression.1: ID");
+      CLAN_debug("rule primary_expression.1: id_or_clan_keyword");
       symbol = clan_symbol_add(&parser_symbol, $1, CLAN_UNDEFINED);
       nb_columns = CLAN_MAX_DEPTH + CLAN_MAX_LOCAL_DIMS +
 	                 CLAN_MAX_PARAMETERS + 2;
@@ -1293,14 +1301,15 @@ postfix_expression:
       osl_relation_list_free($1);
       $$ = $4;
     }
-  | postfix_expression '.' ID
+  | postfix_expression '.' id_or_clan_keyword
     {
       if (parser_options->extbody)
         parser_access_length = strlen(parser_record) - parser_access_start;
 
       clan_symbol_p symbol;
 
-      CLAN_debug("rule postfix_expression.4: postfix_expression . ID");
+      CLAN_debug("rule postfix_expression.4: postfix_expression . "
+                 "id_or_clan_keyword");
       if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_ARRAY))
         YYABORT;
       symbol = clan_symbol_add(&parser_symbol, $3, CLAN_TYPE_FIELD);
@@ -1309,14 +1318,15 @@ postfix_expression:
       $$ = $1;
       CLAN_debug_call(osl_relation_list_dump(stderr, $$));
     }
-  | postfix_expression PTR_OP ID
+  | postfix_expression PTR_OP id_or_clan_keyword
     {
       if (parser_options->extbody)
         parser_access_length = strlen(parser_record) - parser_access_start;
 
       clan_symbol_p symbol;
 
-      CLAN_debug("rule postfix_expression.5: postfix_expression -> ID");
+      CLAN_debug("rule postfix_expression.5: postfix_expression -> "
+                 "id_or_clan_keyword");
       if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_ARRAY))
         YYABORT;
       symbol = clan_symbol_add(&parser_symbol, $3, CLAN_TYPE_FIELD);
@@ -1754,9 +1764,9 @@ type_specifier:
   ;
 
 struct_or_union_specifier:
-    struct_or_union ID '{' struct_declaration_list '}' { free($2); }
+    struct_or_union id_or_clan_keyword '{' struct_declaration_list '}' { free($2); }
   | struct_or_union '{' struct_declaration_list '}'
-  | struct_or_union ID { free($2); }
+  | struct_or_union id_or_clan_keyword { free($2); }
   ;
 
 struct_or_union:
@@ -1793,8 +1803,8 @@ struct_declarator:
 
 enum_specifier:
     ENUM '{' enumerator_list '}'
-  | ENUM ID '{' enumerator_list '}' { free($2); }
-  | ENUM ID { free($2); }
+  | ENUM id_or_clan_keyword '{' enumerator_list '}' { free($2); }
+  | ENUM id_or_clan_keyword { free($2); }
   ;
 
 enumerator_list:
@@ -1803,8 +1813,8 @@ enumerator_list:
   ;
 
 enumerator:
-    ID { free($1); }
-  | ID '=' constant_expression { free($1); }
+    id_or_clan_keyword { free($1); }
+  | id_or_clan_keyword '=' constant_expression { free($1); }
   ;
 
 type_qualifier:
@@ -1818,7 +1828,7 @@ declarator:
   ;
 
 direct_declarator:
-    ID { free($1); }
+    id_or_clan_keyword { free($1); }
   | '(' declarator ')'
   | direct_declarator '[' constant_expression ']'
   | direct_declarator '[' ']'
@@ -1857,8 +1867,8 @@ parameter_declaration:
   ;
 
 identifier_list:
-    ID { free($1); }
-  | identifier_list ',' ID { free($3); }
+    id_or_clan_keyword { free($1); }
+  | identifier_list ',' id_or_clan_keyword { free($3); }
   ;
 
 type_name:

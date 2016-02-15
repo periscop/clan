@@ -305,7 +305,7 @@ scop:
 statement_list:
     statement_indented       { $$ = $1; }
   | statement_list
-    statement_indented       { $$ = $1; osl_statement_add(&$$, $2); }
+    statement_indented       { $$ = $1; if($2) osl_statement_add(&$$, $2); }
   ;
 
 
@@ -327,6 +327,7 @@ statement_indented:
 // Return <stmt>
 statement:
     labeled_statement        { $$ = $1; }
+  | declaration_statement    { $$ = NULL; }
   | compound_statement       { $$ = $1; }
   | expression_statement     { $$ = $1; }
   | selection_statement      { $$ = $1; }
@@ -1721,6 +1722,9 @@ expression_statement:
     }
   ;
 
+declaration_statement:
+  specifier_qualifier_list declarator_list ';' {}
+
 
 // +--------------------------------------------------------------------------+
 // |                              ANSI C CASTING                              |
@@ -1821,6 +1825,10 @@ type_qualifier:
     CONST
   | VOLATILE
   ;
+
+declarator_list:
+    declarator
+  | declarator_list ',' declarator;
 
 declarator:
     pointer direct_declarator

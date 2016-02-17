@@ -330,7 +330,6 @@ statement:
   | declaration_statement    { $$ = NULL; }
   | compound_statement       { $$ = $1; }
   | expression_statement     { $$ = $1; }
-  | selection_statement      { $$ = $1; }
   | {
       if (parser_options->autoscop && !parser_autoscop && !parser_loop_depth) {
         parser_line_start = scanner_line;
@@ -343,7 +342,31 @@ statement:
           fprintf(stderr, "Autoscop start: line %3d column %3d\n",
                   parser_line_start, parser_column_start);
       }
-    }    
+    }
+    selection_statement
+    {
+      $$ = $2;
+      if (parser_options->autoscop && parser_autoscop && !parser_loop_depth) {
+        parser_line_end = scanner_line;
+        parser_column_end = scanner_column_LALR;
+        if (CLAN_DEBUG)
+          fprintf(stderr, "Autoscop found: line %3d column %3d\n",
+                  parser_line_end, parser_column_end);
+      }
+    }
+  | {
+      if (parser_options->autoscop && !parser_autoscop && !parser_loop_depth) {
+        parser_line_start = scanner_line;
+        parser_column_start = scanner_column_LALR;
+        parser_autoscop = CLAN_TRUE;
+        // Reinitialize the symbol table.
+        clan_symbol_free(parser_symbol);
+        parser_symbol = NULL;
+        if (CLAN_DEBUG)
+          fprintf(stderr, "Autoscop start: line %3d column %3d\n",
+                  parser_line_start, parser_column_start);
+      }
+    }
     iteration_statement
     {
       $$ = $2;

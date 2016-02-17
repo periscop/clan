@@ -59,6 +59,7 @@
    #include <osl/body.h>
    #include <osl/extensions/arrays.h>
    #include <osl/extensions/extbody.h>
+   #include <osl/extensions/codemodel.h>
    #include <osl/scop.h>
    #include <clan/macros.h>
    #include <clan/vector.h>
@@ -137,6 +138,10 @@
    osl_extbody_p  parser_access_extbody; /**< The extbody struct */
    int            parser_access_start;   /**< Start coordinates */
    int            parser_access_length;  /**< Length of the access string*/
+
+   // Variables to generate the code model.
+   osl_codemodel_p parser_codemodel_loop;
+   osl_codemodel_p parser_codemodel_head;
 %}
 
 /* We expect the if-then-else shift/reduce to be there, nothing else. */
@@ -290,6 +295,8 @@ scop:
       osl_generic_add(&scop->extension, arrays);
       clan_scop_generate_coordinates(scop, parser_options->name);
       clan_scop_generate_clay(scop, scanner_clay);
+      osl_codemodel_update_identifiers(parser_codemodel_loop);
+      clan_scop_attach_clean_codemodel(scop, parser_codemodel_loop);
 
       // Add the SCoP to parser_scop and prepare the state for the next SCoP.
       osl_scop_add(&parser_scop, scop);
@@ -312,7 +319,7 @@ statement_list:
 // Rules for an indented statement
 // Return <stmt>
 statement_indented:
-    { 
+    {
       if (parser_indent == CLAN_UNDEFINED)
         parser_indent = scanner_column_LALR - 1;
     }
@@ -329,7 +336,32 @@ statement:
     labeled_statement        { $$ = $1; }
   | declaration_statement    { $$ = NULL; }
   | compound_statement       { $$ = $1; }
-  | expression_statement     { $$ = $1; }
+  | {
+      // Avoid adding code model nodes for the statements at the SCoP level
+      // (outside any loop) until it is not allowed by parsing rules.
+      if (parser_codemodel_head != parser_codemodel_loop) {
+        osl_codemodel_p codemodel = osl_codemodel_create_stmt();
+        osl_coordinates_p coordinates = osl_coordinates_malloc();
+
+        coordinates->line_start   = scanner_line;
+        coordinates->column_start = scanner_column_LALR;
+        codemodel->u.stmt->coordinates = coordinates;
+        osl_codemodel_add_child(parser_codemodel_loop, codemodel);
+      }
+    }
+    expression_statement
+    {
+      if (parser_codemodel_head != parser_codemodel_loop) {
+        int index = parser_codemodel_loop->nb_children - 1;
+        osl_codemodel_p codemodel = parser_codemodel_loop->children[index];
+        osl_coordinates_p coordinates = codemodel->u.stmt->coordinates;
+
+        coordinates->line_end   = scanner_line;
+        coordinates->column_end = scanner_column;
+      }
+
+      $$ = $2;
+    }
   | {
       if (parser_options->autoscop && !parser_autoscop && !parser_loop_depth) {
         parser_line_start = scanner_line;
@@ -366,6 +398,14 @@ statement:
           fprintf(stderr, "Autoscop start: line %3d column %3d\n",
                   parser_line_start, parser_column_start);
       }
+
+      osl_codemodel_p loop = osl_codemodel_create_loop();
+      osl_coordinates_p coordinates = osl_coordinates_malloc();
+      coordinates->line_start = scanner_line;
+      coordinates->column_start = scanner_column_LALR;
+      loop->u.loop->coordinates = coordinates;
+      osl_codemodel_add_child(parser_codemodel_loop, loop);
+      parser_codemodel_loop = loop;
     }
     iteration_statement
     {
@@ -377,6 +417,35 @@ statement:
           fprintf(stderr, "Autoscop found: line %3d column %3d\n",
                   parser_line_end, parser_column_end);
       }
+
+      // Unwind the tree structure until finding the parent of current loop.
+      if (parser_codemodel_loop == parser_codemodel_head) {
+        CLAN_warning("Exiting the iteration loop that does not exist.");
+        YYABORT;
+      }
+
+      osl_codemodel_loop_p loop = parser_codemodel_loop->u.loop;
+      loop->coordinates->line_end = scanner_line;
+      loop->coordinates->column_end = scanner_column;
+
+      osl_codemodel_p codemodel = parser_codemodel_head;
+      while (codemodel != NULL) {
+        int nb_children = codemodel->nb_children;
+        if (nb_children == 0) {
+          codemodel = NULL;
+          break;
+        }
+        if (codemodel->children[nb_children - 1] == parser_codemodel_loop) {
+          break;
+        }
+        codemodel = codemodel->children[nb_children - 1];
+      }
+      if (codemodel == NULL) {
+        CLAN_warning("Could not unwind the code model loop tree.");
+        YYABORT;
+      }
+      parser_codemodel_loop = codemodel;
+
     }
 ;
 
@@ -547,44 +616,81 @@ iteration_statement:
       CLAN_debug_call(osl_statement_dump(stderr, $$));
     }
   |
-    FOR '(' loop_initialization_list loop_condition_list loop_stride_list ')'
+    FOR '('
+    {
+      osl_coordinates_p initializer_coordinates = osl_coordinates_malloc();
+      osl_codemodel_loop_p loop = parser_codemodel_loop->u.loop;
+
+      initializer_coordinates->line_start = scanner_line;
+      initializer_coordinates->column_start = scanner_column;
+      loop->initializer_coordinates = initializer_coordinates;
+    }
+    loop_initialization_list
+    {
+      osl_coordinates_p condition_coordinates = osl_coordinates_malloc();
+      osl_codemodel_loop_p loop = parser_codemodel_loop->u.loop;
+
+      condition_coordinates->line_start = scanner_line;
+      condition_coordinates->column_start = scanner_column;
+      loop->condition_coordinates = condition_coordinates;
+      loop->initializer_coordinates->line_end = scanner_line;
+      loop->initializer_coordinates->column_end = scanner_column;
+    }
+    loop_condition_list
+    {
+      osl_coordinates_p increment_coordinates = osl_coordinates_malloc();
+      osl_codemodel_loop_p loop = parser_codemodel_loop->u.loop;
+
+      increment_coordinates->line_start = scanner_line;
+      increment_coordinates->column_start = scanner_column;
+      loop->increment_coordinates = increment_coordinates;
+      loop->condition_coordinates->line_end = scanner_line;
+      loop->condition_coordinates->column_end = scanner_column;
+    }
+    loop_stride_list
+    {
+      osl_codemodel_loop_p loop = parser_codemodel_loop->u.loop;
+      loop->increment_coordinates->line_end = scanner_line;
+      loop->increment_coordinates->column_end = scanner_column;
+    }
+    ')'
     {
       CLAN_debug("rule iteration_statement.2.1: for ( init cond stride ) ...");
       parser_xfor_labels[parser_loop_depth] = 0;
-     
+
       // Check there is only one element in each list
       if (parser_xfor_index != 1) {
 	yyerror("unsupported element list in a for loop");
-	osl_relation_list_free($3);
-        osl_relation_list_free($4);
-	free($5);
+	osl_relation_list_free($4);
+        osl_relation_list_free($6);
+	free($8);
         YYABORT;
       }
 
       // Check loop bounds and stride consistency and reset sanity sentinels.
-      if (!clan_parser_is_loop_sane($3, $4, $5))
+      if (!clan_parser_is_loop_sane($4, $6, $8))
         YYABORT;
 
       // Add the constraints contributed by the for loop to the domain stack.
       clan_domain_dup(&parser_stack);
       clan_domain_for(parser_stack, parser_loop_depth + 1, parser_symbol,
-	              $3->elt, $4->elt, $5[0], parser_options);
+	              $4->elt, $6->elt, $8[0], parser_options);
 
       clan_parser_increment_loop_depth();
       parser_xfor_index = 0;
-      osl_relation_list_free($3);
       osl_relation_list_free($4);
-      $3 = NULL; // To avoid conflicts with the destructor TODO: avoid that.
-      $4 = NULL;
-      parser_scattering[2*parser_loop_depth-1] = ($5[0] > 0) ? 1 : -1;
+      osl_relation_list_free($6);
+      $4 = NULL; // To avoid conflicts with the destructor TODO: avoid that.
+      $6 = NULL;
+      parser_scattering[2*parser_loop_depth-1] = ($8[0] > 0) ? 1 : -1;
       parser_scattering[2*parser_loop_depth] = 0;
-      free($5);
+      free($8);
     }
     loop_body
     {
       CLAN_debug("rule iteration_statement.2.2: for ( init cond stride ) "
 	         "body");
-      $$ = $8;
+      $$ = $12;
       CLAN_debug_call(osl_statement_dump(stderr, $$));
     }
   | loop_infinite
@@ -2293,6 +2399,9 @@ void clan_parser_state_initialize(clan_options_p options) {
 
   for (i = 0; i < 2 * CLAN_MAX_DEPTH + 1; i++)
     parser_scattering[i] = 0;
+
+  parser_codemodel_loop = osl_codemodel_create_loop();
+  parser_codemodel_head = parser_codemodel_loop;
 }
 
 
@@ -2334,7 +2443,8 @@ void clan_parser_autoscop() {
   int coordinates[5][CLAN_MAX_SCOPS]; // 0, 1: line start, end
                                       // 2, 3: column start, end
 				      // 4: autoscop or not
- 
+  osl_codemodel_p codemodels[CLAN_MAX_SCOPS];
+
   while (1) {
     // For the automatic extraction, we parse everything except user-SCoPs.
     if (!scanner_pragma)
@@ -2354,6 +2464,9 @@ void clan_parser_autoscop() {
     }
  
     if (parser_error || new_scop) {
+      // If an error happened, but scanner_scop_start or scanner_scop_end are
+      // set to value other than CLAN_UNDEFINED, it actually means detection of
+      // the user-SCoP triggered by intentional behavior of the scanner.
       if (new_scop) {
         // If a new SCoP has been found, store its coordinates.
         if (nb_scops == CLAN_MAX_SCOPS)
@@ -2368,6 +2481,8 @@ void clan_parser_autoscop() {
                   coordinates[0][nb_scops], coordinates[2][nb_scops],
                   coordinates[1][nb_scops], coordinates[3][nb_scops] - 1);
         }
+        // If a SCoP (user or auto) detected, store its code model.
+        codemodels[nb_scops] = parser_codemodel_loop;
         // Let's go for the next SCoP.
         parser_autoscop = CLAN_FALSE;
         nb_scops++;
@@ -2380,6 +2495,8 @@ void clan_parser_autoscop() {
 	coordinates[2][nb_scops] = 0;
 	coordinates[3][nb_scops] = 0;
 	coordinates[4][nb_scops] = CLAN_FALSE;
+        // If a SCoP (user or auto) detected, store its code model.
+        codemodels[nb_scops] = NULL;
         if (CLAN_DEBUG) {
           fprintf(stderr, "[Clan] Debug: user-SCoP [%d,%d -> %d,%d]\n",
                   coordinates[0][nb_scops], coordinates[2][nb_scops],
@@ -2433,6 +2550,7 @@ void clan_parser_autoscop() {
 
   // Update the SCoP coordinates with those of the original file.
   clan_scop_update_coordinates(parser_scop, coordinates);
+  clan_scop_fix_codemodels(parser_scop, coordinates);
   parser_options->autoscop = CLAN_TRUE;
   
   if (remove(CLAN_AUTOPRAGMA_FILE))

@@ -53,7 +53,7 @@ TEST_FILES = \
 	$(top_srcdir)/tests/iir_4_64.c \
 	$(top_srcdir)/tests/matmul.c \
 	$(top_srcdir)/tests/swim.c \
-	$(top_srcdir)/tests/declarations.c \
+	$(top_srcdir)/tests/declarations.c
 
 UNITARY_TEST_FILES = \
 	$(top_srcdir)/tests/unitary/classicloop.c \

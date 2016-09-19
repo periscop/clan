@@ -296,7 +296,11 @@ scop:
       clan_scop_generate_coordinates(scop, parser_options->name);
       clan_scop_generate_clay(scop, scanner_clay);
       osl_codemodel_update_identifiers(parser_codemodel_loop);
-      clan_scop_attach_clean_codemodel(scop, parser_codemodel_loop);
+      if (parser_options->codemodel) {
+        clan_scop_attach_clean_codemodel(scop, parser_codemodel_loop);
+      } else {
+        osl_codemodel_free(parser_codemodel_loop);
+      }
 
       // Add the SCoP to parser_scop and prepare the state for the next SCoP.
       osl_scop_add(&parser_scop, scop);

@@ -484,6 +484,9 @@ void clan_scop_insert_pragmas(osl_scop_p scop, char* filename, int test) {
 
     fclose(input);
     fclose(output);
+
+    if (remove(CLAN_AUTOPRAGMA_FILE) == -1)
+      CLAN_warning("unable to remove the temporary file");
   }
 }
 

@@ -71,8 +71,8 @@
 # define CLAN_TYPE_WRITE               10
 # define CLAN_TYPE_RDWR                11
 
-# define CLAN_AUTOPRAGMA_FILE           "clan_autopragma.c"
-
+/* This is a bit of a hack! See clan_options_autopragma_file()! */
+# define CLAN_AUTOPRAGMA_FILE clan_options_autopragma_file()
 
 /*---------------------------------------------------------------------------+
  |                               UTILITY MACROS                              |

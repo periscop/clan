@@ -39,6 +39,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <osl/macros.h>
 #include <clan/macros.h>
@@ -346,4 +347,27 @@ clan_options_p clan_options_read(int argv, char** argc,
     CLAN_error("no input file (-h for help)");
 
   return options;
+}
+
+const char* clan_options_autopragma_file(void) {
+  /*
+   * This function aims to "improve" the macro CLAN_AUTOPRAGMA_FILE...
+   * The function returns a pointer to a static char array! This is dirty but
+   * the previous implementation of the macro expanded to a literal string.
+   * At least now, two processes of CLAN can run at the same time.
+   */
+  static char clan_autopragma_filename[128] = { 0 };
+  if (!clan_autopragma_filename[0])
+  {
+    strcpy(clan_autopragma_filename, "/tmp/clan_autopragmaXXXXXX");
+    int fd = mkstemp(clan_autopragma_filename);
+    if (fd == -1)
+      CLAN_error("mkstemp");
+    if (unlink(clan_autopragma_filename) == -1)
+      CLAN_error("unlink");
+    if (close(fd) == -1)
+      CLAN_error("close");
+  }
+
+  return clan_autopragma_filename;
 }

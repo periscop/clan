@@ -98,6 +98,11 @@ clan_options_p clan_options_read(int, char**, char***, FILE**);
  *                            Processing functions                            *
  ******************************************************************************/
 
+/*+****************************************************************************
+ *                            Dirty hack functions                            *
+ ******************************************************************************/
+
+const char* clan_options_autopragma_file(void);
 
 # if defined(__cplusplus)
   }

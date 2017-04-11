@@ -61,14 +61,15 @@ for i in $TEST_FILES; do
   outtemp=0
   # Since -autoinsert modifies the input file, we use a random temporary file
   # before calling clan.
-  input="/tmp/$$.c";
+  input="/tmp/$$-clan-input.c";
+  clanout="/tmp/$$-clan-stderr"
   cp $i $input;
 
   if [ "$TEST_TYPE" = "clan" ]; then
     # Test the basic .scop generation
     filename=$(basename "$i");
     echo "[CHECK] Source parser test:== $i ==";
-    $clan $TEST_OPTION $input > $input.scop 2>/tmp/clanout
+    $clan $TEST_OPTION $input > $input.scop 2>"$clanout"
     if [ "$TEST_OPTION" = "-autoinsert" ]; then
       diff --ignore-matching-lines="$filename" \
            --ignore-matching-lines="$input" \
@@ -82,7 +83,7 @@ for i in $TEST_FILES; do
            $input.scop $i.scop;
       z=$?;
     fi
-    err=`cat /tmp/clanout`;
+    err=`cat "$clanout"`;
     if [ "$z" -ne "0" ]; then
       echo "\033[31m[FAIL] Source parser test: Wrong output\n$z\033[0m";
       outtemp=1;
@@ -96,23 +97,22 @@ for i in $TEST_FILES; do
     fi
   else
     echo "[VALCHECK] Source parser test:== $i ==";
-    libtool --mode=execute valgrind --error-exitcode=1 $clan $TEST_OPTIONS $input > /dev/null 2> /tmp/clanout;
+    libtool --mode=execute valgrind --error-exitcode=1 $clan $TEST_OPTIONS $input > /dev/null 2> "$clanout";
     errors=$?;
-    leaks=`grep "in use at exit" /tmp/clanout | cut -f 2 -d ':'`
+    leaks=`grep "in use at exit" "$clanout" | cut -f 2 -d ':'`
     if [ "$errors" = "1" ]; then
       echo "\033[31mMemory error detected... \033[0m";
-      cat /tmp/clanout;
+      cat "$clanout";
       output="1";
     elif [ "$leaks" != " 0 bytes in 0 blocks" ]; then
       echo "\033[31mMemory leak detected... \033[0m";
-      cat /tmp/clanout;
+      cat "$clanout";
       output="1";
     else
       output="0";
     fi;
   fi
-  rm -f $input.scop
-  rm -f /tmp/clanout
+  rm -f "$input" "$input.scop" "$clanout"
 done
 if [ $output = "1" ]; then
   echo "\033[31m[FAIL] $1\033[0m";

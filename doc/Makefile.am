@@ -71,7 +71,7 @@ if GENERATE_DOC
 #AM_MAKEINFOHTMLFLAGS = --no-headers --no-split
 
 clan.pdf: clan.texi
-	$(TEXI2PDF) clan.texi
+	$(TEXI2PDF) $<
 
 DOCDIR = htmldoc
 DOXYFILE = Doxyfile

@@ -182,7 +182,6 @@ AC_SUBST(OSL_LDFLAGS)
 case "$with_osl" in
 bundled)
     OSL_CFLAGS="-I\$(top_srcdir)/osl/include -I\$(top_builddir)/osl/include"
-    OSL_LIBS="$srcdir/osl/libosl.la"
     ;;
 build)
     OSL_CFLAGS="-I$osl_srcdir/include -I$with_osl_builddir/include"

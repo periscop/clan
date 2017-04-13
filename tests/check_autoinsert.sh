@@ -37,4 +37,4 @@
 # *****************************************************************************/
 
 
-./$CHECKER "Autoinsert test suite" "$AUTOINSERT_TEST_FILES" "-autoinsert" "${1:-clan}"
+"$CHECKER" "Autoinsert test suite" "$AUTOINSERT_TEST_FILES" "-autoinsert" "${1:-clan}"

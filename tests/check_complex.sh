@@ -37,4 +37,4 @@
 # *****************************************************************************/
 
 
-./$CHECKER "Complex test suite" "$TEST_FILES" "" "${1:-clan}"
+"$CHECKER" "Complex test suite" "$TEST_FILES" "" "${1:-clan}"

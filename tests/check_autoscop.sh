@@ -37,4 +37,4 @@
 # *****************************************************************************/
 
 
-./$CHECKER "Autoscop test suite" "$AUTOSCOP_TEST_FILES" "-autoscop" "${1:-clan}"
+"$CHECKER" "Autoscop test suite" "$AUTOSCOP_TEST_FILES" "-autoscop" "${1:-clan}"

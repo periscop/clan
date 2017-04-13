@@ -37,4 +37,4 @@
 # *****************************************************************************/
 
 
-./$CHECKER "Fail test suite" "$FAIL_TEST_FILES" "" "${1:-clan}"
+"$CHECKER" "Fail test suite" "$FAIL_TEST_FILES" "" "${1:-clan}"

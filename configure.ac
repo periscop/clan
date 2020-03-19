@@ -69,7 +69,7 @@ AC_SUBST(versioninfo)
 versioninfo=4:0:0
 
 dnl Initialize automake.
-AM_INIT_AUTOMAKE([foreign])
+AM_INIT_AUTOMAKE([foreign subdir-objects])
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 
 

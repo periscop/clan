@@ -19,7 +19,7 @@ pipeline {
             steps{
               script{
                 if(env.OS == 'Ubuntu')
-                  sh 'sudo apt install flex bison doxygen texinfo -y'
+                  sh 'sudo apt install flex bison doxygen texinfo make texlive texlive-generic-recommended autotools-dev autoconf libtool-bin libgmp-dev -y'
                 if(env.OS == 'macOS')
                   sh 'brew install automake libtool'
                 if(env.OS == 'CentOS')
@@ -27,7 +27,7 @@ pipeline {
                 if(env.OS == 'fedora')
                   sh 'sudo dnf install gmp-devel flex doxygen texinfo -y'
                 if(env.OS == 'Debian')
-                  sh 'sudo apt install autoconf libtool libgmp-dev make flex bison doxygen texinfo -y'
+                  sh 'sudo apt install flex bison doxygen texinfo make texlive texlive-generic-recommended autotools-dev autoconf libtool-bin libgmp-dev -y'
               }
             }
           }
@@ -35,7 +35,7 @@ pipeline {
             steps{
               script{
                 if(env.BuildSystem == 'GNU Autotools')
-                  sh './get_submodules.sh && ./autogen.sh && ./configure && make -j'
+                  sh './get_submodules.sh && ./autogen.sh && ./configure --with-osl=bundled && make -j'
                 if(env.BuildSystem == 'CMake')
                   sh 'mkdir build && cd build && cmake .. && cmake --build'
               }

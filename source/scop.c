@@ -51,6 +51,7 @@
 #include <osl/extensions/coordinates.h>
 #include <osl/extensions/clay.h>
 #include <osl/extensions/extbody.h>
+#include <osl/extensions/codemodel.h>
 #include <osl/generic.h>
 #include <osl/body.h>
 #include <osl/scop.h>
@@ -297,6 +298,144 @@ void clan_scop_update_coordinates(osl_scop_p scop,
   }
 }
 
+/**
+ * Remove codemodel nodes that were created during parsing, but the latter
+ * failed after creation.  These nodes either do not have coordiantes structure
+ * at all or did not properly initialize the ending point.
+ * \param[in,out] codemodel  A pointer to the code model root.
+ */
+static void codemodel_remove_failed_children(osl_codemodel_p codemodel) {
+  int i;
+  osl_codemodel_p child;
+  for (i = 0; i < codemodel->nb_children; ++i) {
+    child = codemodel->children[i];
+    if (child->kind == OSL_CODEMODEL_STMT) {
+      if (!child->u.stmt->coordinates ||
+          child->u.stmt->coordinates->line_end == -1 ||
+          child->u.stmt->coordinates->column_end == -1) {
+        osl_codemodel_remove_child(codemodel, child);
+        --i;
+      }
+    } else if (child->kind == OSL_CODEMODEL_LOOP) {
+      // Recurse first in order to delete failed statemetns.  Than if the loop
+      // became empty, delete the loop.
+      codemodel_remove_failed_children(child);
+      if (child->nb_children == 0) {
+        osl_codemodel_remove_child(codemodel, child);
+        --i;
+      }
+    }
+  }
+}
+
+/**
+ * Attach the codemodel as a SCoP extension after having removed failed nodes.
+ * \param[in,out] scop        The SCoP to attach to.
+ * \param[in]     codemodel   Pointer to the code model root.
+ */
+void clan_scop_attach_clean_codemodel(osl_scop_p scop,
+                                      osl_codemodel_p codemodel) {
+  codemodel_remove_failed_children(codemodel);
+  osl_generic_add(&scop->extension,
+                  osl_generic_shell(codemodel, osl_codemodel_interface()));
+}
+
+/**
+ * Recursively update coordinates in the codemodel to account for \c #pragma
+ * inserted by \c -autoscop option in the code.
+ * \param[in,out] codemodel       Pointer to the running root.
+ * \param[in]     line_correction Number of lines inserted automatically.
+ * \param[in]     first_line      Index of the first lnie in the SCoP.
+ */
+static void clan_scop_fix_codemodel_r(osl_codemodel_p codemodel,
+                                      int line_correction,
+                                      int first_line) {
+  int i;
+  int distance;
+  if (!codemodel || line_correction == 0)
+    return;
+
+  if (codemodel->kind == OSL_CODEMODEL_LOOP) {
+    if (codemodel->u.loop->coordinates) {
+      if (codemodel->u.loop->coordinates->line_start == first_line) {
+        distance = codemodel->u.loop->coordinates->column_end -
+                   codemodel->u.loop->coordinates->column_start;
+        codemodel->u.loop->coordinates->column_start = 0;
+        codemodel->u.loop->coordinates->column_end = distance;
+      }
+      codemodel->u.loop->coordinates->line_start -= line_correction;
+      codemodel->u.loop->coordinates->line_end -= line_correction;
+    }
+    if (codemodel->u.loop->initializer_coordinates) {
+      if (codemodel->u.loop->initializer_coordinates->line_start ==first_line) {
+        distance = codemodel->u.loop->initializer_coordinates->column_end -
+                   codemodel->u.loop->initializer_coordinates->column_start;
+        codemodel->u.loop->initializer_coordinates->column_start = 0;
+        codemodel->u.loop->initializer_coordinates->column_end = distance;
+      }
+      codemodel->u.loop->initializer_coordinates->line_start -= line_correction;
+      codemodel->u.loop->initializer_coordinates->line_end -= line_correction;
+    }
+    if (codemodel->u.loop->coordinates) {
+      if (codemodel->u.loop->condition_coordinates->line_start == first_line) {
+        distance = codemodel->u.loop->condition_coordinates->column_end -
+                   codemodel->u.loop->condition_coordinates->column_start;
+        codemodel->u.loop->condition_coordinates->column_start = 0;
+        codemodel->u.loop->condition_coordinates->column_end = distance;
+      }
+      codemodel->u.loop->condition_coordinates->line_start -= line_correction;
+      codemodel->u.loop->condition_coordinates->line_end -= line_correction;
+    }
+    if (codemodel->u.loop->coordinates) {
+      if (codemodel->u.loop->increment_coordinates->line_start == first_line) {
+        distance = codemodel->u.loop->increment_coordinates->column_end -
+                   codemodel->u.loop->increment_coordinates->column_start;
+        codemodel->u.loop->increment_coordinates->column_start = 0;
+        codemodel->u.loop->increment_coordinates->column_end = distance;
+      }
+      codemodel->u.loop->increment_coordinates->line_start -= line_correction;
+      codemodel->u.loop->increment_coordinates->line_end -= line_correction;
+    }
+    for (i = 0; i < codemodel->nb_children; ++i) {
+      clan_scop_fix_codemodel_r(codemodel->children[i], line_correction,
+                                first_line);
+    }
+  } else if (codemodel->kind == OSL_CODEMODEL_STMT) {
+    if (codemodel->u.stmt->coordinates) {
+      if (codemodel->u.stmt->coordinates->line_start == first_line) {
+        distance = codemodel->u.stmt->coordinates->column_end -
+                   codemodel->u.stmt->coordinates->column_start;
+        codemodel->u.stmt->coordinates->column_start = 0;
+        codemodel->u.stmt->coordinates->column_end = distance;
+      }
+      codemodel->u.stmt->coordinates->line_start -= line_correction;
+      codemodel->u.stmt->coordinates->line_end -= line_correction;
+    }
+  }
+}
+
+/**
+ * Correct the coordinates in the codemodel stored as an extension in the SCoP
+ * to account for the extra lines added by \c -autoscop option.
+ * \param[in,out] scop        The SCoP with codemodel extension.
+ * \param[in]     coordinates Array of SCoP coordinates found by parser.
+ */
+void clan_scop_fix_codemodels(osl_scop_p scop,
+                              int coordinates[5][CLAN_MAX_SCOPS]) {
+  int line_correction = 0;
+  int i = 0;
+  for ( ; scop != NULL; i++, scop = scop->next) {
+    if (coordinates[4][i]) // opening pragma
+      line_correction += 2;
+
+    osl_codemodel_p codemodel = osl_generic_lookup(scop->extension,
+                                                   OSL_URI_CODEMODEL);
+    clan_scop_fix_codemodel_r(codemodel, line_correction, coordinates[0][i]);
+
+    if (coordinates[4][i])
+      line_correction += 2; // closing pragma
+  }
+}
 
 /**
  * clan_scop_print_autopragma function:

@@ -746,6 +746,15 @@ saving reason, this step can be disabled using this option.
 (see OpenScop's documentation) instead of the basic body for
 each statement.
 
+@node Codemodel
+@subsection Code Model @code{-codemodel}
+
+@code{-codemodel}: this option requires Clan to generate the @code{codemodel}
+OpenScop extension (see OpenScop documentation).  In brief, this extension
+captures the row and column number and textual length of individual statements
+in the source code.  It also captures initiaization, condition and increment
+clauses of the loop definition.
+
 @node Help
 @subsection Help @code{--help} or @code{-h}
 

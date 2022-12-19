@@ -100,14 +100,17 @@ for i in $TEST_FILES; do
     libtool --mode=execute valgrind --error-exitcode=1 $clan $TEST_OPTIONS $input > /dev/null 2> "$clanout";
     errors=$?;
     leaks=`grep "in use at exit" "$clanout" | cut -f 2 -d ':'`
+    reachable=`tail "${clanout}" | grep "still reachable:" | cut -f 2 -d ':'`
     if [ "$errors" = "1" ]; then
       printf "\033[31mMemory error detected... \033[0m\n";
       cat "$clanout";
       output="1";
     elif [ "$leaks" != " 0 bytes in 0 blocks" ]; then
-      printf "\033[31mMemory leak detected... \033[0m\n";
-      cat "$clanout";
-      output="1";
+      if [ "${leaks}" != "${reachable}" ]; then
+        printf "\033[31mMemory leak detected... \033[0m\n";
+        cat "$clanout";
+        output="1";
+      fi
     else
       output="0";
     fi;

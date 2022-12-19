@@ -85,12 +85,12 @@ for i in $TEST_FILES; do
     fi
     err=`cat "$clanout"`;
     if [ "$z" -ne "0" ]; then
-      echo "\033[31m[FAIL] Source parser test: Wrong output\n$z\033[0m";
+      printf "\033[31m[FAIL] Source parser test: Wrong output\n$z\033[0m\n";
       outtemp=1;
       output=1
     fi
     if ! [ -z "$err" ]; then
-      echo "\033[33m[INFO] Source parser test stderr output:\n$err\033[0m";
+      printf "\033[33m[INFO] Source parser test stderr output:\n$err\033[0m\n";
     fi
     if [ $outtemp = "0" ]; then
       echo "[PASS] Source parser test: output OK";
@@ -101,11 +101,11 @@ for i in $TEST_FILES; do
     errors=$?;
     leaks=`grep "in use at exit" "$clanout" | cut -f 2 -d ':'`
     if [ "$errors" = "1" ]; then
-      echo "\033[31mMemory error detected... \033[0m";
+      printf "\033[31mMemory error detected... \033[0m\n";
       cat "$clanout";
       output="1";
     elif [ "$leaks" != " 0 bytes in 0 blocks" ]; then
-      echo "\033[31mMemory leak detected... \033[0m";
+      printf "\033[31mMemory leak detected... \033[0m\n";
       cat "$clanout";
       output="1";
     else
@@ -115,7 +115,7 @@ for i in $TEST_FILES; do
   rm -f "$input" "$input.scop" "$clanout"
 done
 if [ $output = "1" ]; then
-  echo "\033[31m[FAIL] $1\033[0m";
+  printf "\033[31m[FAIL] $1\033[0m\n";
 else
   echo "[PASS] $1 ($nb_tests tests)";
 fi

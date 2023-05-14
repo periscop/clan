@@ -6,6 +6,8 @@ set(top_srcdir "${CMAKE_CURRENT_SOURCE_DIR}")
 
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
 
 # User's settings - C Flags
 
@@ -74,10 +76,12 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 # Flex
 	find_package(BISON REQUIRED)
 	find_package(FLEX REQUIRED)
-	BISON_TARGET(clan_parser source/parser.y ${CMAKE_CURRENT_BINARY_DIR}/parser.c)
-	FLEX_TARGET(clan_scanner source/scanner.l ${CMAKE_CURRENT_BINARY_DIR}/scanner.c)
+	#Output in SOURCE_DIR/source/ required for consistency with older buildsystem
+	#(Source files expect an outputted parser.h there)
+	#(make clean still removes it)
+	BISON_TARGET(clan_parser source/parser.y ${CMAKE_CURRENT_SOURCE_DIR}/source/parser.c)
+	FLEX_TARGET(clan_scanner source/scanner.l ${CMAKE_CURRENT_SOURCE_DIR}/source/scanner.c)
 	ADD_FLEX_BISON_DEPENDENCY(clan_scanner clan_parser)
-	include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 # Include directories (to use #include <> instead of #include "")
 
@@ -85,7 +89,7 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 	configure_file("include/clan/macros.h.in" "include/clan/macros.h")
 	include_directories("${CMAKE_CURRENT_BINARY_DIR}/include")
 	# clan
-	include_directories("./include")
+	include_directories("include")
 
 
 # Compiler log
@@ -107,10 +111,8 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 	file(
 		GLOB_RECURSE
 		sources
-		source/*
+		source/*.c
 	)
-	string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/source/clan.c;" "" sources "${sources}") # with ;
-	string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/source/clan.c" "" sources "${sources}")  # without ;
 
 	# Shared
 	add_library(

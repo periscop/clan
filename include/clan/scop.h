@@ -50,6 +50,7 @@ extern "C"
 
 
 struct osl_scop;
+struct osl_codemodel;
 
 
 /*+****************************************************************************
@@ -64,6 +65,10 @@ void             clan_scop_generate_clay(struct osl_scop*, char*);
 void             clan_scop_fill_options(struct osl_scop*, int*, int*);
 void             clan_scop_update_coordinates(struct osl_scop*,
                                               int (*)[CLAN_MAX_SCOPS]);
+void             clan_scop_attach_clean_codemodel(struct osl_scop *,
+                                                  struct osl_codemodel *);
+void             clan_scop_fix_codemodels(struct osl_scop *,
+                                          int (*)[CLAN_MAX_SCOPS]);
 void             clan_scop_print_autopragma(FILE*, int,
                                             int (*)[CLAN_MAX_SCOPS]);
 void             clan_scop_simplify(struct osl_scop*);

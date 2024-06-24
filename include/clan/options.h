@@ -70,6 +70,7 @@ struct clan_options
   int outscoplib;      /**< 1 print to the SCoPLib format (default 0) */
 
   int extbody;    /**< 1 to generate the extbody (default 0) */
+  int codemodel;  /**< 1 to generate the codemodels extension (default 0) */
 };
 typedef struct clan_options  clan_options_t;
 typedef struct clan_options* clan_options_p;

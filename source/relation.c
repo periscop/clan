@@ -240,6 +240,42 @@ void clan_relation_new_output_scalar(osl_relation_p relation, int scalar) {
                  &relation->m[new_row][relation->nb_columns - 1], scalar);
 }
 
+/**
+ * clan_relation_add_modulo_constraint function:
+ * this function adds the constraint of the % to the last relation row, 
+ * and add two rows for the >=0 constraint and <=mod-1 constraint. 
+ * The input relation is direcly updated.
+ * \param[in,out] relation The relation to add a new output dimension.
+ * \param[in]     mod   The integer who is the modulo.
+ */
+void clan_relation_add_modulo_constraint(osl_relation_p relation, int mod) {
+  //edit relation to add ld
+  int* nb_rows = &relation->nb_rows;
+  int* nb_local_dims = &relation->nb_local_dims;
+  osl_int_set_si(relation->precision,
+                  &(relation->m[(*nb_rows)-1][CLAN_MAX_DEPTH + 1 + *nb_local_dims]), -mod);
+  (*nb_local_dims)++;
+
+
+  //edit relation to add the modulo constraint
+  osl_relation_insert_blank_row(relation, *nb_rows);
+
+  // >=0
+  int* nb_output_dims = &relation->nb_output_dims;
+  fprintf(stderr, "nb_output_dims: %d\n", *nb_output_dims);
+  fprintf(stderr, "nb_rows: %d\n", *nb_rows-1);
+  osl_int_set_si(relation->precision, &(relation->m[*nb_rows-1][0]), 1);
+  osl_int_set_si(relation->precision, &(relation->m[(*nb_rows)-1][*nb_output_dims]), 1);
+
+  // <= mod-1
+  osl_relation_insert_blank_row(relation, *nb_rows);
+  int* nb_collumns = &relation->nb_columns;
+  fprintf(stderr, "nb_collumns: %d\n", *nb_collumns);
+  osl_int_set_si(relation->precision, &(relation->m[*nb_rows-1][0]), 1);
+  osl_int_set_si(relation->precision, &(relation->m[(*nb_rows)-1][*nb_output_dims]), -1);
+  osl_int_set_si(relation->precision, &(relation->m[(*nb_rows)-1][*nb_collumns-1]), mod-1);
+}
+
 
 /**
  * clan_relation_compact function:
@@ -255,7 +291,11 @@ void clan_relation_compact(osl_relation_p relation,
   int i, j, nb_columns;
   int nb_output_dims, nb_input_dims, nb_local_dims, nb_out_in_loc;
   osl_relation_p compacted;
-
+  if(CLAN_DEBUG)
+    fprintf(stderr,"compacting relation of type %d with %d rows and %d columns "
+               "to a relation with %d parameters\n",
+               relation->type, relation->nb_rows, relation->nb_columns,
+               nb_parameters);
   while (relation != NULL) {
     nb_output_dims = relation->nb_output_dims;
     nb_input_dims  = relation->nb_input_dims;

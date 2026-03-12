@@ -775,6 +775,7 @@ affine_relation:
       $$ = osl_relation_from_vector($1);
       osl_vector_free($1);
       CLAN_debug_call(osl_relation_dump(stderr, $$));
+
     }
   ;
 
@@ -1107,6 +1108,25 @@ postfix_expression:
       osl_vector_free($3);
       $$ = $1;
       CLAN_debug_call(osl_relation_list_dump(stderr, $$));
+    }
+  | postfix_expression '[' affine_expression '%' INTEGER ']'
+    {
+      if (parser_options->extbody)
+        parser_access_length = strlen(parser_record) - parser_access_start;
+
+      CLAN_debug("rule postfix_expression.modulo: postfix_expression [ <affex> %% INTEGER]");
+      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_ARRAY))
+        YYABORT;      
+
+      clan_relation_new_output_vector($1->elt, $3);
+      osl_vector_free($3);
+
+      clan_relation_add_modulo_constraint($1->elt, $5);
+
+      
+      $$ = $1;
+      CLAN_debug_call(osl_relation_list_dump(stderr, $$));
+
     }
   | postfix_expression '(' ')'
     { 

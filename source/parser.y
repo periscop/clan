@@ -775,7 +775,6 @@ affine_relation:
       $$ = osl_relation_from_vector($1);
       osl_vector_free($1);
       CLAN_debug_call(osl_relation_dump(stderr, $$));
-
     }
   ;
 
@@ -1122,7 +1121,6 @@ postfix_expression:
       osl_vector_free($3);
 
       clan_relation_add_modulo_constraint($1->elt, $5);
-
       
       $$ = $1;
       CLAN_debug_call(osl_relation_list_dump(stderr, $$));

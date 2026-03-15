@@ -138,6 +138,15 @@ AUTOSCOP_TEST_FILES = \
 	$(top_srcdir)/tests/autoscop/matmul_2_non_static_fences.c \
 	$(top_srcdir)/tests/autoscop/matmul_3_user_scop.c
 
+MODULO_ACESS_TEST_FILES = \
+	$(top_srcdir)/tests/modulo_acess/3d7pt.c \
+	$(top_srcdir)/tests/modulo_acess/apop.c \
+	$(top_srcdir)/tests/modulo_acess/heat-1d.c \
+	$(top_srcdir)/tests/modulo_acess/heat-2d.c \
+	$(top_srcdir)/tests/modulo_acess/heat-3d.c \
+	$(top_srcdir)/tests/modulo_acess/life.c
+
+
 AUTOINSERT_TEST_FILES = \
 	$(top_srcdir)/tests/autoinsert/trivial.c \
 	$(top_srcdir)/tests/autoinsert/braces.c \
@@ -155,12 +164,14 @@ TESTS_ENVIRONMENT = \
 	UNITARY_TEST_FILES="$(UNITARY_TEST_FILES)" \
 	FAIL_TEST_FILES="$(FAIL_TEST_FILES)" \
 	AUTOSCOP_TEST_FILES="$(AUTOSCOP_TEST_FILES)" \
+	MODULO_ACESS_TEST_FILES="$(MODULO_ACESS_TEST_FILES)" \
 	AUTOINSERT_TEST_FILES="$(AUTOINSERT_TEST_FILES)"
 
 valcheck:
 	$(TESTS_ENVIRONMENT) $(srcdir)/check_unitary.sh valgrind ; \
 	$(TESTS_ENVIRONMENT) $(srcdir)/check_complex.sh valgrind ; \
 	$(TESTS_ENVIRONMENT) $(srcdir)/check_autoscop.sh valgrind ; \
+	$(TESTS_ENVIRONMENT) $(srcdir)/check_modulo_acess.sh valgrind ; \
 	$(TESTS_ENVIRONMENT) $(srcdir)/check_autoinsert.sh valgrind
 
 check_SCRIPTS = \
@@ -168,6 +179,7 @@ check_SCRIPTS = \
 	check_complex.sh \
 	check_fail.sh \
 	check_autoscop.sh \
+	check_modulo_acess.sh \
 	check_autoinsert.sh
 
 ## Replace by program names when needed
@@ -178,18 +190,22 @@ TEST_FILES_REF = $(TEST_FILES:.c=.c.scop)
 UNITARY_TEST_FILES_REF = $(UNITARY_TEST_FILES:.c=.c.scop)
 FAIL_TEST_FILES_REF = $(FAIL_TEST_FILES:.c=.c.scop)
 AUTOSCOP_TEST_FILES_REF = $(AUTOSCOP_TEST_FILES:.c=.c.scop)
+MODULO_ACESS_TEST_FILES_REF =$(MODULO_ACESS_TEST_FILES:.c=.c.scop)
 AUTOINSERT_TEST_FILES_REF = $(AUTOINSERT_TEST_FILES:.c=.c.orig)
 
 TEST_FILES_CLEAN = $(TEST_FILES:.c=.c.test)
 UNITARY_TEST_FILES_CLEAN = $(UNITARY_TEST_FILES:.c=.c.test)
 FAIL_TEST_FILES_CLEAN = $(FAIL_TEST_FILES:.c=.c.test)
 AUTOSCOP_TEST_FILES_CLEAN = $(AUTOSCOP_TEST_FILES:.c=.c.test)
+MODULO_ACESS_TEST_FILES_CLEAN =$(MODULO_ACESS_TEST_FILES:.c=.c.test)
+
 
 CLEANFILES = \
 	$(TEST_FILES_CLEAN) \
 	$(UNITARY_TEST_FILES_CLEAN) \
 	$(FAIL_TEST_FILES_CLEAN) \
-	$(AUTOSCOP_TEST_FILES_CLEAN)
+	$(AUTOSCOP_TEST_FILES_CLEAN) \
+	$(MODULO_ACESS_TEST_FILES_CLEAN)
 
 EXTRA_DIST = \
 	$(check_SCRIPTS) \
@@ -202,6 +218,8 @@ EXTRA_DIST = \
 	$(FAIL_TEST_FILES_REF) \
 	$(AUTOSCOP_TEST_FILES) \
 	$(AUTOSCOP_TEST_FILES_REF) \
+	$(MODULO_ACESS_TEST_FILES) \
+	$(MODULO_ACESS_TEST_FILES_REF) \
 	$(AUTOINSERT_TEST_FILES) \
 	$(AUTOINSERT_TEST_FILES_REF) \
 	$(check_SCRIPTS)

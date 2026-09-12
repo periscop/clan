@@ -68,6 +68,7 @@ void clan_options_print(FILE* foo, clan_options_p options) {
 
   fprintf(foo, "castle          = %3d,\n", options->castle);
   fprintf(foo, "structure       = %3d.\n", options->structure);
+  fprintf(foo, "affine_only     = %3d.\n", options->affine_only);
   fprintf(foo, "autoscop        = %3d.\n", options->autoscop);
   fprintf(foo, "autopragma      = %3d.\n", options->autopragma);
   fprintf(foo, "autoinsert      = %3d.\n", options->autoinsert);
@@ -114,6 +115,7 @@ void clan_options_help() {
   "  -o <output>          Name of the output file; 'stdout' is a special\n"
   "                       value: when used, output is standard output\n"
   "                       (default setting: stdout).\n"
+  "  -affine-only         Reject non-affine array subscripts.\n"
   "  -autoscop            Automatic SCoP extraction.\n"
   "  -autopragma          Automatic insertion of SCoP pragmas in input code.\n"
   "  -autoinsert          Automatic insertion of SCoP pragmas in input file.\n"
@@ -215,6 +217,7 @@ clan_options_p clan_options_malloc(void) {
   options->name       = NULL;  // Name of the input file is not set.
   options->castle     = 1;     // Do print the Clan McCloog castle in output.
   options->structure  = 0;     // Don't print internal structure.
+  options->affine_only = 0;    // Allow conservative array accesses.
   options->autoscop   = 0;     // Do not extract SCoPs automatically.
   options->autopragma = 0;     // Do not insert SCoP pragmas in the input code.
   options->autoinsert = 0;     // Do not insert SCoP pragmas in the input file.
@@ -271,6 +274,8 @@ clan_options_p clan_options_read(int argv, char** argc,
         clan_options_set(&(options)->castle, argv, argc, &i);
       } else if (strcmp(argc[i], "-structure") == 0) {
         options->structure = 1;
+      } else if (strcmp(argc[i], "-affine-only") == 0) {
+        options->affine_only = 1;
       } else if (strcmp(argc[i], "-autoscop") == 0) {
         options->autoscop = 1;
       } else if (strcmp(argc[i], "-autopragma") == 0) {

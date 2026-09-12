@@ -601,19 +601,34 @@ in parentheses in this part: @code{++(i)}.
 
 @node Array Subscript
 @subsubsection Array Subscript
-Array subscripts may be affine expressions, or remainders of the form
-@code{affine_expression % positive_integer_literal}. Parentheses may surround
-both the dividend and the complete remainder, for example @code{a[(i % 3)]}
-and @code{a[((i + 1) % 3)]}. Dividends containing addition or subtraction
-must be parenthesized: @code{a[(i + 1) % 3]}, not @code{a[i + 1 % 3]}.
-Each subscript may contain one remainder;
-remainders nested inside arithmetic expressions are not supported.
+Array subscripts may be affine expressions, remainders, or general
+side-effect-free expressions involving arithmetic, comparisons, conditionals,
+casts, array references, and function calls. Loop bounds and @code{if}
+conditions must still satisfy the affine restrictions described above.
 
-The dividend must be nonnegative for every execution of the statement.
-Clan accepts symbolic dividends such as @code{n} in @code{a[n % 3]} under
-this requirement; it does not prove their sign. For nonnegative dividends,
-the generated constraints match C's remainder semantics. Negative dividends
-are outside this supported subset. Zero and negative divisors are rejected.
+Recognized affine subscripts retain their exact access constraints.
+A remainder with an affine dividend and a positive constant divisor is also
+represented exactly, including parenthesized forms such as @code{a[(i % 3)]}
+and @code{a[((i + 1) % 3)]}. Other expressions are conservatively represented
+by an unconstrained output dimension. Constraints on the other dimensions
+are preserved. For example, @code{A[B[i]][j] = 0} produces a read of @code{B[i]}
+and a write to @code{A} with an unconstrained first index and second index
+@code{j}. Nested references are handled recursively.
+
+Function calls are assumed to have no hidden memory effects, as required by
+the SCoP contract. The data referenced in their arguments contributes reads;
+the function name itself does not. For example,
+@code{A[f(B[i], j, C[2*i+j+3*n-2])]} reads @code{B[i]}, @code{j}, and
+@code{C[2*i+j+3*n-2]}, and leaves the subscript of @code{A} unconstrained.
+Assignments and increments within subscripts are not supported.
+
+For an exactly represented remainder, the dividend must be nonnegative for
+every execution of the statement. Clan accepts symbolic dividends under
+this requirement; it does not prove their sign. Negative dividends are
+outside this supported subset. Constant zero divisors and negative constant
+remainder divisors are rejected, including in general subscript expressions.
+C operator precedence is respected: @code{A[i + 1 % 3]} is a general
+subscript, not a remainder of @code{i + 1}.
 
 
 
@@ -672,6 +687,7 @@ input file @code{basic.c} with default options by typing:
 * Bounded Context::
 * No Loop Context::
 * No Domain Simplify::
+* Affine-only::
 * Extbody::
 * Help::
 * Version ::
@@ -754,6 +770,16 @@ library, hence it is just able to remove trivially redundant
 constraints and union parts. However, for debugging or time
 saving reason, this step can be disabled using this option.
 
+@node Affine-only
+@subsection Affine-only @code{-affine-only}
+
+@code{-affine-only}: reject array subscripts that would require an
+unconstrained access dimension. Affine subscripts and supported exact
+remainders remain accepted. Function calls outside subscripts retain their
+usual behavior. With explicit SCoP pragmas, a non-affine subscript causes a
+parsing error; with automatic discovery, it excludes the affected region.
+By default, conservative non-affine accesses are enabled.
+
 @node Extbody
 @subsection Extbody @code{-extbody}
 
@@ -815,6 +841,7 @@ struct clan_options @{
   char * name ;   /* Name of the input file */
   int castle;     /* 1 to print the Clan Castle, 0 otherwise */
   int structure;  /* 1 to dump the SCoP structure, 0 otherwise */
+  int affine_only; /* 1 to reject non-affine array subscripts */
   int autoscop;   /* 1 to extract SCoPs automatically, 0 otherwise */
   int autopragma; /* 1 to insert SCoP pragmas in the code, 0 otherwise */
   int inputscop;  /* 1 to read an OpenScop file, 0 for a source code */
@@ -836,6 +863,7 @@ The default values for the various fields set by the
 @item @code{name}: NULL.
 @item @code{castle}: 1 (do print the castle).
 @item @code{structure}: 0 (do not dump the internal data structure).
+@item @code{affine_only}: 0 (conservative non-affine accesses enabled).
 @item @code{autoscop}: 0 (automatic SCoP extraction disabled).
 @item @code{autopragma}: 0 (automatic pragma insertion disabled).
 @item @code{inputscop}: 0 (read a source file by default).

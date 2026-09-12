@@ -68,6 +68,7 @@
    #include <clan/symbol.h>
    #include <clan/statement.h>
    #include <clan/options.h>
+   #include "access.h"
 
    int  yylex(void);
    void yyerror(char*);
@@ -142,7 +143,7 @@
          char* symbol;                   /**< A string for identifiers */
          osl_vector_p affex;             /**< An affine expression */
          osl_relation_p setex;           /**< A set of affine expressions */
-         osl_relation_list_p list;       /**< List of array accesses */
+         struct clan_access_expr* expr; /**< Accesses and affine candidate */
          osl_statement_p stmt;           /**< List of statements */
        }
 
@@ -193,33 +194,34 @@
 %type <affex>  affine_ceild_expression
 %type <affex>  affine_floord_expression
 %type <affex>  affine_expression
-%type <affex>  modulo_access_expression
 
-%type <list>   primary_expression
-%type <list>   postfix_expression
-%type <list>   argument_expression_list
-%type <list>   unary_expression
-%type <list>   cast_expression
-%type <list>   multiplicative_expression
-%type <list>   additive_expression
-%type <list>   shift_expression
-%type <list>   relational_expression
-%type <list>   equality_expression
-%type <list>   and_expression
-%type <list>   exclusive_or_expression
-%type <list>   inclusive_or_expression
-%type <list>   logical_and_expression
-%type <list>   logical_or_expression
-%type <list>   conditional_expression
-%type <list>   assignment_expression
-%type <list>   expression
+%type <expr>   primary_expression
+%type <expr>   postfix_expression
+%type <expr>   argument_expression_list
+%type <expr>   unary_expression
+%type <expr>   cast_expression
+%type <expr>   multiplicative_expression
+%type <expr>   additive_expression
+%type <expr>   shift_expression
+%type <expr>   relational_expression
+%type <expr>   equality_expression
+%type <expr>   and_expression
+%type <expr>   exclusive_or_expression
+%type <expr>   inclusive_or_expression
+%type <expr>   logical_and_expression
+%type <expr>   logical_or_expression
+%type <expr>   conditional_expression
+%type <expr>   assignment_expression
+%type <expr>   expression
 %type <value>  assignment_operator
 
 %destructor { free($$); } <symbol>
 %destructor { osl_vector_free($$); } <affex>
 %destructor { osl_relation_free($$); } <setex>
-%destructor { osl_relation_list_free($$); } <list>
+%destructor { clan_access_expr_free($$); } <expr>
 %destructor { osl_statement_free($$); } <stmt>
+
+%type <value> unary_operator
 
 %start scop_list
 %%
@@ -1075,119 +1077,85 @@ primary_expression:
         parser_access_length = len - parser_access_start;
       }
 
-      free($1);
-      $$ = list;
-      CLAN_debug_call(osl_relation_list_dump(stderr, $$));
+      $$ = clan_access_expr_new(CLAN_ACCESS_ID, NULL, NULL);
+      $$->name = $1;
+      $$->start = strlen(parser_record) - strlen($1);
+      $$->access = list;
+      CLAN_debug_call(osl_relation_list_dump(stderr, $$->access));
     }
   | CONSTANT
-    { $$ = NULL; }
+    { $$ = clan_access_expr_new(CLAN_ACCESS_OTHER, NULL, NULL); }
   | INTEGER
-    { $$ = NULL; }
-  | STRING_LITERAL
-    { $$ = NULL; }
-  | '(' expression ')'
-    { $$ = $2; }
-  ;
-
-
-// A modulo subscript is an affine dividend and a positive integer divisor.
-// Keep it separate from affine_expression so other affine contexts do not
-// acquire modulo syntax. Additive dividends must be parenthesized to respect
-// C precedence. The vector tag temporarily stores the divisor.
-modulo_access_expression:
-    affine_multiplicative_expression '%' INTEGER
     {
-      if ($3 <= 0) {
-        osl_vector_free($1);
-        yyerror("an array modulo divisor must be strictly positive");
-        YYABORT;
-      }
-      osl_int_set_si($1->precision, &$1->v[0], $3);
-      $$ = $1;
+      $$ = clan_access_expr_new(CLAN_ACCESS_INTEGER, NULL, NULL);
+      $$->value = $1;
     }
-  | '(' modulo_access_expression ')'
-    { $$ = $2; }
+  | STRING_LITERAL
+    { $$ = clan_access_expr_new(CLAN_ACCESS_OTHER, NULL, NULL); }
+  | '(' expression ')'
+    { $$ = clan_access_expr_new(CLAN_ACCESS_PAREN, $2, NULL); }
   ;
+
 
 
 postfix_expression:
     primary_expression
     { $$ = $1; }
-  | postfix_expression '[' affine_expression ']' // ANSI: expression
+  | postfix_expression '['
     {
-      if (parser_options->extbody)
-        parser_access_length = strlen(parser_record) - parser_access_start;
-
-      CLAN_debug("rule postfix_expression.2: postfix_expression [ <affex> ]");
-      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_ARRAY)) {
-        osl_relation_list_free($1);
-        osl_vector_free($3);
-        YYABORT;
-      }
-      clan_relation_new_output_vector($1->elt, $3);
-      osl_vector_free($3);
-      $$ = $1;
-      CLAN_debug_call(osl_relation_list_dump(stderr, $$));
+      // The enclosing reference stays pending while its index is parsed.
+      $<value>$ = parser_options->extbody ? parser_access_extbody->nb_access : 0;
+      parser_access_start = -1;
     }
-  | postfix_expression '[' modulo_access_expression ']'
+    expression ']'
     {
-      int divisor = osl_int_get_si($3->precision, $3->v[0]);
-
+      if (!clan_symbol_update_type(parser_symbol, $1->access, CLAN_TYPE_ARRAY) ||
+          !clan_access_subscript($1, $4, $<value>3)) {
+        clan_access_expr_free($1);
+        clan_access_expr_free($4);
+        YYABORT;
+      }
+      $$ = clan_access_expr_new(CLAN_ACCESS_OTHER, $1, $4);
       if (parser_options->extbody) {
+        parser_access_start = $$->start;
         parser_access_length = strlen(parser_record) - parser_access_start;
       }
-      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_ARRAY)) {
-        osl_relation_list_free($1);
-        osl_vector_free($3);
-        YYABORT;
-      }
-      if ($1->elt->nb_local_dims >= CLAN_MAX_LOCAL_DIMS) {
-        osl_relation_list_free($1);
-        osl_vector_free($3);
-        yyerror("too many local dimensions in an array access");
-        YYABORT;
-      }
-
-      // The expression tag carries the divisor until the access is built.
-      osl_int_set_si($3->precision, &$3->v[0], 0);
-      clan_relation_new_output_vector($1->elt, $3);
-      osl_vector_free($3);
-      clan_relation_add_modulo_constraint($1->elt, divisor);
-      $$ = $1;
-      CLAN_debug_call(osl_relation_list_dump(stderr, $$));
+      CLAN_debug_call(osl_relation_list_dump(stderr, $$->access));
     }
   | postfix_expression '(' ')'
     { 
       // don't save access name of a function
       if (parser_options->extbody) {
-        parser_access_extbody->nb_access -= osl_relation_list_count($1) - 1;
+        parser_access_extbody->nb_access -= osl_relation_list_count($1->access) - 1;
         parser_access_start = -1;
       }
 
-      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_FUNCTION)) {
-        osl_relation_list_free($1);
+      if (!clan_symbol_update_type(parser_symbol, $1->access, CLAN_TYPE_FUNCTION)) {
+        clan_access_expr_free($1);
         YYABORT;
       }
-      osl_relation_list_free($1);
-      $$ = NULL;
+      osl_relation_list_free($1->access);
+      $1->access = NULL;
+      $$ = clan_access_expr_new(CLAN_ACCESS_OTHER, $1, NULL);
     }
   | postfix_expression '('
     {
       // don't save access name of a function
       if (parser_options->extbody) {
-        parser_access_extbody->nb_access -= osl_relation_list_count($1) - 1;
+        parser_access_extbody->nb_access -= osl_relation_list_count($1->access) - 1;
         parser_access_start = -1;
       }
     }
     argument_expression_list ')'
     {
-      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_FUNCTION)) {
-        osl_relation_list_free($1);
-        osl_relation_list_free($4);
+      if (!clan_symbol_update_type(parser_symbol, $1->access, CLAN_TYPE_FUNCTION)) {
+        clan_access_expr_free($1);
+        clan_access_expr_free($4);
         YYABORT;
       }
-      osl_relation_list_free($1);
-      $$ = $4;
+      osl_relation_list_free($1->access);
+      $1->access = NULL;
+      $$ = clan_access_expr_new(CLAN_ACCESS_OTHER, $1, $4);
     }
   | postfix_expression '.' id_or_clan_keyword
     {
@@ -1198,16 +1166,16 @@ postfix_expression:
 
       CLAN_debug("rule postfix_expression.4: postfix_expression . "
                  "id_or_clan_keyword");
-      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_ARRAY)) {
-        osl_relation_list_free($1);
+      if (!clan_symbol_update_type(parser_symbol, $1->access, CLAN_TYPE_ARRAY)) {
+        clan_access_expr_free($1);
         free($3);
         YYABORT;
       }
       symbol = clan_symbol_add(&parser_symbol, $3, CLAN_TYPE_FIELD);
-      clan_relation_new_output_scalar($1->elt, symbol->key);
+      clan_relation_new_output_scalar(clan_access_last($1->access)->elt, symbol->key);
       free($3);
-      $$ = $1;
-      CLAN_debug_call(osl_relation_list_dump(stderr, $$));
+      $$ = clan_access_expr_new(CLAN_ACCESS_OTHER, $1, NULL);
+      CLAN_debug_call(osl_relation_list_dump(stderr, $$->access));
     }
   | postfix_expression PTR_OP id_or_clan_keyword
     {
@@ -1218,16 +1186,16 @@ postfix_expression:
 
       CLAN_debug("rule postfix_expression.5: postfix_expression -> "
                  "id_or_clan_keyword");
-      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_ARRAY)) {
-        osl_relation_list_free($1);
+      if (!clan_symbol_update_type(parser_symbol, $1->access, CLAN_TYPE_ARRAY)) {
+        clan_access_expr_free($1);
         free($3);
         YYABORT;
       }
       symbol = clan_symbol_add(&parser_symbol, $3, CLAN_TYPE_FIELD);
-      clan_relation_new_output_scalar($1->elt, symbol->key);
+      clan_relation_new_output_scalar(clan_access_last($1->access)->elt, symbol->key);
       free($3);
-      $$ = $1;
-      CLAN_debug_call(osl_relation_list_dump(stderr, $$));
+      $$ = clan_access_expr_new(CLAN_ACCESS_OTHER, $1, NULL);
+      CLAN_debug_call(osl_relation_list_dump(stderr, $$->access));
     }
   | postfix_expression unary_increment_operator
     { 
@@ -1235,11 +1203,11 @@ postfix_expression:
 
       CLAN_debug("rule postfix_expression.6: postfix_expression -> "
 	         "postfix_expression ++/--");
-      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_ARRAY)) {
-        osl_relation_list_free($1);
+      if (!clan_symbol_update_type(parser_symbol, $1->access, CLAN_TYPE_ARRAY)) {
+        clan_access_expr_free($1);
         YYABORT;
       }
-      list = $1;
+      list = $1->access;
       // The last reference in the list is also written.
       if (list != NULL) {
         while (list->next != NULL)
@@ -1247,11 +1215,16 @@ postfix_expression:
         list->next = osl_relation_list_node(list->elt);
         list->next->elt->type = OSL_TYPE_WRITE;
       }
-      $$ = $1;
-      CLAN_debug_call(osl_relation_list_dump(stderr, $$));
+      $$ = clan_access_expr_new(CLAN_ACCESS_EFFECT, $1, NULL);
+      CLAN_debug_call(osl_relation_list_dump(stderr, $$->access));
 
-      // add an empty line in the extbody
+      // Record the read before its synthetic write counterpart.
       if (parser_options->extbody) {
+        if (parser_access_start != -1) {
+          osl_extbody_add(parser_access_extbody, parser_access_start,
+                          parser_access_length);
+          parser_access_start = -1;
+        }
         osl_extbody_add(parser_access_extbody, -1, -1);
       }
     }
@@ -1262,8 +1235,7 @@ argument_expression_list:
     { $$ = $1; }
   | argument_expression_list ',' assignment_expression
     {
-      $$ = $1;
-      osl_relation_list_add(&$$, $3);
+      $$ = clan_access_expr_new(',', $1, $3);
     }
   ;
 
@@ -1276,11 +1248,11 @@ unary_expression:
 
       CLAN_debug("rule unary_expression.2: unary_expression -> "
 	         "++/-- unary_expression");
-      if (!clan_symbol_update_type(parser_symbol, $2, CLAN_TYPE_ARRAY)) {
-        osl_relation_list_free($2);
+      if (!clan_symbol_update_type(parser_symbol, $2->access, CLAN_TYPE_ARRAY)) {
+        clan_access_expr_free($2);
         YYABORT;
       }
-      list = $2;
+      list = $2->access;
       // The last reference in the list is also written.
       if (list != NULL) {
         while (list->next != NULL)
@@ -1288,29 +1260,34 @@ unary_expression:
         list->next = osl_relation_list_node(list->elt);
         list->next->elt->type = OSL_TYPE_WRITE;
       }
-      $$ = $2;
-      CLAN_debug_call(osl_relation_list_dump(stderr, $$));
+      $$ = clan_access_expr_new(CLAN_ACCESS_EFFECT, $2, NULL);
+      CLAN_debug_call(osl_relation_list_dump(stderr, $$->access));
 
-      // add an empty line in the extbody
+      // Record the read before its synthetic write counterpart.
       if (parser_options->extbody) {
+        if (parser_access_start != -1) {
+          osl_extbody_add(parser_access_extbody, parser_access_start,
+                          parser_access_length);
+          parser_access_start = -1;
+        }
         osl_extbody_add(parser_access_extbody, -1, -1);
       }
     }
   | unary_operator cast_expression
-    { $$ = $2; }
+    { $$ = clan_access_expr_new($1, $2, NULL); }
   | SIZEOF unary_expression
-    { $$ = $2; }
+    { $$ = clan_access_expr_new(CLAN_ACCESS_OTHER, $2, NULL); }
   | SIZEOF '(' type_name ')'
-    { $$ = NULL; }
+    { $$ = clan_access_expr_new(CLAN_ACCESS_OTHER, NULL, NULL); }
   ;
 
 unary_operator:
-    '&'
-  | '*'
-  | '+'
-  | '-'
-  | '~'
-  | '!'
+    '&' { $$ = '&'; }
+  | '*' { $$ = '*'; }
+  | '+' { $$ = '+'; }
+  | '-' { $$ = '-'; }
+  | '~' { $$ = '~'; }
+  | '!' { $$ = '!'; }
   ;
 
 unary_increment_operator:
@@ -1322,7 +1299,7 @@ cast_expression:
     unary_expression
     { $$ = $1; }
   | '(' type_name ')' cast_expression
-    { $$ = $4; }
+    { $$ = clan_access_expr_new(CLAN_ACCESS_OTHER, $4, NULL); }
   ;
 
 multiplicative_expression:
@@ -1330,18 +1307,15 @@ multiplicative_expression:
     { $$ = $1; }
   | multiplicative_expression '*' cast_expression
     {
-      $$ = $1;
-      osl_relation_list_add(&$$, $3);
+      $$ = clan_access_expr_new('*', $1, $3);
     }
   | multiplicative_expression '/' cast_expression
     {
-      $$ = $1;
-      osl_relation_list_add(&$$, $3);
+      $$ = clan_access_expr_new('/', $1, $3);
     }
   | multiplicative_expression '%' cast_expression
     {
-      $$ = $1;
-      osl_relation_list_add(&$$, $3);
+      $$ = clan_access_expr_new('%', $1, $3);
     }
   ;
 
@@ -1350,13 +1324,11 @@ additive_expression:
     { $$ = $1; }
   | additive_expression '+' multiplicative_expression
     {
-      $$ = $1;
-      osl_relation_list_add(&$$, $3);
+      $$ = clan_access_expr_new('+', $1, $3);
     }
   | additive_expression '-' multiplicative_expression
     {
-      $$ = $1;
-      osl_relation_list_add(&$$, $3);
+      $$ = clan_access_expr_new('-', $1, $3);
     }
   ;
 
@@ -1365,13 +1337,11 @@ shift_expression:
     { $$ = $1; }
   | shift_expression LEFT_OP additive_expression
     {
-      $$ = $1;
-      osl_relation_list_add(&$$, $3);
+      $$ = clan_access_expr_new(CLAN_ACCESS_OTHER, $1, $3);
     }
   | shift_expression RIGHT_OP additive_expression
     {
-      $$ = $1;
-      osl_relation_list_add(&$$, $3);
+      $$ = clan_access_expr_new(CLAN_ACCESS_OTHER, $1, $3);
     }
   ;
 
@@ -1380,23 +1350,19 @@ relational_expression:
     { $$ = $1; }
   | relational_expression '<' shift_expression
     {
-      $$ = $1;
-      osl_relation_list_add(&$$, $3);
+      $$ = clan_access_expr_new('<', $1, $3);
     }
   | relational_expression '>' shift_expression
     {
-      $$ = $1;
-      osl_relation_list_add(&$$, $3);
+      $$ = clan_access_expr_new('>', $1, $3);
     }
   | relational_expression LE_OP shift_expression
     {
-      $$ = $1;
-      osl_relation_list_add(&$$, $3);
+      $$ = clan_access_expr_new(CLAN_ACCESS_OTHER, $1, $3);
     }
   | relational_expression GE_OP shift_expression
     {
-      $$ = $1;
-      osl_relation_list_add(&$$, $3);
+      $$ = clan_access_expr_new(CLAN_ACCESS_OTHER, $1, $3);
     }
   ;
 
@@ -1405,13 +1371,11 @@ equality_expression:
     { $$ = $1; }
   | equality_expression EQ_OP relational_expression
     {
-      $$ = $1;
-      osl_relation_list_add(&$$, $3);
+      $$ = clan_access_expr_new(CLAN_ACCESS_OTHER, $1, $3);
     }
   | equality_expression NE_OP relational_expression
     {
-      $$ = $1;
-      osl_relation_list_add(&$$, $3);
+      $$ = clan_access_expr_new(CLAN_ACCESS_OTHER, $1, $3);
     }
   ;
 
@@ -1420,8 +1384,7 @@ and_expression:
     { $$ = $1; }
   | and_expression '&' equality_expression
     {
-      $$ = $1;
-      osl_relation_list_add(&$$, $3);
+      $$ = clan_access_expr_new('&', $1, $3);
     }
   ;
 
@@ -1430,8 +1393,7 @@ exclusive_or_expression:
     { $$ = $1; }
   | exclusive_or_expression '^' and_expression
     {
-      $$ = $1;
-      osl_relation_list_add(&$$, $3);
+      $$ = clan_access_expr_new('^', $1, $3);
     }
   ;
 
@@ -1440,8 +1402,7 @@ inclusive_or_expression:
     { $$ = $1; }
   | inclusive_or_expression '|' exclusive_or_expression
     {
-      $$ = $1;
-      osl_relation_list_add(&$$, $3);
+      $$ = clan_access_expr_new('|', $1, $3);
     }
   ;
 
@@ -1450,8 +1411,7 @@ logical_and_expression:
     { $$ = $1; }
   | logical_and_expression AND_OP inclusive_or_expression
     {
-      $$ = $1;
-      osl_relation_list_add(&$$, $3);
+      $$ = clan_access_expr_new(CLAN_ACCESS_OTHER, $1, $3);
     }
   ;
 
@@ -1460,8 +1420,7 @@ logical_or_expression:
     { $$ = $1; }
   | logical_or_expression OR_OP logical_and_expression
     {
-      $$ = $1;
-      osl_relation_list_add(&$$, $3);
+      $$ = clan_access_expr_new(CLAN_ACCESS_OTHER, $1, $3);
     }
   ;
 
@@ -1470,9 +1429,9 @@ conditional_expression:
     { $$ = $1; }
   | logical_or_expression '?' expression ':' conditional_expression
     {
-      $$ = $1;
-      osl_relation_list_add(&$$, $3);
-      osl_relation_list_add(&$$, $5);
+      struct clan_access_expr* choices;
+      choices = clan_access_expr_new(':', $3, $5);
+      $$ = clan_access_expr_new('?', $1, choices);
     }
   ;
 
@@ -1481,8 +1440,8 @@ assignment_expression:
     {
       CLAN_debug("rule assignment_expression.1: conditional_expression;");
       $$ = $1;
-      clan_relation_list_define_type($$, OSL_TYPE_READ);
-      CLAN_debug_call(osl_relation_list_dump(stderr, $$));
+      clan_relation_list_define_type($$->access, OSL_TYPE_READ);
+      CLAN_debug_call(osl_relation_list_dump(stderr, $$->access));
     }
   | unary_expression assignment_operator assignment_expression
     {
@@ -1490,30 +1449,25 @@ assignment_expression:
 
       CLAN_debug("rule assignment_expression.2: unary_expression "
 	         "assignment_operator assignment_expression;");
-      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_ARRAY)) {
+      if (!clan_symbol_update_type(parser_symbol, $1->access, CLAN_TYPE_ARRAY)) {
         // Bison does not destroy this rule's RHS when its action aborts.
-        osl_relation_list_free($1);
-        osl_relation_list_free($3);
+        clan_access_expr_free($1);
+        clan_access_expr_free($3);
         YYABORT;
       }
       $$ = $1;
       // Accesses of $1 are READ except the last one which is a WRITE or both.
-      clan_relation_list_define_type($$, OSL_TYPE_READ);
-      list = $$;
+      clan_relation_list_define_type($$->access, OSL_TYPE_READ);
+      list = $$->access;
       while (list->next != NULL)
         list = list->next;
       if ($2 == CLAN_TYPE_RDWR) {
         list->next = osl_relation_list_node(list->elt);
         list = list->next;
-
-        // add an empty line in the extbody
-        if (parser_options->extbody) {
-          osl_extbody_add(parser_access_extbody, -1, -1);
-        }
       }
       osl_relation_set_type(list->elt, OSL_TYPE_WRITE);
-      osl_relation_list_add(&$$, $3);
-      CLAN_debug_call(osl_relation_list_dump(stderr, $$));
+      $$ = clan_access_expr_new(CLAN_ACCESS_EFFECT, $1, $3);
+      CLAN_debug_call(osl_relation_list_dump(stderr, $$->access));
     }
   ;
 
@@ -1521,7 +1475,17 @@ assignment_operator:
     '='
     { $$ = CLAN_TYPE_WRITE; }
   | assignment_rdwr_operator
-    { $$ = CLAN_TYPE_RDWR; }
+    {
+      $$ = CLAN_TYPE_RDWR;
+      if (parser_options->extbody) {
+        if (parser_access_start != -1) {
+          osl_extbody_add(parser_access_extbody, parser_access_start,
+                          parser_access_length);
+          parser_access_start = -1;
+        }
+        osl_extbody_add(parser_access_extbody, -1, -1);
+      }
+    }
   ;
 
 assignment_rdwr_operator:
@@ -1542,8 +1506,7 @@ expression:
     { $$ = $1; }
   | expression ',' assignment_expression
     {
-      $$ = $1;
-      osl_relation_list_add(&$$, $3);
+      $$ = clan_access_expr_new(',', $1, $3);
     }
   ;
 
@@ -1583,7 +1546,9 @@ expression_statement:
           parser_loop_depth, parser_options->precision);
 
       // - 3. Array accesses
-      statement->access = $2;
+      statement->access = $2->access;
+      $2->access = NULL;
+      clan_access_expr_free($2);
 
       // - 4. Body.
       body = osl_body_malloc();

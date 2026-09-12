@@ -38,3 +38,6 @@ tests/*
 !tests/must_fail/
 !tests/check_fail_extbody.sh
 !tests/modulo_acess/
+!tests/nonaffine/
+!tests/check_nonaffine*.sh
+!tests/check_affine_only.sh

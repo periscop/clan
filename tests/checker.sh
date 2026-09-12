@@ -102,15 +102,21 @@ for i in $TEST_FILES; do
       output=1
     fi
     if [ "$TEST_OPTION" = "-autoinsert" ]; then
+      normalize_scop "$input" > "$input.actual" || exit 1
+      normalize_scop "$i.orig" > "$input.expected" || exit 1
       diff --ignore-matching-lines="$filename" \
            --ignore-matching-lines="$input" \
            --ignore-matching-lines='enerated' \
-           "$input" "$i.orig";
+           "$input.actual" "$input.expected";
       z=$?;
     else
       # OpenScop's printer pads lines; references need not retain that padding.
       normalize_scop "$input.scop" > "$input.actual" || exit 1
-      normalize_scop "$i.scop" > "$input.expected" || exit 1
+      reference="$i.scop"
+      if [ "$TEST_OPTION" = "-extbody" ] && [ -f "$i.extbody.scop" ]; then
+        reference="$i.extbody.scop"
+      fi
+      normalize_scop "$reference" > "$input.expected" || exit 1
       diff --ignore-matching-lines="$filename" \
            --ignore-matching-lines="$input" \
            --ignore-matching-lines='enerated' \

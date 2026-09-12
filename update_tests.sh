@@ -22,3 +22,9 @@ for i in `ls ./tests/modulo_acess/*.c`; do
   ./clan $i -o $i.scop;
 done
 
+
+for i in ./tests/nonaffine/*.c; do
+  echo "$i";
+  ./clan "$i" -o "$i.scop";
+  ./clan -extbody "$i" -o "$i.extbody.scop";
+done

@@ -88,12 +88,13 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/asan.cmake")
 	configure_file("include/clan/macros.h.in" "include/clan/macros.h")
 	include_directories("${CMAKE_CURRENT_BINARY_DIR}/include")
 	# clan
-	include_directories("./include")
+	include_directories("./include" "./source")
 
 
 # Library sources: never include generated scanner/parser files from a
 # previous in-source Autotools build.
 set(sources
+    source/access.c
   	source/options.c
   	source/symbol.c
   	source/scop.c
@@ -146,6 +147,12 @@ endif()
 add_test(NAME checker COMMAND "${SH_EXECUTABLE}"
   "${CMAKE_CURRENT_SOURCE_DIR}/tests/check_checker.sh"
   "${CMAKE_CURRENT_SOURCE_DIR}/tests/checker.sh")
+add_test(NAME affine-only
+  COMMAND "${CMAKE_COMMAND}" -E env
+    "top_builddir=$<TARGET_FILE_DIR:clan_exe>"
+    "srcdir=${CMAKE_CURRENT_SOURCE_DIR}/tests"
+    "EXEEXT=${CMAKE_EXECUTABLE_SUFFIX}"
+    "${SH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/check_affine_only.sh")
 file(GLOB_RECURSE tests "${CMAKE_CURRENT_SOURCE_DIR}/tests/*.c")
 list(REMOVE_ITEM tests "${CMAKE_CURRENT_SOURCE_DIR}/tests/leaks-wrapper.c")
 foreach(test IN LISTS tests)
@@ -162,7 +169,7 @@ foreach(test IN LISTS tests)
       "EXEEXT=${CMAKE_EXECUTABLE_SUFFIX}"
       "${SH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/checker.sh"
       "${test_name}" "${test}" "${test_option}" clan)
-  if(test_name MATCHES "^must_fail/")
+  if(test_name MATCHES "^(must_fail|nonaffine)/")
     add_test(NAME "${test_name}-extbody"
       COMMAND "${CMAKE_COMMAND}" -E env
         "top_builddir=$<TARGET_FILE_DIR:clan_exe>"

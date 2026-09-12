@@ -90,9 +90,12 @@ uninstall-local:
 #############################################################################
 
 libclan_la_LIBADD = @OSL_LIBS@ $(OSL_LA)
-libclan_la_CPPFLAGS = $(CLAN_INCLUDES) @OSL_CFLAGS@
+libclan_la_CPPFLAGS = $(CLAN_INCLUDES) -I$(top_srcdir)/source @OSL_CFLAGS@
 libclan_la_LDFLAGS = @OSL_LDFLAGS@
+noinst_HEADERS = source/access.h
+
 libclan_la_SOURCES = \
+	source/access.c \
 	source/parser.y \
 	source/scanner.l \
 	source/options.c \

@@ -1,5 +1,5 @@
 /*
- * JJ has to be considered as an array and is illegal in S2.
+ * JJ is a written scalar: accesses indexed by JJ must be unbounded.
  * Reported by David Wonnacott and Uday Bondhugula.
  */
 #pragma scop

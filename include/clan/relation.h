@@ -60,7 +60,8 @@ struct osl_relation* clan_relation_scattering(int*, int, int);
 void                 clan_relation_new_output_vector(struct osl_relation*,
                                                      struct osl_vector*);
 void                 clan_relation_new_output_scalar(struct osl_relation*, int);
-void                 clan_relation_add_modulo_constraint(struct osl_relation* relation, int mod);
+void                 clan_relation_add_modulo_constraint(struct osl_relation*,
+                                                         int);
 void                 clan_relation_compact(struct osl_relation*, int);
 struct osl_relation* clan_relation_greater(struct osl_relation*,
                                            struct osl_relation*, int);

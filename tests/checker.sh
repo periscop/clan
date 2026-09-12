@@ -36,6 +36,19 @@
 # *                                                                           *
 # *****************************************************************************/
 
+# Preserve internal blank lines, but discard printer padding and EOF blanks.
+normalize_scop() {
+  awk '
+    { sub(/[[:blank:]]+$/, "") }
+    /^$/ { blanks++; next }
+    {
+      for (i = 0; i < blanks; i++) print ""
+      blanks = 0
+      print
+    }
+  ' "$1"
+}
+
 output=0
 nb_tests=0;
 
@@ -95,10 +108,13 @@ for i in $TEST_FILES; do
            "$input" "$i.orig";
       z=$?;
     else
+      # OpenScop's printer pads lines; references need not retain that padding.
+      normalize_scop "$input.scop" > "$input.actual" || exit 1
+      normalize_scop "$i.scop" > "$input.expected" || exit 1
       diff --ignore-matching-lines="$filename" \
            --ignore-matching-lines="$input" \
            --ignore-matching-lines='enerated' \
-           "$input.scop" "$i.scop";
+           "$input.actual" "$input.expected";
       z=$?;
     fi
     err=`cat "$clanout"`;
@@ -153,7 +169,7 @@ for i in $TEST_FILES; do
       output="0";
     fi;
   fi
-  rm -f "$input" "$input.scop" "$clanout"
+  rm -f "$input" "$input.scop" "$input.actual" "$input.expected" "$clanout"
 done
 if [ $output = "1" ]; then
   printf "\033[31m[FAIL] $1\033[0m\n";

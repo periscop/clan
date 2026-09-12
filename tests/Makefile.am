@@ -125,6 +125,11 @@ UNITARY_TEST_FILES = \
 	$(top_srcdir)/tests/unitary/iterinparent.c
 
 FAIL_TEST_FILES = \
+	$(top_srcdir)/tests/must_fail/modulo_precedence.c \
+	$(top_srcdir)/tests/must_fail/modulo_zero.c \
+	$(top_srcdir)/tests/must_fail/modulo_negative_divisor.c \
+	$(top_srcdir)/tests/must_fail/modulo_iterator.c \
+	$(top_srcdir)/tests/must_fail/modulo_syntax.c \
 	$(top_srcdir)/tests/must_fail/numeric_label.c \
 	$(top_srcdir)/tests/must_fail/multiple_for_conditions.c \
 	$(top_srcdir)/tests/must_fail/multiple_for_strides.c \
@@ -153,6 +158,9 @@ AUTOSCOP_TEST_FILES = \
 	$(top_srcdir)/tests/autoscop/matmul_3_user_scop.c
 
 MODULO_ACESS_TEST_FILES = \
+	$(top_srcdir)/tests/modulo_acess/no_loop.c \
+	$(top_srcdir)/tests/modulo_acess/parenthesized.c \
+	$(top_srcdir)/tests/modulo_acess/multiple_dimensions.c \
 	$(top_srcdir)/tests/modulo_acess/3d7pt.c \
 	$(top_srcdir)/tests/modulo_acess/apop.c \
 	$(top_srcdir)/tests/modulo_acess/heat-1d.c \
@@ -195,7 +203,7 @@ leakscheck:
 	fi
 	@command -v leaks >/dev/null 2>&1 || { echo "leakscheck requires Apple's macOS leaks tool."; exit 1; }
 	@status=0; \
-	for suite in unitary complex fail fail_extbody autoscop autoinsert; do \
+	for suite in unitary complex fail fail_extbody autoscop modulo_acess autoinsert; do \
 	  $(TESTS_ENVIRONMENT) $(SHELL) "$(srcdir)/check_$$suite.sh" leaks || status=1; \
 	done; \
 	exit $$status

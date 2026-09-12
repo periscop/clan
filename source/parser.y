@@ -193,6 +193,7 @@
 %type <affex>  affine_ceild_expression
 %type <affex>  affine_floord_expression
 %type <affex>  affine_expression
+%type <affex>  modulo_access_expression
 
 %type <list>   primary_expression
 %type <list>   postfix_expression
@@ -1089,6 +1090,26 @@ primary_expression:
   ;
 
 
+// A modulo subscript is an affine dividend and a positive integer divisor.
+// Keep it separate from affine_expression so other affine contexts do not
+// acquire modulo syntax. Additive dividends must be parenthesized to respect
+// C precedence. The vector tag temporarily stores the divisor.
+modulo_access_expression:
+    affine_multiplicative_expression '%' INTEGER
+    {
+      if ($3 <= 0) {
+        osl_vector_free($1);
+        yyerror("an array modulo divisor must be strictly positive");
+        YYABORT;
+      }
+      osl_int_set_si($1->precision, &$1->v[0], $3);
+      $$ = $1;
+    }
+  | '(' modulo_access_expression ')'
+    { $$ = $2; }
+  ;
+
+
 postfix_expression:
     primary_expression
     { $$ = $1; }
@@ -1108,23 +1129,32 @@ postfix_expression:
       $$ = $1;
       CLAN_debug_call(osl_relation_list_dump(stderr, $$));
     }
-  | postfix_expression '[' affine_expression '%' INTEGER ']'
+  | postfix_expression '[' modulo_access_expression ']'
     {
-      if (parser_options->extbody)
+      int divisor = osl_int_get_si($3->precision, $3->v[0]);
+
+      if (parser_options->extbody) {
         parser_access_length = strlen(parser_record) - parser_access_start;
+      }
+      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_ARRAY)) {
+        osl_relation_list_free($1);
+        osl_vector_free($3);
+        YYABORT;
+      }
+      if ($1->elt->nb_local_dims >= CLAN_MAX_LOCAL_DIMS) {
+        osl_relation_list_free($1);
+        osl_vector_free($3);
+        yyerror("too many local dimensions in an array access");
+        YYABORT;
+      }
 
-      CLAN_debug("rule postfix_expression.modulo: postfix_expression [ <affex> %% INTEGER]");
-      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_ARRAY))
-        YYABORT;      
-
+      // The expression tag carries the divisor until the access is built.
+      osl_int_set_si($3->precision, &$3->v[0], 0);
       clan_relation_new_output_vector($1->elt, $3);
       osl_vector_free($3);
-
-      clan_relation_add_modulo_constraint($1->elt, $5);
-      
+      clan_relation_add_modulo_constraint($1->elt, divisor);
       $$ = $1;
       CLAN_debug_call(osl_relation_list_dump(stderr, $$));
-
     }
   | postfix_expression '(' ')'
     { 

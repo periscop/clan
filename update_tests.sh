@@ -19,6 +19,6 @@ done
 
 for i in `ls ./tests/modulo_acess/*.c`; do
   echo $i;
-  ./clan -autoscop $i -o $i.scop;
+  ./clan $i -o $i.scop;
 done
 

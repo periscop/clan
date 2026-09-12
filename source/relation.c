@@ -242,35 +242,43 @@ void clan_relation_new_output_scalar(osl_relation_p relation, int scalar) {
 
 /**
  * clan_relation_add_modulo_constraint function:
- * this function adds the constraint of the % to the last relation row, 
- * and add two rows for the >=0 constraint and <=mod-1 constraint. 
- * The input relation is direcly updated.
- * \param[in,out] relation The relation to add a new output dimension.
- * \param[in]     mod   The integer who is the modulo.
+ * this function changes the last output equality from r = dividend to
+ * r = dividend - divisor*q, with a fresh local dimension q and 0 <= r < divisor.
+ * The dividend must be nonnegative for this to represent C's remainder.
+ * \param[in,out] relation The access relation before compaction.
+ * \param[in] divisor The strictly positive integer divisor.
  */
-void clan_relation_add_modulo_constraint(osl_relation_p relation, int mod) {
-  //edit relation to add ld
-  int* nb_rows = &relation->nb_rows;
-  int* nb_local_dims = &relation->nb_local_dims;
-  int* nb_output_dims = &relation->nb_output_dims;
-  int* nb_input_dims = &relation->nb_input_dims;
-  osl_int_set_si(relation->precision, &(relation->m[(*nb_rows)-1][ 1+*nb_output_dims + CLAN_MAX_DEPTH + *nb_local_dims]), -mod);
-  (*nb_local_dims)++;
+void clan_relation_add_modulo_constraint(osl_relation_p relation, int divisor) {
+  int row, local_column, output_column;
+  int precision = relation->precision;
 
+  if (divisor <= 0) {
+    CLAN_error("an array modulo divisor must be strictly positive");
+  }
+  if (relation->nb_local_dims >= CLAN_MAX_LOCAL_DIMS) {
+    CLAN_error("too many local dimensions in an array access");
+  }
 
-  //edit relation to add the modulo constraint
-  osl_relation_insert_blank_row(relation, *nb_rows);
+  local_column = relation->nb_columns - CLAN_MAX_PARAMETERS -
+                 CLAN_MAX_LOCAL_DIMS - 1 + relation->nb_local_dims;
+  output_column = relation->nb_output_dims;
+  osl_int_set_si(precision,
+                 &relation->m[relation->nb_rows - 1][local_column], -divisor);
+  relation->nb_local_dims++;
 
-  // >=0
-  osl_int_set_si(relation->precision, &(relation->m[*nb_rows-1][0]), 1);
-  osl_int_set_si(relation->precision, &(relation->m[(*nb_rows)-1][*nb_output_dims]), 1);
+  // The remainder is nonnegative.
+  row = relation->nb_rows;
+  osl_relation_insert_blank_row(relation, row);
+  osl_int_set_si(precision, &relation->m[row][0], 1);
+  osl_int_set_si(precision, &relation->m[row][output_column], 1);
 
-  // <= mod-1
-  osl_relation_insert_blank_row(relation, *nb_rows);
-  int* nb_collumns = &relation->nb_columns;
-  osl_int_set_si(relation->precision, &(relation->m[*nb_rows-1][0]), 1);
-  osl_int_set_si(relation->precision, &(relation->m[(*nb_rows)-1][*nb_output_dims]), -1);
-  osl_int_set_si(relation->precision, &(relation->m[(*nb_rows)-1][*nb_collumns-1]), mod-1);
+  // The remainder is strictly smaller than the divisor.
+  row = relation->nb_rows;
+  osl_relation_insert_blank_row(relation, row);
+  osl_int_set_si(precision, &relation->m[row][0], 1);
+  osl_int_set_si(precision, &relation->m[row][output_column], -1);
+  osl_int_set_si(precision, &relation->m[row][relation->nb_columns - 1],
+                 divisor - 1);
 }
 
 
@@ -286,19 +294,17 @@ void clan_relation_add_modulo_constraint(osl_relation_p relation, int mod) {
 void clan_relation_compact(osl_relation_p relation, 
                            int nb_parameters) {
   int i, j, nb_columns;
-  int nb_output_dims, nb_input_dims, nb_local_dims, nb_out_in_loc, nb_out_for_loc;
+  int nb_output_dims, nb_input_dims, nb_local_dims, nb_out_in_loc, local_offset;
   osl_relation_p compacted;
-  if(CLAN_DEBUG)
-    fprintf(stderr,"compacting relation of type %d with %d rows and %d columns "
-               "to a relation with %d parameters\n",
-               relation->type, relation->nb_rows, relation->nb_columns,
-               nb_parameters);
   while (relation != NULL) {
     nb_output_dims = relation->nb_output_dims;
     nb_input_dims  = relation->nb_input_dims;
     nb_local_dims  = relation->nb_local_dims;
     nb_out_in_loc  = nb_output_dims + nb_input_dims + nb_local_dims;
-    nb_out_for_loc = nb_input_dims==0 ? 0 : nb_output_dims;   //number of output dimension for the access part (output dims doesn't mean the same for the domaine)
+    // Construction reserves local and parameter columns at the end of
+    // every relation, including accesses outside loops (no input dims).
+    local_offset = relation->nb_columns - CLAN_MAX_PARAMETERS -
+                   CLAN_MAX_LOCAL_DIMS - 1;
 
     nb_columns = nb_out_in_loc  + nb_parameters + 2;
     compacted = osl_relation_pmalloc(relation->precision,
@@ -313,7 +319,7 @@ void clan_relation_compact(osl_relation_p relation,
       for (j = 0; j < nb_local_dims; j++)
         osl_int_assign(relation->precision,
             &compacted->m[i][nb_output_dims + nb_input_dims + 1 + j],
-            relation->m[i][CLAN_MAX_DEPTH + 1 + nb_out_for_loc + j]);
+            relation->m[i][local_offset + j]);
 
       // Then we copy the parameter coefficients.
       for (j = 0; j < nb_parameters; j++)

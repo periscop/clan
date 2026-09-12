@@ -145,6 +145,25 @@ else
   AC_MSG_ERROR([bison not found. Version 2.4 or greater is required.])
 fi
 
+
+dnl AddressSanitizer flags must also be active for dependency link checks.
+AC_ARG_ENABLE([asan],
+  [AS_HELP_STRING([--enable-asan], [build with AddressSanitizer (default: no)])],
+  [], [enable_asan=no])
+AS_CASE([$enable_asan], [yes|no], [],
+  [AC_MSG_ERROR([--enable-asan accepts only yes or no])])
+AC_SUBST([enable_asan])
+AS_IF([test "x$enable_asan" = xyes], [
+  CFLAGS="$CFLAGS -O1 -g -fsanitize=address -fno-omit-frame-pointer -fno-sanitize-recover=address"
+  LDFLAGS="$LDFLAGS -fsanitize=address"
+  AC_MSG_CHECKING([whether the compiler can compile and link AddressSanitizer])
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdlib.h>]],
+    [[char *p = malloc(1); p[0] = 0; free(p);]])],
+    [AC_MSG_RESULT([yes])],
+    [AC_MSG_RESULT([no])
+     AC_MSG_ERROR([AddressSanitizer requires a compiler and runtime supporting -fsanitize=address])])
+])
+
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_SIZE_T
 

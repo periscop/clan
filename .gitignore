@@ -32,4 +32,6 @@ source/scanner.c
 # Misc.
 doc/
 build*/
-tests/
+tests/*
+!tests/check_checker.sh
+!tests/leaks-wrapper.c

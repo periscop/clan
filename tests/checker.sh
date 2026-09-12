@@ -47,6 +47,7 @@ TEST_OPTION="$3"  ## Option for clan
 
 TEST_TYPE="$4"    ## - "clan" to simply test clan (default)
                   ## - "valgrind" to test the valgrind output
+                  ## - "leaks" to test with Apple's macOS leaks tool
 
 # Uncomment the following line to print the test script
 #set -x verbose  #echo on
@@ -54,6 +55,11 @@ TEST_TYPE="$4"    ## - "clan" to simply test clan (default)
 clan=$top_builddir/clan$EXEEXT
 
 echo "[TEST] $TEST_NAME";
+
+if [ "$TEST_TYPE" = leaks ] && ! command -v leaks >/dev/null 2>&1; then
+  echo "[FAIL] Apple's macOS leaks tool is not available"
+  exit 1
+fi
 
 for i in $TEST_FILES; do
 
@@ -63,24 +69,36 @@ for i in $TEST_FILES; do
   # before calling clan.
   input="/tmp/$$-clan-input.c";
   clanout="/tmp/$$-clan-stderr"
-  cp $i $input;
+  cp "$i" "$input" || exit 1;
 
   if [ "$TEST_TYPE" = "clan" ]; then
     # Test the basic .scop generation
     filename=$(basename "$i");
     echo "[CHECK] Source parser test:== $i ==";
-    $clan $TEST_OPTION $input > $input.scop 2>"$clanout"
+    "$clan" $TEST_OPTION "$input" > "$input.scop" 2>"$clanout"
+    clan_status=$?
+    if [ "$clan_status" -ne 0 ]; then
+      printf '[FAIL] Clan exited with status %s\n' "$clan_status"
+      outtemp=1
+      output=1
+    fi
+    # Also catch reports when a caller overrides the sanitizer exit code.
+    if grep -Eq 'ERROR: (AddressSanitizer|LeakSanitizer)|SUMMARY: (AddressSanitizer|LeakSanitizer)|AddressSanitizer:DEADLYSIGNAL' "$clanout"; then
+      echo '[FAIL] Sanitizer diagnostic detected'
+      outtemp=1
+      output=1
+    fi
     if [ "$TEST_OPTION" = "-autoinsert" ]; then
       diff --ignore-matching-lines="$filename" \
            --ignore-matching-lines="$input" \
            --ignore-matching-lines='enerated' \
-           $input $i.orig;
+           "$input" "$i.orig";
       z=$?;
     else
       diff --ignore-matching-lines="$filename" \
            --ignore-matching-lines="$input" \
            --ignore-matching-lines='enerated' \
-           $input.scop $i.scop;
+           "$input.scop" "$i.scop";
       z=$?;
     fi
     err=`cat "$clanout"`;
@@ -90,10 +108,30 @@ for i in $TEST_FILES; do
       output=1
     fi
     if ! [ -z "$err" ]; then
-      printf "\033[33m[INFO] Source parser test stderr output:\n$err\033[0m\n";
+      printf '\033[33m[INFO] Source parser test stderr output:\n%s\033[0m\n' "$err";
     fi
     if [ $outtemp = "0" ]; then
       echo "[PASS] Source parser test: output OK";
+    fi
+  elif [ "$TEST_TYPE" = leaks ]; then
+    echo "[LEAKSCHECK] Source parser test:== $i =="
+    # Libtool resolves its executable wrapper before leaks launches the process.
+    # --atExit enables allocation stack logging and returns nonzero on leaks
+    # or tool errors. Capture stdout too, since that contains the leak report.
+    if [ -f "$top_builddir/libtool" ]; then
+      /bin/sh "$top_builddir/libtool" --mode=execute \
+        "$top_builddir/tests/leaks-wrapper$EXEEXT" "$clan" $TEST_OPTION "$input" > "$clanout" 2>&1
+    else
+      leaks --atExit -- "$clan" $TEST_OPTION "$input" > "$clanout" 2>&1
+    fi
+    errors=$?
+    if [ "$errors" -ne 0 ] ||
+       ! grep -Eq '^Process [0-9]+: 0 leaks for 0 total leaked bytes\.' "$clanout"; then
+      printf '[FAIL] Leak check failed (status %s)\n' "$errors"
+      cat "$clanout"
+      output=1
+    else
+      echo '[PASS] No leaks detected'
     fi
   else
     echo "[VALCHECK] Source parser test:== $i ==";

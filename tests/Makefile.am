@@ -163,7 +163,20 @@ valcheck:
 	$(TESTS_ENVIRONMENT) $(srcdir)/check_autoscop.sh valgrind ; \
 	$(TESTS_ENVIRONMENT) $(srcdir)/check_autoinsert.sh valgrind
 
+.PHONY: leakscheck
+leakscheck:
+	@if test "@enable_asan@" = yes; then \
+	  echo "leakscheck requires a non-ASan build."; exit 1; \
+	fi
+	@command -v leaks >/dev/null 2>&1 || { echo "leakscheck requires Apple's macOS leaks tool."; exit 1; }
+	@status=0; \
+	for suite in unitary complex fail autoscop autoinsert; do \
+	  $(TESTS_ENVIRONMENT) $(SHELL) "$(srcdir)/check_$$suite.sh" leaks || status=1; \
+	done; \
+	exit $$status
+
 check_SCRIPTS = \
+	check_checker.sh \
 	check_unitary.sh \
 	check_complex.sh \
 	check_fail.sh \

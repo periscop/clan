@@ -1098,6 +1098,40 @@ package for a different kind of computer) type @code{make distclean}.
 
 @node Optional Features
 @section Optional Features
+
+AddressSanitizer can be enabled with @code{./configure --enable-asan}.
+After configuring normally, @code{make asan} cleans the current build,
+reconfigures it with the original options plus @code{--enable-asan},
+then rebuilds and runs @code{make check}. The build remains instrumented,
+so subsequent @code{make check} and @code{make install} use ASan too.
+To return to a normal build, run @code{make clean}, configure again with
+@code{--disable-asan} and your usual options, then run @code{make}.
+
+On macOS, @code{make leakscheck} runs Apple's @code{leaks --atExit}
+over the test suites. It reports allocation backtraces when leaks
+are found and returns failures.
+Use a non-ASan build of Clan and OpenScop, preferably with @code{CFLAGS="-g -O1"}.
+After an ASan build, clean and reconfigure both projects with
+@code{--disable-asan} first. This target uses the current build and does
+not change its configuration. @code{make check} remains the output-regression
+test; @code{make leakscheck} checks memory leaks.
+For complete instrumentation, build OpenScop with ASan first and use
+that build or installation when configuring Clan. For example, run
+@code{make asan} and @code{make install} in OpenScop, then configure Clan
+with your usual @code{--with-osl=system --with-osl-prefix=...} options
+and @code{--enable-asan}. Alternatively use
+@code{--with-osl=build --with-osl-builddir=...} to avoid installation.
+Clan cannot rebuild a separately installed OpenScop automatically.
+A bundled OpenScop receives @code{--enable-asan} through recursive
+configuration.
+
+The CMake equivalent is @code{-DENABLE_ASAN=ON}; its @code{asan} target
+also enables instrumentation, rebuilds and runs CTest. Set
+@code{-DENABLE_ASAN=OFF} to turn this option off again.
+Sanitizer support is checked during configuration. Runtime options can
+be supplied through @code{ASAN_OPTIONS}; leak detection availability
+is platform dependent.
+
 The @code{configure} shell script attempts to guess correct values for
 various system-dependent variables and user options used during compilation.
 It uses those values to create the @code{Makefile}. Various user options

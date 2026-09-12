@@ -134,9 +134,36 @@ dist-hook:
 valcheck:
 	$(MAKE) valcheck -C tests
 
+.PHONY: leakscheck
+leakscheck: all tests/leaks-wrapper$(EXEEXT)
+	@if test "@enable_asan@" = yes; then \
+	  echo "leakscheck requires a non-ASan build; clean and configure with --disable-asan first."; \
+	  exit 1; \
+	fi
+	$(MAKE) leakscheck -C tests
+
+# A native launcher preserves Libtool's library path across Apple's protected
+# leaks executable, then restores it before executing the program under test.
+# This launcher deliberately has no Clan/OpenScop link dependencies.
+tests/leaks-wrapper$(EXEEXT): $(top_srcdir)/tests/leaks-wrapper.c
+	$(MKDIR_P) tests
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o $@ "$(top_srcdir)/tests/leaks-wrapper.c"
+
+CLEANFILES = tests/leaks-wrapper$(EXEEXT)
+EXTRA_DIST += tests/leaks-wrapper.c
+
 #############################################################################
 
 ctags:
 	ctags -R --c++-kinds=+p --fields=+iaS --extra=+q -f$(HOME)/.ctags .
 
 #############################################################################
+
+# Keep the selected configuration and dependency paths; rebuild every object.
+.PHONY: asan
+asan:
+	$(MAKE) clean
+	$(SHELL) "$(top_srcdir)/asan.sh" "$(abs_top_srcdir)/configure"
+	$(MAKE) check
+
+EXTRA_DIST += asan.sh asan.cmake

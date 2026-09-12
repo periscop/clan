@@ -15,6 +15,8 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED TRUE)
 
+include("${CMAKE_CURRENT_SOURCE_DIR}/asan.cmake")
+
 # Build doxygen
 	find_package(Doxygen)
 	if(DOXYGEN_FOUND)
@@ -142,6 +144,9 @@ find_program(SH_EXECUTABLE sh)
 if(NOT SH_EXECUTABLE)
   message(FATAL_ERROR "Clan tests require a POSIX shell")
 endif()
+add_test(NAME checker COMMAND "${SH_EXECUTABLE}"
+  "${CMAKE_CURRENT_SOURCE_DIR}/tests/check_checker.sh"
+  "${CMAKE_CURRENT_SOURCE_DIR}/tests/checker.sh")
 file(GLOB_RECURSE tests "${CMAKE_CURRENT_SOURCE_DIR}/tests/*.c")
 foreach(test IN LISTS tests)
   file(RELATIVE_PATH test_name "${CMAKE_CURRENT_SOURCE_DIR}/tests" "${test}")

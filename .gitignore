@@ -35,3 +35,5 @@ build*/
 tests/*
 !tests/check_checker.sh
 !tests/leaks-wrapper.c
+!tests/must_fail/
+!tests/check_fail_extbody.sh

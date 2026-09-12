@@ -125,6 +125,18 @@ UNITARY_TEST_FILES = \
 	$(top_srcdir)/tests/unitary/iterinparent.c
 
 FAIL_TEST_FILES = \
+	$(top_srcdir)/tests/must_fail/error_after_scop.c \
+	$(top_srcdir)/tests/must_fail/invalid_else.c \
+	$(top_srcdir)/tests/must_fail/multiple_for_indices.c \
+	$(top_srcdir)/tests/must_fail/zero_loop_stride.c \
+	$(top_srcdir)/tests/must_fail/missing_xfor_label.c \
+	$(top_srcdir)/tests/must_fail/iterator_function.c \
+	$(top_srcdir)/tests/must_fail/iterator_function_noargs.c \
+	$(top_srcdir)/tests/must_fail/iterator_field.c \
+	$(top_srcdir)/tests/must_fail/iterator_pointer_field.c \
+	$(top_srcdir)/tests/must_fail/iterator_postincrement.c \
+	$(top_srcdir)/tests/must_fail/iterator_preincrement.c \
+	$(top_srcdir)/tests/must_fail/iterator_subscript.c \
 	$(top_srcdir)/tests/must_fail/array_in_affex.c \
 	$(top_srcdir)/tests/must_fail/variable_to_iterator.c \
 	$(top_srcdir)/tests/must_fail/function_call_in_affex.c \
@@ -170,7 +182,7 @@ leakscheck:
 	fi
 	@command -v leaks >/dev/null 2>&1 || { echo "leakscheck requires Apple's macOS leaks tool."; exit 1; }
 	@status=0; \
-	for suite in unitary complex fail autoscop autoinsert; do \
+	for suite in unitary complex fail fail_extbody autoscop autoinsert; do \
 	  $(TESTS_ENVIRONMENT) $(SHELL) "$(srcdir)/check_$$suite.sh" leaks || status=1; \
 	done; \
 	exit $$status
@@ -180,6 +192,7 @@ check_SCRIPTS = \
 	check_unitary.sh \
 	check_complex.sh \
 	check_fail.sh \
+	check_fail_extbody.sh \
 	check_autoscop.sh \
 	check_autoinsert.sh
 

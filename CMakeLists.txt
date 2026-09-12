@@ -148,6 +148,7 @@ add_test(NAME checker COMMAND "${SH_EXECUTABLE}"
   "${CMAKE_CURRENT_SOURCE_DIR}/tests/check_checker.sh"
   "${CMAKE_CURRENT_SOURCE_DIR}/tests/checker.sh")
 file(GLOB_RECURSE tests "${CMAKE_CURRENT_SOURCE_DIR}/tests/*.c")
+list(REMOVE_ITEM tests "${CMAKE_CURRENT_SOURCE_DIR}/tests/leaks-wrapper.c")
 foreach(test IN LISTS tests)
   file(RELATIVE_PATH test_name "${CMAKE_CURRENT_SOURCE_DIR}/tests" "${test}")
   set(test_option "")
@@ -162,6 +163,14 @@ foreach(test IN LISTS tests)
       "EXEEXT=${CMAKE_EXECUTABLE_SUFFIX}"
       "${SH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/checker.sh"
       "${test_name}" "${test}" "${test_option}" clan)
+  if(test_name MATCHES "^must_fail/")
+    add_test(NAME "${test_name}-extbody"
+      COMMAND "${CMAKE_COMMAND}" -E env
+        "top_builddir=$<TARGET_FILE_DIR:clan_exe>"
+        "EXEEXT=${CMAKE_EXECUTABLE_SUFFIX}"
+        "${SH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/checker.sh"
+        "${test_name}-extbody" "${test}" -extbody clan)
+  endif()
 endforeach()
 
 

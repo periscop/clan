@@ -225,6 +225,8 @@
 
 %destructor { free($$); } <symbol>
 %destructor { osl_vector_free($$); } <affex>
+%destructor { osl_relation_free($$); } <setex>
+%destructor { free($$); } <vecint>
 %destructor { osl_relation_list_free($$); } <list>
 %destructor { osl_statement_free($$); } <stmt>
 
@@ -461,6 +463,7 @@ selection_statement:
 	parser_valid_else[parser_if_depth] = 0;
       }
       osl_relation_free($3);
+      $3 = NULL;
     }
     selection_else_statement
     {
@@ -492,9 +495,7 @@ iteration_statement:
 	  (clan_relation_list_nb_elements(parser_stack->constraints) !=
 	   clan_relation_list_nb_elements($3))) {
 	yyerror("consecutive xfor loops without the same number of indices");
-	osl_relation_list_free($3);
-        osl_relation_list_free($4);
-	free($5);
+        // This midrule action leaves the header values on Bison's stack.
         YYABORT;
       }
 
@@ -513,6 +514,7 @@ iteration_statement:
       parser_scattering[2*parser_loop_depth-1] = ($5[0] > 0) ? 1 : -1;
       parser_scattering[2*parser_loop_depth] = 0;
       free($5);
+      $5 = NULL;
     }
     loop_body
     {
@@ -531,9 +533,7 @@ iteration_statement:
       // Check there is only one element in each list
       if (parser_xfor_index != 1) {
 	yyerror("unsupported element list in a for loop");
-	osl_relation_list_free($3);
-        osl_relation_list_free($4);
-	free($5);
+        // This midrule action leaves the header values on Bison's stack.
         YYABORT;
       }
 
@@ -555,6 +555,7 @@ iteration_statement:
       parser_scattering[2*parser_loop_depth-1] = ($5[0] > 0) ? 1 : -1;
       parser_scattering[2*parser_loop_depth] = 0;
       free($5);
+      $5 = NULL;
     }
     loop_body
     {
@@ -1266,8 +1267,11 @@ postfix_expression:
         parser_access_length = strlen(parser_record) - parser_access_start;
 
       CLAN_debug("rule postfix_expression.2: postfix_expression [ <affex> ]");
-      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_ARRAY))
+      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_ARRAY)) {
+        osl_relation_list_free($1);
+        osl_vector_free($3);
         YYABORT;
+      }
       clan_relation_new_output_vector($1->elt, $3);
       osl_vector_free($3);
       $$ = $1;
@@ -1281,8 +1285,10 @@ postfix_expression:
         parser_access_start = -1;
       }
 
-      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_FUNCTION))
+      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_FUNCTION)) {
+        osl_relation_list_free($1);
         YYABORT;
+      }
       osl_relation_list_free($1);
       $$ = NULL;
     }
@@ -1296,8 +1302,11 @@ postfix_expression:
     }
     argument_expression_list ')'
     {
-      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_FUNCTION))
+      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_FUNCTION)) {
+        osl_relation_list_free($1);
+        osl_relation_list_free($4);
         YYABORT;
+      }
       osl_relation_list_free($1);
       $$ = $4;
     }
@@ -1310,8 +1319,11 @@ postfix_expression:
 
       CLAN_debug("rule postfix_expression.4: postfix_expression . "
                  "id_or_clan_keyword");
-      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_ARRAY))
+      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_ARRAY)) {
+        osl_relation_list_free($1);
+        free($3);
         YYABORT;
+      }
       symbol = clan_symbol_add(&parser_symbol, $3, CLAN_TYPE_FIELD);
       clan_relation_new_output_scalar($1->elt, symbol->key);
       free($3);
@@ -1327,8 +1339,11 @@ postfix_expression:
 
       CLAN_debug("rule postfix_expression.5: postfix_expression -> "
                  "id_or_clan_keyword");
-      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_ARRAY))
+      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_ARRAY)) {
+        osl_relation_list_free($1);
+        free($3);
         YYABORT;
+      }
       symbol = clan_symbol_add(&parser_symbol, $3, CLAN_TYPE_FIELD);
       clan_relation_new_output_scalar($1->elt, symbol->key);
       free($3);
@@ -1341,8 +1356,10 @@ postfix_expression:
 
       CLAN_debug("rule postfix_expression.6: postfix_expression -> "
 	         "postfix_expression ++/--");
-      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_ARRAY))
+      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_ARRAY)) {
+        osl_relation_list_free($1);
         YYABORT;
+      }
       list = $1;
       // The last reference in the list is also written.
       if (list != NULL) {
@@ -1380,8 +1397,10 @@ unary_expression:
 
       CLAN_debug("rule unary_expression.2: unary_expression -> "
 	         "++/-- unary_expression");
-      if (!clan_symbol_update_type(parser_symbol, $2, CLAN_TYPE_ARRAY))
+      if (!clan_symbol_update_type(parser_symbol, $2, CLAN_TYPE_ARRAY)) {
+        osl_relation_list_free($2);
         YYABORT;
+      }
       list = $2;
       // The last reference in the list is also written.
       if (list != NULL) {
@@ -1592,8 +1611,12 @@ assignment_expression:
 
       CLAN_debug("rule assignment_expression.2: unary_expression "
 	         "assignment_operator assignment_expression;");
-      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_ARRAY))
+      if (!clan_symbol_update_type(parser_symbol, $1, CLAN_TYPE_ARRAY)) {
+        // Bison does not destroy this rule's RHS when its action aborts.
+        osl_relation_list_free($1);
+        osl_relation_list_free($3);
         YYABORT;
+      }
       $$ = $1;
       // Accesses of $1 are READ except the last one which is a WRITE or both.
       clan_relation_list_define_type($$, OSL_TYPE_READ);
@@ -1669,13 +1692,13 @@ expression_statement:
       osl_generic_p gen;
       
       CLAN_debug("rule expression_statement.2: expression ;");
-      statement = osl_statement_malloc();
-
       // - 1. Domain
       if (clan_relation_list_nb_elements(parser_stack->constraints) != 1) {
 	yyerror("missing label on a statement inside an xfor loop");
+        osl_relation_list_free($2);
         YYABORT;
       }
+      statement = osl_statement_malloc();
       statement->domain = osl_relation_clone(parser_stack->constraints->elt);
       osl_relation_set_type(statement->domain, OSL_TYPE_DOMAIN);
       osl_relation_set_attributes(statement->domain, parser_loop_depth, 0,
@@ -1709,6 +1732,7 @@ expression_statement:
         parser_access_extbody->body = osl_body_clone(body);
         gen = osl_generic_shell(parser_access_extbody, osl_extbody_interface());
         osl_generic_add(&statement->extension, gen);
+        parser_access_extbody = NULL;
       }
 
       parser_recording = CLAN_FALSE;
@@ -2151,9 +2175,7 @@ int clan_parser_is_loop_sane(osl_relation_list_p initialization,
 	((step > 0) && parser_floord[i]) ||
 	((step < 0) && parser_max[i])    ||
 	((step < 0) && parser_ceild[i])) {
-      osl_relation_list_free(initialization);
-      osl_relation_list_free(condition);
-      free(stride);
+      // The caller's grammar stack retains ownership of these values.
       if (step == 0)
 	yyerror("unsupported zero loop stride");
       else if (step > 0)
@@ -2205,7 +2227,14 @@ void clan_parser_state_malloc(int precision) {
  * exception of the parser_scop.
  */
 void clan_parser_state_free() {
+  int i;
+
+  free(parser_record);
+  osl_extbody_free(parser_access_extbody);
   clan_symbol_free(parser_symbol);
+  for (i = 0; i < CLAN_MAX_DEPTH; i++) {
+    clan_symbol_free(parser_iterators[i]);
+  }
   free(parser_scattering);
   free(parser_iterators);
   free(parser_nb_local_dims);
@@ -2216,7 +2245,7 @@ void clan_parser_state_free() {
   free(parser_max);
   free(parser_xfor_depths);
   free(parser_xfor_labels);
-  clan_domain_drop(&parser_stack);
+  clan_domain_free(parser_stack);
 }
 
 
@@ -2233,6 +2262,7 @@ void clan_parser_state_initialize(clan_options_p options) {
   parser_options       = options;
   parser_recording     = CLAN_FALSE;
   parser_record        = NULL;
+  parser_access_extbody = NULL;
   parser_if_depth      = 0;
   parser_xfor_nb_nests = 0;
   parser_xfor_index    = 0;
@@ -2275,12 +2305,16 @@ void clan_parser_reinitialize() {
   int i;
   
   free(parser_record);
+  osl_extbody_free(parser_access_extbody);
   clan_symbol_free(parser_symbol);
-  for (i = 0; i < parser_loop_depth; i++)
+  // A loop header can allocate an iterator before incrementing loop depth.
+  for (i = 0; i < CLAN_MAX_DEPTH; i++) {
     clan_symbol_free(parser_iterators[i]);
+  }
   while (parser_stack->next != NULL)
     clan_domain_drop(&parser_stack);
   osl_scop_free(parser_scop);
+  parser_scop = NULL;
   clan_parser_state_initialize(parser_options);
 }
 
@@ -2437,8 +2471,11 @@ osl_scop_p clan_parse(FILE* input, clan_options_p options) {
   
   if (!parser_error)
     scop = parser_scop;
-  else
+  else {
+    osl_scop_free(parser_scop);
+    parser_scop = NULL;
     scop = NULL;
+  }
 
   clan_parser_state_free();
   CLAN_debug("parser state successfully freed");

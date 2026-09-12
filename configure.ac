@@ -42,15 +42,7 @@ m4_define([version_major], [0])
 m4_define([version_minor], [8])
 m4_define([version_revision], [1])
 
-AC_PREREQ(2.53)
-
-dnl AC_PROG_SED is only available from version 2.6 (released in 2003). CentosOS
-dnl 5.10 still has an ancient version. The actual AC_PROG_SED macro does
-dnl functional checks, but here
-dnl we define a trivial local version for times when we are running on
-dnl obsoldete autoconf.
-ifdef([AC_PROG_SED], [],
-      [AC_DEFUN([AC_PROG_SED], [AC_CHECK_PROG(SED, sed, sed)])])
+AC_PREREQ([2.70])
 
 dnl Fill here the @bug email adress.
 AC_INIT([clan], [version_major.version_minor.version_revision],
@@ -59,8 +51,8 @@ dnl A common file, which serve as a test.
 AC_CONFIG_SRCDIR([include/clan/symbol.h])
 dnl Put as most as possible configuration files to an auxialiry
 dnl directory.
-AC_CONFIG_AUX_DIR(autoconf)
-AC_CONFIG_MACRO_DIR([m4])
+AC_CONFIG_AUX_DIR([autoconf])
+AC_CONFIG_MACRO_DIRS([m4])
 
 VERSION_MAJOR=version_major
 VERSION_MINOR=version_minor
@@ -69,8 +61,8 @@ AC_SUBST(versioninfo)
 versioninfo=4:0:0
 
 dnl Initialize automake.
-AM_INIT_AUTOMAKE([foreign subdir-objects])
-m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
+AM_INIT_AUTOMAKE([1.12 foreign subdir-objects])
+AM_SILENT_RULES([yes])
 
 
 dnl /**************************************************************************
@@ -80,14 +72,14 @@ dnl  **************************************************************************/
 
 dnl Checks for programs.
 AC_PROG_CC
+AM_PROG_AR
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
-AC_CHECK_PROG(CD, cd)
 AC_PROG_INSTALL
-AC_PROG_LIBTOOL
+LT_INIT
 AC_PROG_SED
 AC_PROG_AWK
-AC_PROG_LEX
+AC_PROG_LEX([noyywrap])
 AC_PROG_YACC
 
 AC_CHECK_PROGS(DOXYGEN, doxygen, doxygen, [])
@@ -101,13 +93,13 @@ if $LEX --version | grep "flex" >/dev/null; then
   flex_major=`echo $flex_version| cut -d . -f 1`
   flex_minor=`echo $flex_version| cut -d . -f 2`
   flex_rev=`echo $flex_version| cut -d . -f 3`
-   
+
   if test "$flex_major" -gt "2"; then
     flex_good=1
-  else 
+  else
     if test "$flex_major" -eq "2" -a "$flex_minor" -gt "5"; then
     flex_good=1
-    else 
+    else
       if test "$flex_major" -eq "2" -a "$flex_minor" -eq "5" -a "$flex_rev" -ge "35"; then
       flex_good=1
       else
@@ -154,11 +146,9 @@ else
 fi
 
 dnl Checks for typedefs, structures, and compiler characteristics.
-AC_C_CONST
 AC_TYPE_SIZE_T
 
 dnl Checks for header files.
-AC_HEADER_STDC
 AC_CHECK_HEADERS([errno.h stddef.h stdlib.h string.h strings.h unistd.h])
 
 dnl Checks for library functions.

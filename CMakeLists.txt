@@ -1,28 +1,19 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.12)
+project(clan VERSION 0.8.1 LANGUAGES C)
 
 
-set(PACKAGE_VERSION "0.7.1")
+set(PACKAGE_VERSION "${PROJECT_VERSION}")
+set(VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
+set(VERSION_MINOR "${PROJECT_VERSION_MINOR}")
+set(VERSION_REVISION "${PROJECT_VERSION_PATCH}")
 set(top_srcdir "${CMAKE_CURRENT_SOURCE_DIR}")
 
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 
-# User's settings - C Flags
-
-# 	set(release "TRUE")
-	set(release "FALSE")
-
-	# Release
-	if (release)
-		set(CMAKE_C_FLAGS "-O3")
-	# Debug # valgrind --show-reachable=yes --leak-check=full -v exe
-	else()
-		set(CMAKE_C_FLAGS "-O0 -g3")
-	endif()
-
-# User's settings - General C Flags
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -std=c99 -pedantic")
-
+# Honor the standard CMake build types and user-supplied compiler flags.
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED TRUE)
 
 # Build doxygen
 	find_package(Doxygen)
@@ -69,15 +60,25 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 
 # osl
-	find_package(osl REQUIRED)
+	find_package(osl REQUIRED CONFIG)
+	# CMake installations export a target; Autotools installations provide
+	# the legacy OSL_LIBRARY and OSL_INCLUDE_DIR variables.
+	if(TARGET osl)
+		set(OSL_LIBRARY osl)
+	else()
+		include_directories("${OSL_INCLUDE_DIR}")
+	endif()
 
 # Flex
 	find_package(BISON REQUIRED)
 	find_package(FLEX REQUIRED)
-	BISON_TARGET(clan_parser source/parser.y ${CMAKE_CURRENT_BINARY_DIR}/parser.c)
-	FLEX_TARGET(clan_scanner source/scanner.l ${CMAKE_CURRENT_BINARY_DIR}/scanner.c)
+	file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/source")
+	BISON_TARGET(clan_parser source/parser.y ${CMAKE_CURRENT_BINARY_DIR}/source/parser.c)
+	FLEX_TARGET(clan_scanner source/scanner.l ${CMAKE_CURRENT_BINARY_DIR}/source/scanner.c)
 	ADD_FLEX_BISON_DEPENDENCY(clan_scanner clan_parser)
-	include_directories(${CMAKE_CURRENT_BINARY_DIR})
+	add_custom_target(clan_generated DEPENDS
+		${BISON_clan_parser_OUTPUTS} ${FLEX_clan_scanner_OUTPUTS})
+	include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/source)
 
 # Include directories (to use #include <> instead of #include "")
 
@@ -88,29 +89,17 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 	include_directories("./include")
 
 
-# Compiler log
-	message(STATUS "---")
-	message(STATUS "C compiler = ${CMAKE_C_COMPILER}")
-	if (release)
-		message(STATUS "Mode Release")
-	else()
-		message(STATUS "Mode Debug")
-	endif()
-	message(STATUS "C flags    = ${CMAKE_C_FLAGS}")
-
-
-# Library
-
-	message(STATUS "---")
-
-	# files .c
-	file(
-		GLOB_RECURSE
-		sources
-		source/*
-	)
-	string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/source/clan.c;" "" sources "${sources}") # with ;
-	string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/source/clan.c" "" sources "${sources}")  # without ;
+# Library sources: never include generated scanner/parser files from a
+# previous in-source Autotools build.
+set(sources
+  	source/options.c
+  	source/symbol.c
+  	source/scop.c
+  	source/statement.c
+  	source/relation.c
+  	source/relation_list.c
+  	source/domain.c
+  	source/vector.c)
 
 	# Shared
 	add_library(
@@ -120,9 +109,9 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 		${BISON_clan_parser_OUTPUTS}
 		${FLEX_clan_scanner_OUTPUTS}
 	)
+	add_dependencies(clan clan_generated)
 	target_link_libraries(clan ${OSL_LIBRARY})
-	get_property(clan_lib_location TARGET clan PROPERTY LOCATION)
-	message(STATUS "Add clan library (shared) ${clan_lib_location}")
+
 
 	# Static
 	add_library(
@@ -133,9 +122,9 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 		${FLEX_clan_scanner_OUTPUTS}
 	)
 	set_target_properties(clan_static PROPERTIES OUTPUT_NAME clan)
+	add_dependencies(clan_static clan_generated)
 	target_link_libraries(clan_static ${OSL_LIBRARY})
-	get_property(clan_static_lib_location TARGET clan_static PROPERTY LOCATION)
-	message(STATUS "Add clan library (static) ${clan_static_lib_location}")
+
 
 
 # Executables & tests
@@ -147,44 +136,28 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 	set_target_properties(clan_exe PROPERTIES OUTPUT_NAME "clan")
 	target_link_libraries(clan_exe clan_static ${OSL_LIBRARY})
 
-	# clan test
-	find_package(PythonInterp)
-	if (PYTHONINTERP_FOUND)
-	
-		message(STATUS "---")
-
-		enable_testing()
-		file(
-			GLOB_RECURSE
-			tests
-			tests/*.c
-		)
-
-		foreach(test ${tests})
-			message(STATUS "Add Test ${test}")
-			if("${test}" MATCHES "autoscop")
-				add_test(
-					${test}
-					"${CMAKE_CURRENT_SOURCE_DIR}/tests/check_source_result.py"
-					"${test}"
-					"${test}.scop"
-					"${CMAKE_CURRENT_BINARY_DIR}/clan"
-					"-autoscop"
-				)
-			else()
-				add_test(
-					${test}
-					"${CMAKE_CURRENT_SOURCE_DIR}/tests/check_source_result.py"
-					"${test}"
-					"${test}.scop"
-					"${CMAKE_CURRENT_BINARY_DIR}/clan"
-				)
-			endif()
-			endforeach()
-
-		message(STATUS "---")
-
-	endif()
+# Run each fixture through the same shell checker used by make check.
+enable_testing()
+find_program(SH_EXECUTABLE sh)
+if(NOT SH_EXECUTABLE)
+  message(FATAL_ERROR "Clan tests require a POSIX shell")
+endif()
+file(GLOB_RECURSE tests "${CMAKE_CURRENT_SOURCE_DIR}/tests/*.c")
+foreach(test IN LISTS tests)
+  file(RELATIVE_PATH test_name "${CMAKE_CURRENT_SOURCE_DIR}/tests" "${test}")
+  set(test_option "")
+  if(test_name MATCHES "^autoinsert/")
+    set(test_option "-autoinsert")
+  elseif(test_name MATCHES "^autoscop/")
+    set(test_option "-autoscop")
+  endif()
+  add_test(NAME "${test_name}"
+    COMMAND "${CMAKE_COMMAND}" -E env
+      "top_builddir=$<TARGET_FILE_DIR:clan_exe>"
+      "EXEEXT=${CMAKE_EXECUTABLE_SUFFIX}"
+      "${SH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/checker.sh"
+      "${test_name}" "${test}" "${test_option}" clan)
+endforeach()
 
 
 # Install
@@ -193,7 +166,7 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 	install(TARGETS clan_static ARCHIVE DESTINATION lib)
 	install(DIRECTORY include/ DESTINATION include FILES_MATCHING PATTERN "*.h")
 	install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/include/" DESTINATION include FILES_MATCHING PATTERN "*.h")
-	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/parser.h" DESTINATION include/clan)
+	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/source/parser.h" DESTINATION include/clan)
 	install(FILES clan-config.cmake DESTINATION lib/clan)
 	install(TARGETS clan_exe RUNTIME DESTINATION bin)
 
@@ -202,9 +175,7 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 	message(STATUS "You can execute:")
 	message(STATUS "    make          # To compile clan library & clan")
-	if (PYTHONINTERP_FOUND)
-		message(STATUS "    make test     # To execute tests")
-	endif()
+	message(STATUS "    make test     # To execute tests")
 	message(STATUS "    make install  # To install library, include and CMake module")
 	message(STATUS "                  # If you need root access:")
 	message(STATUS "                  #     sudo make install")

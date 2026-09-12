@@ -1,4 +1,6 @@
 #!/bin/sh
+set -e
+
 autoreconf -i
 if test -f osl/autogen.sh; then
 	(cd osl; ./autogen.sh)

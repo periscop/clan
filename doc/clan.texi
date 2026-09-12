@@ -1022,6 +1022,11 @@ GNU General Public License for more details.
 @node Requirements
 @section Requirements
 
+Building from the Git sources requires Autoconf 2.70 or later,
+Automake 1.12 or later, and GNU Libtool. Run @code{./autogen.sh}
+to generate the configure script and Makefile templates.
+The alternative CMake build requires CMake 3.12 or later.
+Its tests use the same POSIX shell checker as @code{make check}.
 
 Clan relies on the OpenScop Library, or @code{osl} for everything related to
 the OpenScop format. For convenience, an embedded version of osl is

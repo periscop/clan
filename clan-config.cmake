@@ -7,7 +7,7 @@
 
 if (CLAN_INCLUDE_DIR AND CLAN_LIBRARY)
 	# Already in cache, be silent
-	set(CLAN_FIND_QUIETLY TRUE)
+	set(clan_FIND_QUIETLY TRUE)
 endif()
 
 find_path(CLAN_INCLUDE_DIR NAMES clan/clan.h)
@@ -20,6 +20,8 @@ else()
 endif()
 
 include(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(CLAN DEFAULT_MSG CLAN_INCLUDE_DIR CLAN_LIBRARY)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(clan DEFAULT_MSG CLAN_INCLUDE_DIR CLAN_LIBRARY)
+
+set(CLAN_FOUND "${clan_FOUND}")
 
 mark_as_advanced(CLAN_INCLUDE_DIR CLAN_LIBRARY)

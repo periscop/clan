@@ -495,6 +495,9 @@ code between SCoP pragmas:
 @itemize @bullet
 @item The only allowed control keywords are @code{for}, @code{while},
       @code{if} and @code{else}, with restrictions as described below.
+@item Each finite @code{for} loop has one iterator, one initialization,
+      one condition, and one step. Comma-separated loop-header lists and
+      numeric statement labels are not supported.
 @item Declarations are not allowed.
 @item Any C instruction without control keywords is accepted, with
       restrictions for array subscripts as described below.

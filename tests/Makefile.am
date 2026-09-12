@@ -125,11 +125,13 @@ UNITARY_TEST_FILES = \
 	$(top_srcdir)/tests/unitary/iterinparent.c
 
 FAIL_TEST_FILES = \
+	$(top_srcdir)/tests/must_fail/numeric_label.c \
+	$(top_srcdir)/tests/must_fail/multiple_for_conditions.c \
+	$(top_srcdir)/tests/must_fail/multiple_for_strides.c \
 	$(top_srcdir)/tests/must_fail/error_after_scop.c \
 	$(top_srcdir)/tests/must_fail/invalid_else.c \
 	$(top_srcdir)/tests/must_fail/multiple_for_indices.c \
 	$(top_srcdir)/tests/must_fail/zero_loop_stride.c \
-	$(top_srcdir)/tests/must_fail/missing_xfor_label.c \
 	$(top_srcdir)/tests/must_fail/iterator_function.c \
 	$(top_srcdir)/tests/must_fail/iterator_function_noargs.c \
 	$(top_srcdir)/tests/must_fail/iterator_field.c \

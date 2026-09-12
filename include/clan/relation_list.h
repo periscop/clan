@@ -53,7 +53,6 @@ struct osl_relation_list;
  ******************************************************************************/
 void clan_relation_list_compact(struct osl_relation_list*, int);
 void clan_relation_list_define_type(struct osl_relation_list*, int);
-int  clan_relation_list_nb_elements(struct osl_relation_list*);
 
 
 # if defined(__cplusplus)

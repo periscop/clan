@@ -64,7 +64,6 @@
    #include <clan/vector.h>
    #include <clan/relation.h>
    #include <clan/relation_list.h>
-   #include <clan/domain.h>
    #include <clan/scop.h>
    #include <clan/symbol.h>
    #include <clan/statement.h>
@@ -82,7 +81,8 @@
    void clan_parser_log(char*);
    void clan_parser_increment_loop_depth();
    void clan_parser_state_print(FILE*);
-   int  clan_parser_is_loop_sane(osl_relation_list_p,osl_relation_list_p,int*);
+   int  clan_parser_is_loop_sane(int);
+   void clan_parser_loop_domain(osl_relation_p, osl_relation_p, int);
    void clan_parser_state_initialize(clan_options_p);
    osl_scop_p clan_parse(FILE*, clan_options_p);
 
@@ -107,21 +107,17 @@
    int            parser_if_depth;      /**< Current if depth */
    int*           parser_scattering;    /**< Current statement scattering */
    clan_symbol_p* parser_iterators;     /**< Current iterator list */
-   clan_domain_p  parser_stack;         /**< Iteration domain stack */
+   osl_relation_list_p parser_stack;    /**< Iteration domain stack */
    int*           parser_nb_local_dims; /**< Nb of local dims per depth */
    int            parser_nb_parameters; /**< Nb of parameter symbols */
    int*           parser_valid_else;    /**< Boolean: OK for else per depth */
    int            parser_indent;        /**< SCoP indentation */
    int            parser_error;         /**< Boolean: parse error */
 
-   int            parser_xfor_nb_nests; /**< Current number of xfor nests */
-   int*           parser_xfor_depths;   /**< Current xfor nest depth list */
-   int*           parser_xfor_labels;   /**< Current xfor label list */
-   int            parser_xfor_index;    /**< Nb of current (x)for loop index */
-   int*           parser_ceild;         /**< Booleans: ith index used ceild */
-   int*           parser_floord;        /**< Booleans: ith index used floord */
-   int*           parser_min;           /**< Booleans: ith index used min */
-   int*           parser_max;           /**< Booleans: ith index used max */
+   int            parser_ceild;         /**< Boolean: ceild used */
+   int            parser_floord;        /**< Boolean: floord used */
+   int            parser_min;           /**< Boolean: min used */
+   int            parser_max;           /**< Boolean: max used */
 
    // Autoscop-relative variables.
    int            parser_autoscop;      /**< Boolean: autoscop in progress */
@@ -140,10 +136,9 @@
 %}
 
 /* We expect the if-then-else shift/reduce to be there, nothing else. */
-%expect 8 // TODO: should be 1 !!! (cause : labeled_statement)
+%expect 1
 
 %union { int value;                      /**< An integer value */
-         int* vecint;                    /**< A vector of integer values */
          char* symbol;                   /**< A string for identifiers */
          osl_vector_p affex;             /**< An affine expression */
          osl_relation_p setex;           /**< A set of affine expressions */
@@ -163,7 +158,7 @@
 %token BOOL COMPLEX IMAGINARY
 %token STRUCT UNION ENUM ELLIPSIS
 
-%token CASE DEFAULT IF ELSE SWITCH WHILE DO XFOR FOR GOTO CONTINUE BREAK RETURN
+%token CASE DEFAULT IF ELSE SWITCH WHILE DO FOR GOTO CONTINUE BREAK RETURN
 
 %token IGNORE PRAGMA
 %token MIN MAX CEILD FLOORD
@@ -173,7 +168,6 @@
 %type <stmt>   statement_list
 %type <stmt>   statement_indented
 %type <stmt>   statement
-%type <stmt>   labeled_statement
 %type <stmt>   compound_statement
 %type <stmt>   expression_statement
 %type <stmt>   selection_else_statement
@@ -181,11 +175,8 @@
 %type <stmt>   iteration_statement
 %type <stmt>   loop_body
 %type <setex>  loop_initialization
-%type <list>   loop_initialization_list
 %type <setex>  loop_condition
-%type <list>   loop_condition_list
 %type <value>  loop_stride
-%type <vecint> loop_stride_list
 %type <symbol> idparent
 %type <symbol> id_or_clan_keyword
 
@@ -226,7 +217,6 @@
 %destructor { free($$); } <symbol>
 %destructor { osl_vector_free($$); } <affex>
 %destructor { osl_relation_free($$); } <setex>
-%destructor { free($$); } <vecint>
 %destructor { osl_relation_list_free($$); } <list>
 %destructor { osl_statement_free($$); } <stmt>
 
@@ -328,8 +318,7 @@ statement_indented:
 // Rules for a statement
 // Return <stmt>
 statement:
-    labeled_statement        { $$ = $1; }
-  | compound_statement       { $$ = $1; }
+    compound_statement       { $$ = $1; }
   | expression_statement     { $$ = $1; }
   | selection_statement      { $$ = $1; }
   | {
@@ -357,49 +346,6 @@ statement:
       }
     }
 ;
-
-
-labeled_statement:
-    INTEGER ':' 
-    {
-      int i;
-      clan_domain_p labeled_domain;
-      osl_relation_list_p labeled_constraints;
-
-      CLAN_debug("labeled_statement.1.1: <int> : ...");
-     
-      if (parser_stack == NULL)
-        printf("NULL stack, label %d\n", $1);
-      if (parser_stack->constraints == NULL)
-        printf("NULL constraints\n");
-      if (($1 < 0) ||
-	  ($1 >= clan_relation_list_nb_elements(parser_stack->constraints))) {
-	yyerror("label out of range");
-        YYABORT;
-      }
-
-      labeled_domain = clan_domain_malloc();
-      labeled_domain->constraints = osl_relation_list_malloc();
-      labeled_constraints = parser_stack->constraints;
-      for (i = 0; i < $1; i++)
-	labeled_constraints = labeled_constraints->next;
-      labeled_domain->constraints->elt =
-	  osl_relation_clone(labeled_constraints->elt);
-
-      clan_domain_push(&parser_stack, labeled_domain);
-      parser_xfor_labels[parser_xfor_nb_nests] = $1;
-      parser_xfor_depths[parser_xfor_nb_nests + 1] = 0;
-      parser_xfor_nb_nests++;
-    }
-    statement
-    {
-      clan_domain_drop(&parser_stack);
-      parser_xfor_nb_nests--;
-      parser_xfor_labels[parser_xfor_nb_nests] = CLAN_UNDEFINED;
-      $$ = $4;
-      CLAN_debug("labeled_statement.1.2: ... <stmt>");
-    }
-  ;
 
 
 // Rules for a compound statement
@@ -441,8 +387,8 @@ selection_statement:
     IF '(' affine_condition ')'
     {
       CLAN_debug("rule selection_statement.1.1: if ( condition ) ...");
-      clan_domain_dup(&parser_stack);
-      clan_domain_and(parser_stack, $3);
+      osl_relation_list_dup(&parser_stack);
+      clan_relation_and(parser_stack->elt, $3);
       parser_if_depth++;
       if ((parser_loop_depth + parser_if_depth) > CLAN_MAX_DEPTH)
 	CLAN_error("CLAN_MAX_DEPTH reached, recompile with a higher value");
@@ -452,11 +398,11 @@ selection_statement:
       osl_relation_p not_if;
       
       CLAN_debug("rule selection_statement.1.2: if ( condition ) <stmt> ...");
-      clan_domain_drop(&parser_stack);
-      clan_domain_dup(&parser_stack);
+      osl_relation_list_drop(&parser_stack);
+      osl_relation_list_dup(&parser_stack);
       if (!clan_relation_existential($3)) {
 	not_if = clan_relation_not($3);
-	clan_domain_and(parser_stack, not_if);
+	clan_relation_and(parser_stack->elt, not_if);
 	osl_relation_free(not_if);
 	parser_valid_else[parser_if_depth] = 1;
       } else {
@@ -469,7 +415,7 @@ selection_statement:
     {
       CLAN_debug("rule selection_statement.1.3: if ( condition ) <stmt>"
 	         "[else <stmt>]");
-      clan_domain_drop(&parser_stack);
+      osl_relation_list_drop(&parser_stack);
       $$ = $6;
       osl_statement_add(&$$, $8);
       parser_if_depth--;
@@ -480,87 +426,30 @@ selection_statement:
 
 
 iteration_statement:
-    XFOR '(' loop_initialization_list loop_condition_list loop_stride_list ')'
+    FOR '(' loop_initialization loop_condition loop_stride ')'
     {
-      CLAN_debug("rule iteration_statement.1.1: xfor ( init cond stride ) ...");
-      parser_xfor_labels[parser_loop_depth] = CLAN_UNDEFINED;
-       
-      // Check loop bounds and stride consistency and reset sanity sentinels.
-      if (!clan_parser_is_loop_sane($3, $4, $5))
-        YYABORT;
-
-      // Check that either an xfor loop is the first one or have the same
-      // number of indices than the previous one.
-      if ((clan_relation_list_nb_elements(parser_stack->constraints) != 1) &&
-	  (clan_relation_list_nb_elements(parser_stack->constraints) !=
-	   clan_relation_list_nb_elements($3))) {
-	yyerror("consecutive xfor loops without the same number of indices");
-        // This midrule action leaves the header values on Bison's stack.
-        YYABORT;
-      }
-
-      // Add the constraints contributed by the xfor loop to the domain stack.
-      clan_domain_dup(&parser_stack);
-      clan_domain_xfor(parser_stack, parser_loop_depth + 1, parser_symbol,
-	               $3, $4, $5, parser_options);
-
-      clan_parser_increment_loop_depth();
-      parser_xfor_depths[parser_xfor_nb_nests]++;
-      parser_xfor_index = 0;
-      osl_relation_list_free($3);
-      osl_relation_list_free($4);
-      $3 = NULL; // To avoid conflicts with the destructor TODO: avoid that.
-      $4 = NULL;
-      parser_scattering[2*parser_loop_depth-1] = ($5[0] > 0) ? 1 : -1;
-      parser_scattering[2*parser_loop_depth] = 0;
-      free($5);
-      $5 = NULL;
-    }
-    loop_body
-    {
-      CLAN_debug("rule iteration_statement.1.2: xfor ( init cond stride ) "
-	         "body");
-      parser_xfor_depths[parser_xfor_nb_nests]--;
-      $$ = $8;
-      CLAN_debug_call(osl_statement_dump(stderr, $$));
-    }
-  |
-    FOR '(' loop_initialization_list loop_condition_list loop_stride_list ')'
-    {
-      CLAN_debug("rule iteration_statement.2.1: for ( init cond stride ) ...");
-      parser_xfor_labels[parser_loop_depth] = 0;
-     
-      // Check there is only one element in each list
-      if (parser_xfor_index != 1) {
-	yyerror("unsupported element list in a for loop");
-        // This midrule action leaves the header values on Bison's stack.
-        YYABORT;
-      }
+      CLAN_debug("rule iteration_statement.1.1: for ( init cond stride ) ...");
 
       // Check loop bounds and stride consistency and reset sanity sentinels.
-      if (!clan_parser_is_loop_sane($3, $4, $5))
+      if (!clan_parser_is_loop_sane($5)) {
         YYABORT;
+      }
 
       // Add the constraints contributed by the for loop to the domain stack.
-      clan_domain_dup(&parser_stack);
-      clan_domain_for(parser_stack, parser_loop_depth + 1, parser_symbol,
-	              $3->elt, $4->elt, $5[0], parser_options);
-
+      clan_parser_loop_domain($3, $4, $5);
       clan_parser_increment_loop_depth();
-      parser_xfor_index = 0;
-      osl_relation_list_free($3);
-      osl_relation_list_free($4);
-      $3 = NULL; // To avoid conflicts with the destructor TODO: avoid that.
+      osl_relation_free($3);
+      osl_relation_free($4);
+      // These values remain on Bison's stack while parsing the loop body.
+      $3 = NULL;
       $4 = NULL;
-      parser_scattering[2*parser_loop_depth-1] = ($5[0] > 0) ? 1 : -1;
+      parser_scattering[2*parser_loop_depth-1] = ($5 > 0) ? 1 : -1;
       parser_scattering[2*parser_loop_depth] = 0;
-      free($5);
-      $5 = NULL;
     }
     loop_body
     {
-      CLAN_debug("rule iteration_statement.2.2: for ( init cond stride ) "
-	         "body");
+      CLAN_debug("rule iteration_statement.1.2: for ( init cond stride ) "
+                 "body");
       $$ = $8;
       CLAN_debug_call(osl_statement_dump(stderr, $$));
     }
@@ -569,12 +458,11 @@ iteration_statement:
       osl_vector_p   iterator_term;
       osl_relation_p iterator_relation;
 
-      CLAN_debug("rule iteration_statement.3.1: loop_infinite ...");
+      CLAN_debug("rule iteration_statement.2.1: loop_infinite ...");
       if (!clan_symbol_new_iterator(&parser_symbol, parser_iterators,
 	                            "clan_infinite_loop", parser_loop_depth))
 	YYABORT;
 
-      parser_xfor_labels[parser_loop_depth] = 0;
       clan_parser_increment_loop_depth();
       
       // Generate the constraint clan_infinite_loop >= 0.
@@ -586,8 +474,8 @@ iteration_statement:
       iterator_relation = osl_relation_from_vector(iterator_term);
       
       // Add it to the domain stack.
-      clan_domain_dup(&parser_stack);
-      clan_domain_and(parser_stack, iterator_relation);
+      osl_relation_list_dup(&parser_stack);
+      clan_relation_and(parser_stack->elt, iterator_relation);
       osl_vector_free(iterator_term);
       osl_relation_free(iterator_relation);
       parser_scattering[2*parser_loop_depth-1] = 1;
@@ -595,29 +483,9 @@ iteration_statement:
     }
     loop_body
     {
-      CLAN_debug("rule iteration_statement.3.2: loop_infinite body");
+      CLAN_debug("rule iteration_statement.2.2: loop_infinite body");
       $$ = $3;
       CLAN_debug_call(osl_statement_dump(stderr, $$));
-    }
-  ;
-
-
-loop_initialization_list:
-    loop_initialization ',' loop_initialization_list
-    {
-      osl_relation_list_p new = osl_relation_list_malloc();
-      CLAN_debug("rule initialization_list.1: initialization , "
-	         "initialization_list");
-      new->elt = $1;
-      osl_relation_list_push(&$3, new);
-      $$ = $3;
-    }
-  | loop_initialization ';'
-    {
-      CLAN_debug("rule initialization_list.2: initialization ;");
-      parser_xfor_index = 0;
-      $$ = osl_relation_list_malloc();
-      $$->elt = $1;
     }
   ;
 
@@ -629,10 +497,9 @@ loop_initialization:
 	                            parser_loop_depth))
 	YYABORT;
     }
-    '=' affine_minmax_expression
+    '=' affine_minmax_expression ';'
     {
       CLAN_debug("rule initialization: ID = <setex>");
-      parser_xfor_index++;
       free($2);
       $$ = $5;
       CLAN_debug_call(osl_relation_dump(stderr, $$));
@@ -646,48 +513,12 @@ loop_declaration:
   ;
 
 
-loop_condition_list:
-    loop_condition ',' loop_condition_list
-    {
-      osl_relation_list_p new = osl_relation_list_malloc();
-      new->elt = $1;
-      osl_relation_list_push(&$3, new);
-      $$ = $3;
-    }
-  | loop_condition ';'
-    {
-      parser_xfor_index = 0;
-      $$ = osl_relation_list_malloc();
-      $$->elt = $1;
-    }
-  ;
-
-
 loop_condition:
-    affine_condition
+    affine_condition ';'
     {
       CLAN_debug("rule condition.1: <setex>");
-      parser_xfor_index++;
       $$ = $1;
       CLAN_debug_call(osl_relation_dump(stderr, $$));
-    }
-  ;
-
-
-loop_stride_list:
-    loop_stride ',' loop_stride_list
-    {
-      int i;
-      $$ = malloc((parser_xfor_index) * sizeof(int));
-      for (i = 0; i < parser_xfor_index - 1; i++)
-        $$[i + 1] = $3[i];
-      free($3);
-      $$[0] = $1;
-    }
-  | loop_stride
-    {
-      $$ = malloc(sizeof(int));
-      $$[0] = $1;
     }
   ;
 
@@ -699,16 +530,16 @@ loop_stride_list:
 // TODO: we should check that ID corresponds to the current loop iterator.
 //
 loop_stride:
-    idparent INC_OP             { parser_xfor_index++; $$ =  1;  free($1); }
-  | idparent DEC_OP             { parser_xfor_index++; $$ = -1;  free($1); }
-  | INC_OP idparent             { parser_xfor_index++; $$ =  1;  free($2); }
-  | DEC_OP idparent             { parser_xfor_index++; $$ = -1;  free($2); }
+    idparent INC_OP             { $$ =  1;  free($1); }
+  | idparent DEC_OP             { $$ = -1;  free($1); }
+  | INC_OP idparent             { $$ =  1;  free($2); }
+  | DEC_OP idparent             { $$ = -1;  free($2); }
   | idparent '=' idparent '+' INTEGER
-    { parser_xfor_index++; $$ =  $5; free($1); free($3); }
+    { $$ =  $5; free($1); free($3); }
   | idparent '=' idparent '-' INTEGER
-    { parser_xfor_index++; $$ = -$5; free($1); free($3); }
-  | idparent ADD_ASSIGN INTEGER { parser_xfor_index++; $$ =  $3; free($1); }
-  | idparent SUB_ASSIGN INTEGER { parser_xfor_index++; $$ = -$3; free($1); }
+    { $$ = -$5; free($1); free($3); }
+  | idparent ADD_ASSIGN INTEGER { $$ =  $3; free($1); }
+  | idparent SUB_ASSIGN INTEGER { $$ = -$3; free($1); }
   ;
 
 idparent:
@@ -730,7 +561,7 @@ loop_body:
       parser_loop_depth--;
       clan_symbol_free(parser_iterators[parser_loop_depth]);
       parser_iterators[parser_loop_depth] = NULL;
-      clan_domain_drop(&parser_stack);
+      osl_relation_list_drop(&parser_stack);
       $$ = $1;
       parser_scattering[2*parser_loop_depth]++;
       parser_nb_local_dims[parser_loop_depth + parser_if_depth] = 0;
@@ -765,8 +596,8 @@ affine_minmax_expression:
 
 
 minmax:
-    MIN { parser_min[parser_xfor_index] = 1; }
-  | MAX { parser_max[parser_xfor_index] = 1; }
+    MIN { parser_min = 1; }
+  | MAX { parser_max = 1; }
   ;
 
 
@@ -1158,8 +989,8 @@ affine_ceildfloord_expression:
 
 
 ceildfloord:
-    CEILD  { parser_ceild[parser_xfor_index]  = 1; }
-  | FLOORD { parser_floord[parser_xfor_index] = 1; }
+    CEILD  { parser_ceild  = 1; }
+  | FLOORD { parser_floord = 1; }
   ;
 
 
@@ -1693,13 +1524,8 @@ expression_statement:
       
       CLAN_debug("rule expression_statement.2: expression ;");
       // - 1. Domain
-      if (clan_relation_list_nb_elements(parser_stack->constraints) != 1) {
-	yyerror("missing label on a statement inside an xfor loop");
-        osl_relation_list_free($2);
-        YYABORT;
-      }
       statement = osl_statement_malloc();
-      statement->domain = osl_relation_clone(parser_stack->constraints->elt);
+      statement->domain = osl_relation_clone(parser_stack->elt);
       osl_relation_set_type(statement->domain, OSL_TYPE_DOMAIN);
       osl_relation_set_attributes(statement->domain, parser_loop_depth, 0,
 	                          clan_parser_nb_ld(), CLAN_MAX_PARAMETERS);
@@ -1714,7 +1540,7 @@ expression_statement:
       // - 4. Body.
       body = osl_body_malloc();
       body->iterators = clan_symbol_array_to_strings(parser_iterators,
-	  parser_loop_depth, parser_xfor_depths, parser_xfor_labels);
+          parser_loop_depth);
       body->expression = osl_strings_encapsulate(parser_record);
       gen = osl_generic_shell(body, osl_body_interface());
       osl_generic_add(&statement->extension, gen);
@@ -2045,7 +1871,7 @@ void clan_parser_state_print(FILE* file) {
   // Iteration domain stack.
   fprintf(file, "|\tparser_domain [Iteration domain stack]\n");
   fprintf(file, "|\t|\t|\n");
-  clan_domain_idump(file, parser_stack, 2);
+  osl_relation_list_idump(file, parser_stack, 2);
   fprintf(file, "|\t|\n");
 
   // Number of local dimensions per depth.
@@ -2089,37 +1915,14 @@ void clan_parser_state_print(FILE* file) {
   fprintf(file, "|\tparser_error [Boolean: parse error] = %d\n", parser_error);
   fprintf(file, "|\t|\n");
 
-  // xfor number of nests, depths and labels.
-  fprintf(file, "|\txfor management [nb of nests, depths and labels]\n");
-  fprintf(file, "|\t|\t|\n");
-  if (parser_xfor_nb_nests > 0) {
-    fprintf(file, "|\t|\t|  nest | depth | label\n");
-    for (i = 0; i < parser_xfor_nb_nests; i++) {
-      printf("|\t|\t|   [%d] |     %d |     %d\n",
-	     i, parser_xfor_depths[i], parser_xfor_labels[i]);
-    }
-  } else {
-    fprintf(file, "|\t|\t|  (no xfor loop)\n");
-  }
-  fprintf(file, "|\t|\t|\n");
-  fprintf(file, "|\t|\n");
-  
-  // loop sanity sentinels
+  // Loop sanity sentinels.
   fprintf(file, "|\tloop sanity sentinels [booleans min/max/floord/ceild]\n");
   fprintf(file, "|\t|\t|\n");
-  if (parser_xfor_index > 0) {
-    fprintf(file, "|\t|\t|  index | min | max | floord | ceild\n");
-    for (i = 0; i < parser_xfor_index; i++) {
-      printf("|\t|\t|  [%d] |   %d |   %d |      %d |     %d\n",
-	     i, parser_min[i], parser_max[i],
-	     parser_floord[i], parser_ceild[i]);
-    }
-  } else {
-    fprintf(file, "|\t|\t|  (no (x)for loop indices)\n");
-  }
+  fprintf(file, "|\t|\t|  %d | %d | %d | %d\n",
+          parser_min, parser_max, parser_floord, parser_ceild);
   fprintf(file, "|\t|\t|\n");
   fprintf(file, "|\t|\n");
-  
+
   fprintf(file, "|\n");
 }
 
@@ -2156,40 +1959,70 @@ void clan_parser_increment_loop_depth() {
 }
 
 
-int clan_parser_is_loop_sane(osl_relation_list_p initialization,
-                             osl_relation_list_p condition, int* stride) {
-  int i, step;
-
-  // Check there is the same number of elements in all for parts.
-  if ((clan_relation_list_nb_elements(initialization) != parser_xfor_index) ||
-      (clan_relation_list_nb_elements(condition) != parser_xfor_index)) {
-    yyerror("not the same number of elements in all loop parts");
+int clan_parser_is_loop_sane(int stride) {
+  // Check that the bounds and stride are consistent.
+  if ((stride == 0) ||
+      ((stride > 0) && (parser_min || parser_floord)) ||
+      ((stride < 0) && (parser_max || parser_ceild))) {
+    if (stride == 0) {
+      yyerror("unsupported zero loop stride");
+    } else if (stride > 0) {
+      yyerror("illegal min or floord in forward loop initialization");
+    } else {
+      yyerror("illegal max or ceild in backward loop initialization");
+    }
     return 0;
   }
-
-  // Check that all bounds and strides are consistent.
-  for (i = 0; i < parser_xfor_index; i++) {
-    step = stride[i];
-    if ((step == 0) ||
-	((step > 0) && parser_min[i])    ||
-	((step > 0) && parser_floord[i]) ||
-	((step < 0) && parser_max[i])    ||
-	((step < 0) && parser_ceild[i])) {
-      // The caller's grammar stack retains ownership of these values.
-      if (step == 0)
-	yyerror("unsupported zero loop stride");
-      else if (step > 0)
-	yyerror("illegal min or floord in forward loop initialization");
-      else
-	yyerror("illegal max or ceild in backward loop initialization");
-      return 0;
-    }
-    parser_ceild[i]  = 0;
-    parser_floord[i] = 0;
-    parser_min[i]    = 0;
-    parser_max[i]    = 0;
-  }
+  parser_ceild  = 0;
+  parser_floord = 0;
+  parser_min    = 0;
+  parser_max    = 0;
   return 1;
+}
+
+
+/**
+ * clan_parser_loop_domain function:
+ * this function pushes the domain of a for loop onto the parser stack.
+ * The loop depth is incremented by the caller after building the domain.
+ * \param[in] initialization The loop initialization right part constraints.
+ * \param[in,out] condition The loop condition, updated with loop context.
+ * \param[in] stride The loop stride value.
+ */
+void clan_parser_loop_domain(osl_relation_p initialization,
+                             osl_relation_p condition, int stride) {
+  int depth = parser_loop_depth + 1;
+  osl_vector_p iterator_term;
+  osl_relation_p iterator_relation, init_constraints, stride_constraints;
+
+  // Initialization constraints depend on the direction of the stride.
+  iterator_term = clan_vector_term(parser_symbol, 0, NULL,
+                                   parser_options->precision);
+  osl_int_set_si(parser_options->precision, &iterator_term->v[depth], 1);
+  iterator_relation = osl_relation_from_vector(iterator_term);
+  if (stride > 0) {
+    init_constraints = clan_relation_greater(iterator_relation,
+                                             initialization, 0);
+  } else {
+    init_constraints = clan_relation_greater(initialization,
+                                             iterator_relation, 0);
+  }
+  osl_vector_free(iterator_term);
+  osl_relation_free(iterator_relation);
+
+  osl_relation_list_dup(&parser_stack);
+  clan_relation_and(parser_stack->elt, init_constraints);
+  if (!parser_options->noloopcontext) {
+    clan_relation_loop_context(condition, init_constraints, depth);
+  }
+  clan_relation_and(parser_stack->elt, condition);
+
+  if ((stride != 1) && (stride != -1)) {
+    stride_constraints = clan_relation_stride(parser_stack->elt, depth, stride);
+    osl_relation_free(parser_stack->elt);
+    parser_stack->elt = stride_constraints;
+  }
+  osl_relation_free(init_constraints);
 }
 
 
@@ -2204,20 +2037,12 @@ void clan_parser_state_malloc(int precision) {
   nb_columns        = CLAN_MAX_DEPTH + CLAN_MAX_LOCAL_DIMS +
                       CLAN_MAX_PARAMETERS + 2;
   depth             = CLAN_MAX_DEPTH;
-  parser_stack      = clan_domain_malloc();
-  parser_stack->constraints = osl_relation_list_malloc();
-  parser_stack->constraints->elt = osl_relation_pmalloc(precision,
-      0, nb_columns);
+  parser_stack      = osl_relation_list_malloc();
+  parser_stack->elt = osl_relation_pmalloc(precision, 0, nb_columns);
   CLAN_malloc(parser_nb_local_dims, int*, depth * sizeof(int));
   CLAN_malloc(parser_valid_else, int*, depth * sizeof(int));
   CLAN_malloc(parser_scattering, int*, (2 * depth + 1) * sizeof(int));
   CLAN_malloc(parser_iterators, clan_symbol_p*, depth * sizeof(clan_symbol_p));
-  CLAN_malloc(parser_ceild,  int*, CLAN_MAX_XFOR_INDICES * sizeof(int));
-  CLAN_malloc(parser_floord, int*, CLAN_MAX_XFOR_INDICES * sizeof(int));
-  CLAN_malloc(parser_min,    int*, CLAN_MAX_XFOR_INDICES * sizeof(int));
-  CLAN_malloc(parser_max,    int*, CLAN_MAX_XFOR_INDICES * sizeof(int));
-  CLAN_malloc(parser_xfor_depths, int*, CLAN_MAX_DEPTH * sizeof(int));
-  CLAN_malloc(parser_xfor_labels, int*, CLAN_MAX_DEPTH * sizeof(int));
 }
 
 
@@ -2239,13 +2064,7 @@ void clan_parser_state_free() {
   free(parser_iterators);
   free(parser_nb_local_dims);
   free(parser_valid_else);
-  free(parser_ceild);
-  free(parser_floord);
-  free(parser_min);
-  free(parser_max);
-  free(parser_xfor_depths);
-  free(parser_xfor_labels);
-  clan_domain_free(parser_stack);
+  osl_relation_list_free(parser_stack);
 }
 
 
@@ -2264,8 +2083,6 @@ void clan_parser_state_initialize(clan_options_p options) {
   parser_record        = NULL;
   parser_access_extbody = NULL;
   parser_if_depth      = 0;
-  parser_xfor_nb_nests = 0;
-  parser_xfor_index    = 0;
   parser_indent        = CLAN_UNDEFINED;
   parser_error         = CLAN_FALSE;
   parser_autoscop      = CLAN_FALSE;
@@ -2275,19 +2092,15 @@ void clan_parser_state_initialize(clan_options_p options) {
   parser_column_end    = 1;
   parser_nb_parameters = 0;
 
-  for (i = 0; i < CLAN_MAX_XFOR_INDICES; i++) {
-    parser_ceild[i]  = 0;
-    parser_floord[i] = 0;
-    parser_min[i]    = 0;
-    parser_max[i]    = 0;
-  }
+  parser_ceild  = 0;
+  parser_floord = 0;
+  parser_min    = 0;
+  parser_max    = 0;
 
   for (i = 0; i < CLAN_MAX_DEPTH; i++) {
     parser_nb_local_dims[i] = 0;
     parser_valid_else[i] = 0;
     parser_iterators[i] = NULL;
-    parser_xfor_depths[i] = 0;
-    parser_xfor_labels[i] = CLAN_UNDEFINED;
   }
 
   for (i = 0; i < 2 * CLAN_MAX_DEPTH + 1; i++)
@@ -2312,7 +2125,7 @@ void clan_parser_reinitialize() {
     clan_symbol_free(parser_iterators[i]);
   }
   while (parser_stack->next != NULL)
-    clan_domain_drop(&parser_stack);
+    osl_relation_list_drop(&parser_stack);
   osl_scop_free(parser_scop);
   parser_scop = NULL;
   clan_parser_state_initialize(parser_options);

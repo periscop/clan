@@ -100,7 +100,6 @@ set(sources
   	source/statement.c
   	source/relation.c
   	source/relation_list.c
-  	source/domain.c
   	source/vector.c)
 
 	# Shared

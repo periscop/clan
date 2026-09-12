@@ -410,37 +410,15 @@ int clan_symbol_get_type(clan_symbol_p symbol, char* identifier) {
  * in the symbol array.
  * \param[in] sarray The symbol array.
  * \param[in] size   The size of the symbol array.
- * \param[in] depths The depth of each xfor loop.
- * \param[in] labels The labels (i.e., the symbol version) of each xfor loop.
  * \return An osl_strings_t containing all the symbol strings.
  */
-osl_strings_p clan_symbol_array_to_strings(clan_symbol_p* sarray, int size,
-                                           int* depths, int* labels) {
-  int i, j, xfor_index = 0, xfor_index_reuse = 0;
-  clan_symbol_p symbol;
+osl_strings_p clan_symbol_array_to_strings(clan_symbol_p* sarray, int size) {
+  int i;
   osl_strings_p strings = osl_strings_malloc();
-  
+
   // Fill the array of strings.
   for (i = 0; i < size; i++) {
-    symbol = sarray[i];
-    // If symbol has a non-NULL next field, it means it corresponds to
-    // an xfor index that we have to select conveniently:
-    if (symbol->next != NULL) {
-      // -1. Select the convenient symbol thanks to the xfor label.
-      for (j = 0; j < labels[xfor_index]; j++)
-        symbol = symbol->next;
-      
-      // -2. Increment the number of times we used that symbol.
-      xfor_index_reuse++;
-
-      // -3. If we reached the current xfor depth, the next xfor index
-      //     will be found in the next xfor loop nest.
-      if (xfor_index_reuse >= depths[xfor_index]) {
-        xfor_index++;
-        xfor_index_reuse = 0;
-      }
-    }
-    osl_strings_add(strings, symbol->identifier);
+    osl_strings_add(strings, sarray[i]->identifier);
   }
 
   return strings;
@@ -593,7 +571,7 @@ int clan_symbol_new_iterator(clan_symbol_p* table, clan_symbol_p* array,
   if (symbol->rank != depth + 1)
     symbol->rank = depth + 1;
 
-  clan_symbol_push_at_end(&array[depth], clan_symbol_clone_one(symbol));
+  array[depth] = clan_symbol_clone_one(symbol);
   return 1;
 }
 

@@ -1267,11 +1267,19 @@ documentation sources (in HTML, LaTeX and man) in the @code{doc/source}
 directory of the Clan distribution.
 
 The Texinfo sources of the present document are also provided in the @code{doc}
-directory. You can build it in PDF format
-(by typing @code{texi2pdf clan.texi} or @code{make pdf}) or HTML format
-(by typing @code{makeinfo --html clan.texi}, using @code{--no-split}
-option to generate a single HTML file) or info format
-(by typing @code{makeinfo clan.texi}).
+directory. With an Autotools build, type @code{make -C doc clan.pdf} at the
+Clan top-level directory to generate @code{doc/clan.pdf}. This rule is enabled
+when @code{configure} detects both @code{texi2pdf} and Doxygen. The standard
+@code{make pdf} target does not build the manual.
+
+Alternatively, run @code{texi2pdf clan.texi} from the @code{doc} directory;
+this direct command requires a working TeX installation but not Doxygen.
+For a CMake build, use @code{cmake --build <build-directory> --target doc};
+the PDF is generated as @code{<build-directory>/clan.pdf}.
+
+From the @code{doc} source directory, you can also build HTML format with
+@code{makeinfo --html clan.texi} (add @code{--no-split} to generate a single
+HTML file), or info format with @code{makeinfo clan.texi}.
 
 @c %  **************************** DEVELOPPING ********************************
 @node Development

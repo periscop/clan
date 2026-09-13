@@ -47,6 +47,7 @@
 #include <osl/relation.h>
 #include <osl/relation_list.h>
 #include <osl/extensions/arrays.h>
+#include <osl/extensions/private.h>
 #include <clan/macros.h>
 #include <clan/symbol.h>
 
@@ -196,11 +197,13 @@ clan_symbol_p clan_symbol_malloc() {
   clan_symbol_p symbol;
 
   CLAN_malloc(symbol, clan_symbol_p, sizeof(clan_symbol_t));
-  symbol->key        = CLAN_UNDEFINED;
-  symbol->identifier = NULL;
-  symbol->type       = CLAN_UNDEFINED;
-  symbol->rank       = CLAN_UNDEFINED;
-  symbol->next       = NULL;
+  symbol->key           = CLAN_UNDEFINED;
+  symbol->identifier    = NULL;
+  symbol->type          = CLAN_UNDEFINED;
+  symbol->rank          = CLAN_UNDEFINED;
+  symbol->private_depth = -1;
+  symbol->declaration   = 0;
+  symbol->next          = NULL;
 
   return symbol;
 }
@@ -495,6 +498,8 @@ clan_symbol_p clan_symbol_clone_one(clan_symbol_p symbol) {
     clone->identifier = strdup(symbol->identifier);
   clone->type = symbol->type;
   clone->rank = symbol->rank;
+  clone->private_depth = symbol->private_depth;
+  clone->declaration = symbol->declaration;
 
   return clone;
 }
@@ -541,6 +546,29 @@ osl_generic_p clan_symbol_to_arrays(clan_symbol_p symbol) {
   }
 
   return generic;
+}
+
+
+/**
+ * clan_symbol_to_private function:
+ * this function collects scalar expansion metadata from the symbol table and
+ * embeds it in a generic shell after declaration statement numbers are known.
+ * \param[in] symbol The symbol table.
+ * \return A private extension, or NULL if there are no expanded variables.
+ */
+osl_generic_p clan_symbol_to_private(clan_symbol_p symbol) {
+  osl_private_p priv = NULL;
+
+  for (; symbol != NULL; symbol = symbol->next) {
+    if (symbol->private_depth > 0) {
+      if (priv == NULL) {
+        priv = osl_private_malloc();
+      }
+      osl_private_add(priv, symbol->key, symbol->declaration,
+                      symbol->private_depth);
+    }
+  }
+  return priv == NULL ? NULL : osl_generic_shell(priv, osl_private_interface());
 }
 
 

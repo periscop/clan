@@ -37,6 +37,7 @@
 
 
 #include <stdlib.h>
+#include <string.h>
 #include <osl/macros.h>
 #include <osl/int.h>
 #include <osl/vector.h>
@@ -53,11 +54,114 @@
 
 extern clan_symbol_p parser_symbol;
 extern clan_options_p parser_options;
+extern int parser_loop_depth;
+extern char* parser_record;
+extern clan_symbol_p* parser_iterators;
 extern int parser_access_start;
 extern int parser_access_length;
 extern int parser_nb_parameters;
 extern osl_extbody_p parser_access_extbody;
 void yyerror(char*);
+
+/**
+ * clan_access_private_type_add function:
+ * this function combines scalar declaration specifiers without a declaration
+ * AST. A second long is accepted; other duplicate type specifiers are rejected.
+ * \param[in] types The accumulated type flags, or -1 after an invalid specifier.
+ * \param[in] type  The next type flag (zero for const qualification).
+ * \return The combined flags, or -1 for an invalid combination.
+ */
+int clan_access_private_type_add(int types, int type) {
+  if (types < 0) {
+    return -1;
+  }
+  if (type == CLAN_PRIVATE_LONG && (types & CLAN_PRIVATE_LONG)) {
+    if (types & CLAN_PRIVATE_LONGLONG) {
+      return -1;
+    }
+    return types | CLAN_PRIVATE_LONGLONG;
+  }
+  return (types & type) ? -1 : types | type;
+}
+
+/**
+ * clan_access_private_type function:
+ * this function checks whether declaration specifiers form a base scalar type.
+ * \param[in] types The combined scalar type flags.
+ * \return 1 for a supported scalar type, 0 otherwise.
+ */
+int clan_access_private_type(int types) {
+  int sign = types & (CLAN_PRIVATE_SIGNED | CLAN_PRIVATE_UNSIGNED);
+  int complex = types & (CLAN_PRIVATE_COMPLEX | CLAN_PRIVATE_IMAGINARY);
+
+  if (types <= 0 || sign == (CLAN_PRIVATE_SIGNED | CLAN_PRIVATE_UNSIGNED) ||
+      complex == (CLAN_PRIVATE_COMPLEX | CLAN_PRIVATE_IMAGINARY)) {
+    return 0;
+  }
+  types &= ~(CLAN_PRIVATE_SIGNED | CLAN_PRIVATE_UNSIGNED |
+             CLAN_PRIVATE_COMPLEX | CLAN_PRIVATE_IMAGINARY);
+  if (types == CLAN_PRIVATE_FLOAT || types == CLAN_PRIVATE_DOUBLE ||
+      types == (CLAN_PRIVATE_LONG | CLAN_PRIVATE_DOUBLE)) {
+    return !sign;
+  }
+  if (complex) {
+    return 0;
+  }
+  if (types == CLAN_PRIVATE_BOOL) {
+    return !sign;
+  }
+  if (types == CLAN_PRIVATE_CHAR) {
+    return 1;
+  }
+  types &= ~CLAN_PRIVATE_INT;
+  return types == 0 || types == CLAN_PRIVATE_SHORT ||
+         types == CLAN_PRIVATE_LONG ||
+         types == (CLAN_PRIVATE_LONG | CLAN_PRIVATE_LONGLONG);
+}
+
+/**
+ * clan_access_identifier function:
+ * this function builds an identifier access, including implicit scalar
+ * expansion. Expansion dimensions reflect declaration depth, while input
+ * dimensions reflect the current statement depth.
+ * \param[in] name The identifier string; ownership transfers to the result.
+ * \return An expression containing the identifier access and source position.
+ */
+struct clan_access_expr* clan_access_identifier(char* name) {
+  int i, nb_columns;
+  clan_symbol_p symbol;
+  osl_relation_p relation;
+  osl_vector_p vector;
+  struct clan_access_expr* expr;
+
+  nb_columns = CLAN_MAX_DEPTH + CLAN_MAX_LOCAL_DIMS + CLAN_MAX_PARAMETERS + 2;
+  symbol = clan_symbol_add(&parser_symbol, name, CLAN_UNDEFINED);
+  relation = osl_relation_pmalloc(parser_options->precision, 0, nb_columns);
+  expr = clan_access_expr_new(CLAN_ACCESS_ID, NULL, NULL);
+  osl_relation_set_attributes(relation, 0, parser_loop_depth, 0,
+                              CLAN_MAX_PARAMETERS);
+  clan_relation_tag_array(relation, symbol->key);
+  for (i = 0; i < symbol->private_depth; i++) {
+    vector = clan_vector_term(parser_symbol, 1,
+                              parser_iterators[i]->identifier,
+                              parser_options->precision);
+    clan_relation_new_output_vector(relation, vector);
+    osl_vector_free(vector);
+  }
+  expr->name = name;
+  expr->start = strlen(parser_record) - strlen(name);
+  expr->access = osl_relation_list_malloc();
+  expr->access->elt = relation;
+  if (parser_options->extbody) {
+    if (parser_access_start != -1) {
+      osl_extbody_add(parser_access_extbody, parser_access_start,
+                      parser_access_length);
+    }
+    parser_access_start = expr->start;
+    parser_access_length = strlen(name);
+  }
+  return expr;
+}
 
 /** Combine existing parser access lists and retain an affine candidate tree. */
 struct clan_access_expr* clan_access_expr_new(int op,

@@ -41,3 +41,6 @@ tests/*
 !tests/nonaffine/
 !tests/check_nonaffine*.sh
 !tests/check_affine_only.sh
+
+!tests/private/
+!tests/check_private*.sh

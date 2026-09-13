@@ -169,7 +169,7 @@ foreach(test IN LISTS tests)
       "EXEEXT=${CMAKE_EXECUTABLE_SUFFIX}"
       "${SH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/checker.sh"
       "${test_name}" "${test}" "${test_option}" clan)
-  if(test_name MATCHES "^(must_fail|nonaffine)/")
+  if(test_name MATCHES "^(must_fail|nonaffine|private)/")
     add_test(NAME "${test_name}-extbody"
       COMMAND "${CMAKE_COMMAND}" -E env
         "top_builddir=$<TARGET_FILE_DIR:clan_exe>"

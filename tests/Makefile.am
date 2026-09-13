@@ -125,6 +125,27 @@ UNITARY_TEST_FILES = \
 	$(top_srcdir)/tests/unitary/iterinparent.c
 
 FAIL_TEST_FILES = \
+	$(top_srcdir)/tests/must_fail/private_multiple.c \
+	$(top_srcdir)/tests/must_fail/private_array.c \
+	$(top_srcdir)/tests/must_fail/private_pointer.c \
+	$(top_srcdir)/tests/must_fail/private_struct.c \
+	$(top_srcdir)/tests/must_fail/private_union.c \
+	$(top_srcdir)/tests/must_fail/private_typedef.c \
+	$(top_srcdir)/tests/must_fail/private_static.c \
+	$(top_srcdir)/tests/must_fail/private_extern.c \
+	$(top_srcdir)/tests/must_fail/private_volatile.c \
+	$(top_srcdir)/tests/must_fail/private_void.c \
+	$(top_srcdir)/tests/must_fail/private_function.c \
+	$(top_srcdir)/tests/must_fail/private_aggregate.c \
+	$(top_srcdir)/tests/must_fail/private_duplicate.c \
+	$(top_srcdir)/tests/must_fail/private_bound.c \
+	$(top_srcdir)/tests/must_fail/private_condition.c \
+	$(top_srcdir)/tests/must_fail/private_iterator.c \
+	$(top_srcdir)/tests/must_fail/private_prior_use.c \
+	$(top_srcdir)/tests/must_fail/private_bad_type.c \
+	$(top_srcdir)/tests/must_fail/private_only_const.c \
+	$(top_srcdir)/tests/must_fail/private_long_long_long.c \
+	$(top_srcdir)/tests/must_fail/private_after_valid.c \
 	$(top_srcdir)/tests/must_fail/nonaffine_loop.c \
 	$(top_srcdir)/tests/must_fail/nonaffine_condition.c \
 	$(top_srcdir)/tests/must_fail/indirect_iterator.c \
@@ -184,6 +205,14 @@ AUTOINSERT_TEST_FILES = \
 	$(top_srcdir)/tests/autoinsert/multiple.c \
 	$(top_srcdir)/tests/autoinsert/weird_format.c
 
+PRIVATE_TEST_FILES = \
+	$(top_srcdir)/tests/private/branches.c \
+	$(top_srcdir)/tests/private/infinite.c \
+	$(top_srcdir)/tests/private/matmul.c \
+	$(top_srcdir)/tests/private/multiscop.c \
+	$(top_srcdir)/tests/private/nested.c \
+	$(top_srcdir)/tests/private/types.c
+
 TESTS_ENVIRONMENT = \
 	top_builddir=$(top_builddir) \
 	srcdir=$(srcdir) \
@@ -192,6 +221,7 @@ TESTS_ENVIRONMENT = \
 	COMPILE="$(COMPILE)" \
 	LINK="$(LINK)" \
 	TEST_FILES="$(TEST_FILES)" \
+	PRIVATE_TEST_FILES="$(PRIVATE_TEST_FILES)" \
 	UNITARY_TEST_FILES="$(UNITARY_TEST_FILES)" \
 	FAIL_TEST_FILES="$(FAIL_TEST_FILES)" \
 	AUTOSCOP_TEST_FILES="$(AUTOSCOP_TEST_FILES)" \
@@ -214,12 +244,14 @@ leakscheck:
 	fi
 	@command -v leaks >/dev/null 2>&1 || { echo "leakscheck requires Apple's macOS leaks tool."; exit 1; }
 	@status=0; \
-	for suite in unitary complex fail fail_extbody autoscop modulo_acess nonaffine nonaffine_extbody autoinsert; do \
+	for suite in private private_extbody unitary complex fail fail_extbody autoscop modulo_acess nonaffine nonaffine_extbody autoinsert; do \
 	  $(TESTS_ENVIRONMENT) $(SHELL) "$(srcdir)/check_$$suite.sh" leaks || status=1; \
 	done; \
 	exit $$status
 
 check_SCRIPTS = \
+	check_private.sh \
+	check_private_extbody.sh \
 	check_affine_only.sh \
 	check_checker.sh \
 	check_unitary.sh \
@@ -259,6 +291,9 @@ CLEANFILES = \
 	$(MODULO_ACESS_TEST_FILES_CLEAN)
 
 EXTRA_DIST = \
+	$(PRIVATE_TEST_FILES) \
+	$(PRIVATE_TEST_FILES:.c=.c.scop) \
+	$(PRIVATE_TEST_FILES:.c=.c.extbody.scop) \
 	$(NONAFFINE_TEST_FILES) \
 	$(NONAFFINE_TEST_FILES:.c=.c.scop) \
 	$(NONAFFINE_TEST_FILES:.c=.c.extbody.scop) \

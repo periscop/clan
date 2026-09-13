@@ -57,6 +57,8 @@ struct clan_symbol
   char* identifier;         /**< Symbol identifier */
   int type;                 /**< Symbol type (variable, iterator...) */
   int rank;                 /**< Depth for iterators, number for parameters */
+  int private_depth;        /**< Declaration loop depth, -1 if not declared */
+  int declaration;          /**< One-based declaration statement number */
   struct clan_symbol* next; /**< Next symbol in the symbol table */
 };
 typedef struct clan_symbol  clan_symbol_t;
@@ -91,6 +93,7 @@ int                 clan_symbol_nb_of_type(clan_symbol_p, int);
 struct osl_generic* clan_symbol_to_strings(clan_symbol_p, int);
 clan_symbol_p       clan_symbol_clone_one(clan_symbol_p);
 struct osl_generic* clan_symbol_to_arrays(clan_symbol_p);
+struct osl_generic* clan_symbol_to_private(clan_symbol_p);
 int                 clan_symbol_new_iterator(clan_symbol_p*, clan_symbol_p*,
                                 char*, int); 
 int                 clan_symbol_update_type(clan_symbol_p,

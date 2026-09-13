@@ -484,6 +484,7 @@ behavior is undefined.
 * Loop and if Condition::
 * Loop Step::
 * Array Subscript::
+* Local Scalar Declarations::
 @end menu
 
 Clan only accepts a subset of C between SCoP pragmas. The big picture is,
@@ -498,7 +499,8 @@ code between SCoP pragmas:
 @item Each finite @code{for} loop has one iterator, one initialization,
       one condition, and one step. Comma-separated loop-header lists and
       numeric statement labels are not supported.
-@item Declarations are not allowed.
+@item Local declarations are limited to base scalar variables, one per
+      declaration (@pxref{Local Scalar Declarations}).
 @item Any C instruction without control keywords is accepted, with
       restrictions for array subscripts as described below.
 @end itemize
@@ -629,6 +631,47 @@ outside this supported subset. Constant zero divisors and negative constant
 remainder divisors are rejected, including in general subscript expressions.
 C operator precedence is respected: @code{A[i + 1 % 3]} is a general
 subscript, not a remainder of @code{i + 1}.
+
+
+@node Local Scalar Declarations
+@subsubsection Local Scalar Declarations
+
+A SCoP may declare base scalar variables, optionally initialized, for example
+@code{float acc = 0;} or @code{unsigned long count;}. Integer and floating
+scalar types, @code{_Bool}, complex and imaginary floating types, and
+@code{const} qualification are supported. Each declaration introduces exactly
+one variable. Arrays, pointers, functions, structures, unions, enumerations,
+typedefs, storage-class specifiers (including @code{static} and @code{extern}),
+and @code{volatile} or @code{restrict} qualifiers are not supported.
+
+Each declaration produces a statement with a write access, even without an
+initializer. Initializer accesses follow that write in Clan's access list,
+just as for an ordinary assignment. Bodies retain the declaration's type,
+name, and initializer; extended bodies locate the declared identifier in the
+original declaration text, without adding textual subscripts.
+
+A variable declared inside @math{d} enclosing loops is represented as if
+array-expanded with @math{d} leading dimensions, each equal to the respective
+loop iterator. For example, @code{acc} declared inside loops @code{i} and
+@code{j} is accessed as @code{acc[i][j]}, including from a deeper loop
+@code{k}. The expansion depth is fixed at its declaration. No extra dimension
+is introduced for an @code{if}. A declaration outside all loops is an ordinary
+scalar write and introduces no expansion dimensions.
+
+The SCoP-level OpenScop @code{private} extension records each expanded
+variable's array identifier, one-based declaration statement number, and
+expansion depth. Only statements represented in OpenScop count toward this
+number; braces and empty statements do not. Variables declared outside loops
+are omitted from this extension.
+
+Under the @code{#pragma scop} contract, declared names must be unique across
+the whole SCoP, and variables must be used as scalars within their valid C
+scope, after declaration, without self-reference in an initializer. Clan
+rejects duplicate or previously used names, but does not implement lexical
+scope or general use validation. Declared variables cannot serve as loop
+iterators, affine loop bounds, or affine conditions. As with other mutable
+scalars, their use in an array subscript gives a conservative non-affine
+access (or is rejected with @code{-affine-only}).
 
 
 

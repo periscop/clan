@@ -110,6 +110,7 @@
    clan_symbol_p* parser_iterators;     /**< Current iterator list */
    osl_relation_list_p parser_stack;    /**< Iteration domain stack */
    int*           parser_nb_local_dims; /**< Nb of local dims per depth */
+   int            parser_nb_statements; /**< Completed statements in this SCoP */
    int            parser_nb_parameters; /**< Nb of parameter symbols */
    int*           parser_valid_else;    /**< Boolean: OK for else per depth */
    int            parser_indent;        /**< SCoP indentation */
@@ -195,6 +196,12 @@
 %type <affex>  affine_floord_expression
 %type <affex>  affine_expression
 
+%type <value>  private_specifiers
+%type <value>  private_type
+
+%type <expr>   statement_expression
+%type <expr>   private_declaration
+%type <expr>   private_declarator
 %type <expr>   primary_expression
 %type <expr>   postfix_expression
 %type <expr>   argument_expression_list
@@ -283,6 +290,7 @@ scop:
       clan_scop_generate_scatnames(scop);
       arrays = clan_symbol_to_arrays(parser_symbol);
       osl_generic_add(&scop->extension, arrays);
+      osl_generic_add(&scop->extension, clan_symbol_to_private(parser_symbol));
       clan_scop_generate_coordinates(scop, parser_options->name);
       clan_scop_generate_clay(scop, scanner_clay);
 
@@ -1048,39 +1056,8 @@ id_or_clan_keyword:
 primary_expression:
     id_or_clan_keyword
     {
-      int nb_columns;
-      osl_relation_p id;
-      osl_relation_list_p list;
-      clan_symbol_p symbol;
-
       CLAN_debug("rule primary_expression.1: id_or_clan_keyword");
-      symbol = clan_symbol_add(&parser_symbol, $1, CLAN_UNDEFINED);
-      nb_columns = CLAN_MAX_DEPTH + CLAN_MAX_LOCAL_DIMS +
-	                 CLAN_MAX_PARAMETERS + 2;
-      id = osl_relation_pmalloc(parser_options->precision, 0, nb_columns);
-      osl_relation_set_attributes(id, 0, parser_loop_depth, 0,
-                                  CLAN_MAX_PARAMETERS);
-      clan_relation_tag_array(id, symbol->key);
-      list = osl_relation_list_malloc();
-      list->elt = id;
-
-      // add the id to the extbody
-      if (parser_options->extbody) {
-        if (parser_access_start != -1) {
-          osl_extbody_add(parser_access_extbody,
-                          parser_access_start,
-                          parser_access_length);
-        }
-
-        int len = strlen(parser_record);
-        parser_access_start = len - strlen($1);
-        parser_access_length = len - parser_access_start;
-      }
-
-      $$ = clan_access_expr_new(CLAN_ACCESS_ID, NULL, NULL);
-      $$->name = $1;
-      $$->start = strlen(parser_record) - strlen($1);
-      $$->access = list;
+      $$ = clan_access_identifier($1);
       CLAN_debug_call(osl_relation_list_dump(stderr, $$->access));
     }
   | CONSTANT
@@ -1510,6 +1487,88 @@ expression:
     }
   ;
 
+
+// Declarations share recording and statement construction with expressions.
+statement_expression:
+    expression
+    { $$ = $1; }
+  | private_declaration
+    { $$ = $1; }
+  ;
+
+
+private_declaration:
+    private_declarator
+    { $$ = $1; }
+  | private_declarator '=' assignment_expression
+    { $$ = clan_access_expr_new(CLAN_ACCESS_EFFECT, $1, $3); }
+  ;
+
+
+private_declarator:
+    private_specifiers id_or_clan_keyword
+    {
+      clan_symbol_p symbol;
+
+      CLAN_debug("rule private_declarator: private_specifiers "
+                 "id_or_clan_keyword");
+      if (!clan_access_private_type($1)) {
+        yyerror("invalid base scalar type in declaration");
+        free($2);
+        YYABORT;
+      }
+      if (clan_symbol_lookup(parser_symbol, $2) != NULL) {
+        yyerror("duplicate declaration or previously used variable name");
+        free($2);
+        YYABORT;
+      }
+      symbol = clan_symbol_add(&parser_symbol, $2, CLAN_TYPE_ARRAY);
+      symbol->private_depth = parser_loop_depth;
+      symbol->declaration = parser_nb_statements + 1;
+      $$ = clan_access_identifier($2);
+      osl_relation_set_type($$->access->elt, OSL_TYPE_WRITE);
+    }
+  ;
+
+
+// Only base scalar types and const: declarator syntax cannot introduce
+// arrays, pointers, functions, storage classes, or multiple variables.
+private_specifiers:
+    private_type
+    { $$ = $1; }
+  | private_specifiers private_type
+    { $$ = clan_access_private_type_add($1, $2); }
+  ;
+
+
+private_type:
+    CHAR
+    { $$ = CLAN_PRIVATE_CHAR; }
+  | SHORT
+    { $$ = CLAN_PRIVATE_SHORT; }
+  | INT
+    { $$ = CLAN_PRIVATE_INT; }
+  | LONG
+    { $$ = CLAN_PRIVATE_LONG; }
+  | SIGNED
+    { $$ = CLAN_PRIVATE_SIGNED; }
+  | UNSIGNED
+    { $$ = CLAN_PRIVATE_UNSIGNED; }
+  | FLOAT
+    { $$ = CLAN_PRIVATE_FLOAT; }
+  | DOUBLE
+    { $$ = CLAN_PRIVATE_DOUBLE; }
+  | BOOL
+    { $$ = CLAN_PRIVATE_BOOL; }
+  | COMPLEX
+    { $$ = CLAN_PRIVATE_COMPLEX; }
+  | IMAGINARY
+    { $$ = CLAN_PRIVATE_IMAGINARY; }
+  | CONST
+    { $$ = 0; }
+  ;
+
+
 expression_statement:
     ';'
     {
@@ -1527,7 +1586,7 @@ expression_statement:
       CLAN_strdup(parser_record, scanner_latest_text);
       parser_recording = CLAN_TRUE;
     }
-    expression ';'
+    statement_expression ';'
     {
       osl_statement_p statement;
       osl_body_p body;
@@ -1578,6 +1637,7 @@ expression_statement:
       parser_record = NULL;
       
       parser_scattering[2*parser_loop_depth]++;
+      parser_nb_statements++;
 
       $$ = statement;
       CLAN_debug_call(osl_statement_dump(stderr, $$));
@@ -2104,6 +2164,7 @@ void clan_parser_state_initialize(clan_options_p options) {
   parser_column_start  = 1;
   parser_column_end    = 1;
   parser_nb_parameters = 0;
+  parser_nb_statements = 0;
 
   parser_ceild  = 0;
   parser_floord = 0;

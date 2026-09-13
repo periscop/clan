@@ -603,17 +603,17 @@ in parentheses in this part: @code{++(i)}.
 
 @node Array Subscript
 @subsubsection Array Subscript
-Array subscripts may be affine expressions, remainders, or general
-side-effect-free expressions involving arithmetic, comparisons, conditionals,
-casts, array references, and function calls. Loop bounds and @code{if}
-conditions must still satisfy the affine restrictions described above.
+To extract an exact polyhedral representation of an array subscript,
+it must be either an affine expression (e.g., @code{a[2*i - N + 1]}) or
+the remainder of an affine dividend (supposed to be nonnegative by
+SCoP contract) and a positive constant divisor (e.g., @code{a[i % 3]} or
+@code{a[((2*i - N + 1) % 3)]}).
 
-Recognized affine subscripts retain their exact access constraints.
-A remainder with an affine dividend and a positive constant divisor is also
-represented exactly, including parenthesized forms such as @code{a[(i % 3)]}
-and @code{a[((i + 1) % 3)]}. Other expressions are conservatively represented
-by an unconstrained output dimension. Constraints on the other dimensions
-are preserved. For example, @code{A[B[i]][j] = 0} produces a read of @code{B[i]}
+Other expressions like indirections (e.g., @code{A[B[i]]}) or
+function calls (e.g., @code{A[f(x)]}) are possible but conservatively
+represented by an unconstrained output dimension. Analyses are
+per dimension and recognized affine subscripts retain their exact access
+constraints. For example, @code{A[B[i]][j] = 0} produces a read of @code{B[i]}
 and a write to @code{A} with an unconstrained first index and second index
 @code{j}. Nested references are handled recursively.
 
@@ -623,14 +623,6 @@ the function name itself does not. For example,
 @code{A[f(B[i], j, C[2*i+j+3*n-2])]} reads @code{B[i]}, @code{j}, and
 @code{C[2*i+j+3*n-2]}, and leaves the subscript of @code{A} unconstrained.
 Assignments and increments within subscripts are not supported.
-
-For an exactly represented remainder, the dividend must be nonnegative for
-every execution of the statement. Clan accepts symbolic dividends under
-this requirement; it does not prove their sign. Negative dividends are
-outside this supported subset. Constant zero divisors and negative constant
-remainder divisors are rejected, including in general subscript expressions.
-C operator precedence is respected: @code{A[i + 1 % 3]} is a general
-subscript, not a remainder of @code{i + 1}.
 
 
 @node Local Scalar Declarations

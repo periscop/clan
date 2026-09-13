@@ -107,7 +107,7 @@ void clan_scop_compact(osl_scop_p scop) {
  * \param[in] options Clan's general option settings.
  */
 void clan_scop_print(FILE* file, osl_scop_p scop, clan_options_p options) {
-  
+
   if ((scop != NULL) && (options->castle)) {
     fprintf(file, "#                                                     \n");
     fprintf(file, "#          <|                                         \n");
@@ -281,7 +281,7 @@ void clan_scop_update_coordinates(osl_scop_p scop,
   while (scop != NULL) {
     if (i > CLAN_MAX_SCOPS)
       CLAN_error("too many SCoPs! Change CLAN_MAX_SCOPS and recompile Clan.");
-    
+
     old = osl_generic_lookup(scop->extension, OSL_URI_COORDINATES);
     if (old == NULL)
       CLAN_error("coordinates extension not present");
@@ -315,7 +315,7 @@ void clan_scop_print_autopragma(FILE* input, int nb_scops,
   int i, j, line, column;
   char c;
   FILE* autopragma;
- 
+
   if (CLAN_DEBUG) {
     CLAN_debug("coordinates:");
     for (i = 0; i < 5; i++) {
@@ -333,19 +333,19 @@ void clan_scop_print_autopragma(FILE* input, int nb_scops,
   while ((c = fgetc(input)) != EOF) {
     if (nb_scops > 0) {
       if ((line == coordinates[0][i]) && (column == coordinates[2][i])) {
-	fprintf(autopragma, "\n#pragma scop\n");
+        fprintf(autopragma, "\n#pragma scop\n");
         for (j = 0; j < coordinates[2][i] - 1; j++)
           fprintf(autopragma, " ");
       }
       if ((line == coordinates[1][i]) && (column == coordinates[3][i])) {
-	fprintf(autopragma, "\n#pragma endscop\n");
+        fprintf(autopragma, "\n#pragma endscop\n");
         for (j = 0; j < coordinates[3][i] - 1; j++)
           fprintf(autopragma, " ");
-	if (i < nb_scops - 1) {
-	  do
-	    i++;
-	  while ((i < nb_scops - 1) && !coordinates[4][i]);
-	}
+        if (i < nb_scops - 1) {
+          do
+            i++;
+          while ((i < nb_scops - 1) && !coordinates[4][i]);
+        }
       }
     }
     fputc(c, autopragma);
@@ -376,7 +376,7 @@ int clan_scop_no_pragma(char * filename, int line_start) {
   FILE* file;
   char s1[CLAN_MAX_STRING];
   char s2[CLAN_MAX_STRING];
-  
+
   if (line_start < 0)
     CLAN_error("negative line number");
 
@@ -432,7 +432,7 @@ void clan_scop_insert_pragmas(osl_scop_p scop, char* filename, int test) {
   FILE* input, *output;
   size_t size;
   char buffer[BUFSIZ];
-  
+
   // Get coordinate information from the list of SCoPS.
   while (scop != NULL) {
     coordinates = osl_generic_lookup(scop->extension, OSL_URI_COORDINATES);
@@ -498,7 +498,7 @@ void clan_scop_insert_pragmas(osl_scop_p scop, char* filename, int test) {
  */
 void clan_scop_simplify(osl_scop_p scop) {
   osl_statement_p statement;
-  
+
   while (scop != NULL) {
     statement = scop->statement;
     while (statement != NULL) {

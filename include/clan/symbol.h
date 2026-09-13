@@ -95,7 +95,7 @@ clan_symbol_p       clan_symbol_clone_one(clan_symbol_p);
 struct osl_generic* clan_symbol_to_arrays(clan_symbol_p);
 struct osl_generic* clan_symbol_to_private(clan_symbol_p);
 int                 clan_symbol_new_iterator(clan_symbol_p*, clan_symbol_p*,
-                                char*, int); 
+                                char*, int);
 int                 clan_symbol_update_type(clan_symbol_p,
                                 struct osl_relation_list*, int);
 

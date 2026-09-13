@@ -48,7 +48,7 @@
    #include <stdlib.h>
    #include <string.h>
    #include <assert.h>
-   
+
    #include <osl/macros.h>
    #include <osl/int.h>
    #include <osl/vector.h>
@@ -240,10 +240,10 @@
 
 // Rules for a scop_list
 scop_list:
-    scop             { CLAN_debug("rule scop_list.1: scop"); } 
-  | scop_list scop   { CLAN_debug("rule scop_list.2: scop_list scop"); } 
-  | scop_list IGNORE { CLAN_debug("rule scop_list.3: scop_list IGNORE"); } 
-  | IGNORE           { CLAN_debug("rule scop_list.4: IGNORE"); } 
+    scop             { CLAN_debug("rule scop_list.1: scop"); }
+  | scop_list scop   { CLAN_debug("rule scop_list.2: scop_list scop"); }
+  | scop_list IGNORE { CLAN_debug("rule scop_list.3: scop_list IGNORE"); }
+  | IGNORE           { CLAN_debug("rule scop_list.4: IGNORE"); }
   ;
 
 
@@ -266,19 +266,19 @@ scop:
           CLAN_TYPE_PARAMETER);
       scop->context = clan_relation_build_context(nb_parameters,
                                                   parser_options);
-      
+
       // Set the statements.
       scop->statement = $1;
 
       // Compact the SCoP relations.
       if (CLAN_DEBUG) {
-	CLAN_debug("SCoP before compaction:");
-	osl_scop_dump(stderr, scop);
+        CLAN_debug("SCoP before compaction:");
+        osl_scop_dump(stderr, scop);
       }
       clan_scop_compact(scop);
       if (CLAN_DEBUG) {
-	CLAN_debug("SCoP after compaction:");
-	osl_scop_dump(stderr, scop);
+        CLAN_debug("SCoP after compaction:");
+        osl_scop_dump(stderr, scop);
       }
 
       // Simplify the SCoP iteration domains.
@@ -299,7 +299,7 @@ scop:
       clan_symbol_free(parser_symbol);
       clan_parser_state_initialize(parser_options);
       CLAN_debug_call(osl_scop_dump(stderr, scop));
-    } 
+    }
   ;
 
 
@@ -315,7 +315,7 @@ statement_list:
 // Rules for an indented statement
 // Return <stmt>
 statement_indented:
-    { 
+    {
       if (parser_indent == CLAN_UNDEFINED)
         parser_indent = scanner_column_LALR - 1;
     }
@@ -323,7 +323,7 @@ statement_indented:
     {
       $$ = $2;
     }
-  ; 
+  ;
 
 
 // Rules for a statement
@@ -344,7 +344,7 @@ statement:
           fprintf(stderr, "Autoscop start: line %3d column %3d\n",
                   parser_line_start, parser_column_start);
       }
-    }    
+    }
     iteration_statement
     {
       $$ = $2;
@@ -373,11 +373,11 @@ compound_statement:
 
 
 selection_else_statement:
-    ELSE 
+    ELSE
     {
       if (!parser_valid_else[parser_if_depth]) {
-	yyerror("unsupported negation of a condition involving a modulo");
-	YYABORT;
+        yyerror("unsupported negation of a condition involving a modulo");
+        YYABORT;
       }
     }
     statement
@@ -402,22 +402,22 @@ selection_statement:
       clan_relation_and(parser_stack->elt, $3);
       parser_if_depth++;
       if ((parser_loop_depth + parser_if_depth) > CLAN_MAX_DEPTH)
-	CLAN_error("CLAN_MAX_DEPTH reached, recompile with a higher value");
+        CLAN_error("CLAN_MAX_DEPTH reached, recompile with a higher value");
     }
     statement
     {
       osl_relation_p not_if;
-      
+
       CLAN_debug("rule selection_statement.1.2: if ( condition ) <stmt> ...");
       osl_relation_list_drop(&parser_stack);
       osl_relation_list_dup(&parser_stack);
       if (!clan_relation_existential($3)) {
-	not_if = clan_relation_not($3);
-	clan_relation_and(parser_stack->elt, not_if);
-	osl_relation_free(not_if);
-	parser_valid_else[parser_if_depth] = 1;
+        not_if = clan_relation_not($3);
+        clan_relation_and(parser_stack->elt, not_if);
+        osl_relation_free(not_if);
+        parser_valid_else[parser_if_depth] = 1;
       } else {
-	parser_valid_else[parser_if_depth] = 0;
+        parser_valid_else[parser_if_depth] = 0;
       }
       osl_relation_free($3);
       $3 = NULL;
@@ -425,7 +425,7 @@ selection_statement:
     selection_else_statement
     {
       CLAN_debug("rule selection_statement.1.3: if ( condition ) <stmt>"
-	         "[else <stmt>]");
+                 "[else <stmt>]");
       osl_relation_list_drop(&parser_stack);
       $$ = $6;
       osl_statement_add(&$$, $8);
@@ -471,19 +471,19 @@ iteration_statement:
 
       CLAN_debug("rule iteration_statement.2.1: loop_infinite ...");
       if (!clan_symbol_new_iterator(&parser_symbol, parser_iterators,
-	                            "clan_infinite_loop", parser_loop_depth))
-	YYABORT;
+                                    "clan_infinite_loop", parser_loop_depth))
+        YYABORT;
 
       clan_parser_increment_loop_depth();
-      
+
       // Generate the constraint clan_infinite_loop >= 0.
       iterator_term = clan_vector_term(parser_symbol, 0, NULL,
                                        parser_options->precision);
       osl_int_set_si(parser_options->precision,
-                     &iterator_term->v[parser_loop_depth], 1); 
-      osl_int_set_si(parser_options->precision, &iterator_term->v[0], 1); 
+                     &iterator_term->v[parser_loop_depth], 1);
+      osl_int_set_si(parser_options->precision, &iterator_term->v[0], 1);
       iterator_relation = osl_relation_from_vector(iterator_term);
-      
+
       // Add it to the domain stack.
       osl_relation_list_dup(&parser_stack);
       clan_relation_and(parser_stack->elt, iterator_relation);
@@ -505,8 +505,8 @@ loop_initialization:
     loop_declaration ID
     {
       if (!clan_symbol_new_iterator(&parser_symbol, parser_iterators, $2,
-	                            parser_loop_depth))
-	YYABORT;
+                                    parser_loop_depth))
+        YYABORT;
     }
     '=' affine_minmax_expression ';'
     {
@@ -736,9 +736,9 @@ affine_relation:
       // Warning: cases like ceild(M,32) == ceild(N,32) are not handled.
       // Assert if we encounter such a case.
       assert ((osl_int_zero(parser_options->precision, $1->v[0]) ||
-	       osl_int_one(parser_options->precision,  $1->v[0])) &&
-	      (osl_int_zero(parser_options->precision, $3->v[0]) ||
-	       osl_int_one(parser_options->precision,  $3->v[0])));
+               osl_int_one(parser_options->precision,  $1->v[0])) &&
+              (osl_int_zero(parser_options->precision, $3->v[0]) ||
+               osl_int_one(parser_options->precision,  $3->v[0])));
       res = osl_vector_sub($1, $3);
       osl_vector_tag_equality(res);
       $$ = osl_relation_from_vector(res);
@@ -764,8 +764,8 @@ affine_relation:
       CLAN_debug("rule affine_relation.7: ! ( condition )");
       if (clan_relation_existential($3)) {
         osl_relation_free($3);
-	yyerror("unsupported negation of a condition involving a modulo");
-	YYABORT;
+        yyerror("unsupported negation of a condition involving a modulo");
+        YYABORT;
       }
       $$ = clan_relation_not($3);
       osl_relation_free($3);
@@ -777,11 +777,11 @@ affine_relation:
   | affine_expression '%' INTEGER EQ_OP INTEGER
     {
       CLAN_debug("rule affine_relation.8: "
-	         "affine_expression %% INTEGER == INTEGER");
+                 "affine_expression %% INTEGER == INTEGER");
       osl_int_set_si(parser_options->precision,
                      &($1->v[CLAN_MAX_DEPTH + 1 + clan_parser_nb_ld()]), -$3);
       osl_int_add_si(parser_options->precision,
-	             &($1->v[$1->size - 1]), $1->v[$1->size - 1], -$5);
+                     &($1->v[$1->size - 1]), $1->v[$1->size - 1], -$5);
       clan_parser_add_ld();
       $$ = osl_relation_from_vector($1);
       osl_vector_free($1);
@@ -800,7 +800,7 @@ affine_logical_and_expression:
   | affine_logical_and_expression AND_OP affine_relation
     {
       CLAN_debug("rule affine_logical_and_expression.2: "
-	         "affine_logical_and_expression && affine_relation");
+                 "affine_logical_and_expression && affine_relation");
       clan_relation_and($1, $3);
       $$ = $1;
       osl_relation_free($3);
@@ -819,7 +819,7 @@ affine_condition:
   | affine_condition OR_OP affine_logical_and_expression
     {
       CLAN_debug("rule affine_condition.2: "
-	         "affine_condition || affine_logical_and_expression");
+                 "affine_condition || affine_logical_and_expression");
       osl_relation_add(&$1, $3);
       $$ = $1;
       CLAN_debug_call(osl_relation_dump(stderr, $$));
@@ -838,8 +838,8 @@ affine_primary_expression:
       // an unknown (embeds read-only variables), it is updated to a parameter.
       if (id->type == CLAN_UNDEFINED) {
         if ((parser_nb_parameters + 1) > CLAN_MAX_PARAMETERS)
-	        CLAN_error("CLAN_MAX_PARAMETERS reached,"
-                             "recompile with a higher value");
+          CLAN_error("CLAN_MAX_PARAMETERS reached,"
+                     "recompile with a higher value");
         id->type = CLAN_TYPE_PARAMETER;
         id->rank = ++parser_nb_parameters;
       }
@@ -847,13 +847,13 @@ affine_primary_expression:
       if ((id->type != CLAN_TYPE_ITERATOR) &&
           (id->type != CLAN_TYPE_PARAMETER)) {
         free($1);
-	if (id->type == CLAN_TYPE_ARRAY)
-	  yyerror("variable or array reference in an affine expression");
-	else
+        if (id->type == CLAN_TYPE_ARRAY)
+          yyerror("variable or array reference in an affine expression");
+        else
           yyerror("function call in an affine expression");
-	YYABORT;
+        YYABORT;
       }
-      
+
       $$ = clan_vector_term(parser_symbol, 1, $1, parser_options->precision);
       free($1);
       CLAN_debug_call(osl_vector_dump(stderr, $$));
@@ -899,7 +899,7 @@ affine_unary_expression:
 
 affine_multiplicative_expression:
     affine_unary_expression
-    { 
+    {
       CLAN_debug("rule affine_multiplicative_expression.1: "
                  "affine_unary_expression");
       $$ = $1;
@@ -908,14 +908,14 @@ affine_multiplicative_expression:
   | affine_multiplicative_expression '*' affine_unary_expression
     {
       int coef;
-      
+
       CLAN_debug("rule affine_multiplicative_expression.2: "
                  "affine_multiplicative_expression * affine_unary_expression");
       if (!osl_vector_is_scalar($1) && !osl_vector_is_scalar($3)) {
         osl_vector_free($1);
         osl_vector_free($3);
         yyerror("non-affine expression");
-	YYABORT;
+        YYABORT;
       }
 
       if (osl_vector_is_scalar($1)) {
@@ -932,14 +932,14 @@ affine_multiplicative_expression:
   | affine_multiplicative_expression '/' affine_unary_expression
     {
       int val1, val2;
-      
+
       CLAN_debug("rule affine_multiplicative_expression.3: "
                  "affine_multiplicative_expression / affine_unary_expression");
       if (!osl_vector_is_scalar($1) || !osl_vector_is_scalar($3)) {
         osl_vector_free($1);
         osl_vector_free($3);
         yyerror("non-affine expression");
-	YYABORT;
+        YYABORT;
       }
       val1 = osl_int_get_si($1->precision, $1->v[$1->size - 1]);
       val2 = osl_int_get_si($3->precision, $3->v[$3->size - 1]);
@@ -954,7 +954,7 @@ affine_multiplicative_expression:
 
 affine_expression:
     affine_multiplicative_expression
-    { 
+    {
       CLAN_debug("rule affine_expression.1: "
                  "affine_multiplicative_expression");
       $$ = $1;
@@ -1100,7 +1100,7 @@ postfix_expression:
       CLAN_debug_call(osl_relation_list_dump(stderr, $$->access));
     }
   | postfix_expression '(' ')'
-    { 
+    {
       // don't save access name of a function
       if (parser_options->extbody) {
         parser_access_extbody->nb_access -= osl_relation_list_count($1->access) - 1;
@@ -1175,11 +1175,11 @@ postfix_expression:
       CLAN_debug_call(osl_relation_list_dump(stderr, $$->access));
     }
   | postfix_expression unary_increment_operator
-    { 
+    {
       osl_relation_list_p list;
 
       CLAN_debug("rule postfix_expression.6: postfix_expression -> "
-	         "postfix_expression ++/--");
+                 "postfix_expression ++/--");
       if (!clan_symbol_update_type(parser_symbol, $1->access, CLAN_TYPE_ARRAY)) {
         clan_access_expr_free($1);
         YYABORT;
@@ -1224,7 +1224,7 @@ unary_expression:
       osl_relation_list_p list;
 
       CLAN_debug("rule unary_expression.2: unary_expression -> "
-	         "++/-- unary_expression");
+                 "++/-- unary_expression");
       if (!clan_symbol_update_type(parser_symbol, $2->access, CLAN_TYPE_ARRAY)) {
         clan_access_expr_free($2);
         YYABORT;
@@ -1425,7 +1425,7 @@ assignment_expression:
       osl_relation_list_p list;
 
       CLAN_debug("rule assignment_expression.2: unary_expression "
-	         "assignment_operator assignment_expression;");
+                 "assignment_operator assignment_expression;");
       if (!clan_symbol_update_type(parser_symbol, $1->access, CLAN_TYPE_ARRAY)) {
         // Bison does not destroy this rule's RHS when its action aborts.
         clan_access_expr_free($1);
@@ -1576,7 +1576,7 @@ expression_statement:
       $$ = NULL;
       CLAN_debug_call(osl_statement_dump(stderr, $$));
     }
-  | 
+  |
     {
       if (parser_options->extbody) {
         parser_access_start = -1;
@@ -1591,14 +1591,14 @@ expression_statement:
       osl_statement_p statement;
       osl_body_p body;
       osl_generic_p gen;
-      
+
       CLAN_debug("rule expression_statement.2: expression ;");
       // - 1. Domain
       statement = osl_statement_malloc();
       statement->domain = osl_relation_clone(parser_stack->elt);
       osl_relation_set_type(statement->domain, OSL_TYPE_DOMAIN);
       osl_relation_set_attributes(statement->domain, parser_loop_depth, 0,
-	                          clan_parser_nb_ld(), CLAN_MAX_PARAMETERS);
+                                  clan_parser_nb_ld(), CLAN_MAX_PARAMETERS);
 
       // - 2. Scattering
       statement->scattering = clan_relation_scattering(parser_scattering,
@@ -1635,7 +1635,7 @@ expression_statement:
 
       parser_recording = CLAN_FALSE;
       parser_record = NULL;
-      
+
       parser_scattering[2*parser_loop_depth]++;
       parser_nb_statements++;
 
@@ -1824,7 +1824,7 @@ void yyerror(char *s) {
   int i, line = 1;
   char c = 'C';
   FILE* file;
- 
+
   CLAN_debug("parse error notified");
 
   if (!parser_options->autoscop) {
@@ -1933,7 +1933,7 @@ void clan_parser_state_print(FILE* file) {
       fprintf(file, "|\t|\t|\t|\n");
       clan_symbol_print_structure(file, parser_iterators[i], 3);
       if (i == parser_loop_depth - 1)
-	fprintf(file, "|\t|\t|\n");
+        fprintf(file, "|\t|\t|\n");
     }
   } else {
     fprintf(file, "|\t|\t+-- (none)\n");
@@ -1954,8 +1954,8 @@ void clan_parser_state_print(FILE* file) {
   if (parser_loop_depth > 0) {
     for (i = 0; i < parser_loop_depth; i++)
       printf("%d ", parser_nb_local_dims[i]);
-      fprintf(file, "\n");
-    } else {
+    fprintf(file, "\n");
+  } else {
     fprintf(file, "(none)\n");
   }
   fprintf(file, "|\t|\t|\n");
@@ -2010,7 +2010,7 @@ void clan_parser_add_ld() {
       fprintf(stderr, "%d:%d ", i, parser_nb_local_dims[i]);
     fprintf(stderr, "\n");
   }
-  
+
   if (clan_parser_nb_ld() > CLAN_MAX_LOCAL_DIMS)
     CLAN_error("CLAN_MAX_LOCAL_DIMS reached, recompile with a higher value");
 }
@@ -2020,7 +2020,7 @@ int clan_parser_nb_ld() {
   int i, nb_ld = 0;
 
   for (i = 0; i <= parser_loop_depth + parser_if_depth; i++)
-    nb_ld += parser_nb_local_dims[i]; 
+    nb_ld += parser_nb_local_dims[i];
   return nb_ld;
 }
 
@@ -2190,7 +2190,7 @@ void clan_parser_state_initialize(clan_options_p options) {
  */
 void clan_parser_reinitialize() {
   int i;
-  
+
   free(parser_record);
   osl_extbody_free(parser_access_extbody);
   clan_symbol_free(parser_symbol);
@@ -2223,8 +2223,8 @@ void clan_parser_autoscop() {
   char c;
   int coordinates[5][CLAN_MAX_SCOPS]; // 0, 1: line start, end
                                       // 2, 3: column start, end
-				      // 4: autoscop or not
- 
+                                      // 4: autoscop or not
+
   while (1) {
     // For the automatic extraction, we parse everything except user-SCoPs.
     if (!scanner_pragma)
@@ -2236,13 +2236,13 @@ void clan_parser_autoscop() {
     restart_column = (new_scop) ? parser_column_end : scanner_column;
     if (CLAN_DEBUG) {
       if (new_scop)
-	fprintf(stderr, "[Clan] Debug: new autoscop, ");
+        fprintf(stderr, "[Clan] Debug: new autoscop, ");
       else
-	fprintf(stderr, "[Clan] Debug: no autoscop, ");
+        fprintf(stderr, "[Clan] Debug: no autoscop, ");
       fprintf(stderr, "restart at line %d, column %d\n",
-	      restart_line, restart_column);
+              restart_line, restart_column);
     }
- 
+
     if (parser_error || new_scop) {
       if (new_scop) {
         // If a new SCoP has been found, store its coordinates.
@@ -2263,19 +2263,19 @@ void clan_parser_autoscop() {
         nb_scops++;
       } else if (scanner_scop_start != CLAN_UNDEFINED) {
         // If the start of a user-SCoP is detected, store its coordinate.
-	coordinates[0][nb_scops] = scanner_scop_start;
+        coordinates[0][nb_scops] = scanner_scop_start;
       } else if (scanner_scop_end != CLAN_UNDEFINED) {
         // If the end of a user-SCoP is detected, store its coordinate.
-	coordinates[1][nb_scops] = scanner_scop_end;
-	coordinates[2][nb_scops] = 0;
-	coordinates[3][nb_scops] = 0;
-	coordinates[4][nb_scops] = CLAN_FALSE;
+        coordinates[1][nb_scops] = scanner_scop_end;
+        coordinates[2][nb_scops] = 0;
+        coordinates[3][nb_scops] = 0;
+        coordinates[4][nb_scops] = CLAN_FALSE;
         if (CLAN_DEBUG) {
           fprintf(stderr, "[Clan] Debug: user-SCoP [%d,%d -> %d,%d]\n",
                   coordinates[0][nb_scops], coordinates[2][nb_scops],
                   coordinates[1][nb_scops], coordinates[3][nb_scops]);
         }
-	nb_scops++;
+        nb_scops++;
       }
 
       // Restart after the SCoP or after the error.
@@ -2303,10 +2303,10 @@ void clan_parser_autoscop() {
     c = fgetc(yyin);
     if (fgetc(yyin) == EOF)
       break;
-    else 
+    else
       fseek(yyin, position, SEEK_SET);
   }
- 
+
   // Write the code with the inserted SCoP pragmas in CLAN_AUTOPRAGMA_FILE.
   rewind(yyin);
   clan_scop_print_autopragma(yyin, nb_scops, coordinates);
@@ -2324,7 +2324,7 @@ void clan_parser_autoscop() {
   // Update the SCoP coordinates with those of the original file.
   clan_scop_update_coordinates(parser_scop, coordinates);
   parser_options->autoscop = CLAN_TRUE;
-  
+
   if (remove(CLAN_AUTOPRAGMA_FILE))
     CLAN_warning("cannot delete temporary file");
 }
@@ -2355,7 +2355,7 @@ osl_scop_p clan_parse(FILE* input, clan_options_p options) {
   CLAN_debug("parsing done");
 
   clan_scanner_free();
-  
+
   if (!parser_error)
     scop = parser_scop;
   else {

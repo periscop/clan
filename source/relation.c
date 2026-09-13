@@ -141,8 +141,8 @@ osl_relation_p clan_relation_scattering(int* vector, int depth,
   scattering = osl_relation_pmalloc(precision, nb_rows, nb_columns);
   osl_relation_set_type(scattering, OSL_TYPE_SCATTERING);
   osl_relation_set_attributes(scattering, 2 * depth + 1, depth, 0,
-                              CLAN_MAX_PARAMETERS);  
-  
+                              CLAN_MAX_PARAMETERS);
+
   // The output dimension identity
   for (i = 0; i < 2 * depth + 1; i++)
     osl_int_set_si(precision, &scattering->m[i][i + 1], -1);
@@ -219,7 +219,7 @@ void clan_relation_new_output_vector(osl_relation_p relation,
  */
 void clan_relation_new_output_scalar(osl_relation_p relation, int scalar) {
   int new_col, new_row;
-  
+
   if (relation == NULL)
     CLAN_error("cannot add a new output dimension to a NULL relation");
 
@@ -291,7 +291,7 @@ void clan_relation_add_modulo_constraint(osl_relation_p relation, int divisor) {
  * \param[in,out] relation      The relation to compact.
  * \param[in]     nb_parameters The true number of parameters in the SCoP.
  */
-void clan_relation_compact(osl_relation_p relation, 
+void clan_relation_compact(osl_relation_p relation,
                            int nb_parameters) {
   int i, j, nb_columns;
   int nb_output_dims, nb_input_dims, nb_local_dims, nb_out_in_loc, local_offset;
@@ -382,13 +382,13 @@ osl_relation_p clan_relation_greater(osl_relation_p min, osl_relation_p max,
   if ((min == NULL) || (max == NULL) || (strict < 0) || (strict > 1) ||
       (min->nb_columns != max->nb_columns))
     CLAN_error("cannot compose relations");
-  
+
   precision = min->precision;
   osl_int_init(precision, &a_max);
   osl_int_init(precision, &b_min);
   r = osl_relation_pmalloc(precision,
                            min->nb_rows * max->nb_rows, min->nb_columns);
-  
+
   // For each row of min
   for (imin = 0; imin < min->nb_rows; imin++) {
     // For each row of max
@@ -396,8 +396,8 @@ osl_relation_p clan_relation_greater(osl_relation_p min, osl_relation_p max,
     //      or a couple min/a > max/b  to translate to b*min - a*max - 1 >= 0
     // TODO: here a and b are > 0, this may be generalized to avoid a
     //       problem if the grammar is updated. Plus it's debatable to use
-    //       b*min - a*max -a*b >= 0 in the second case. 
-    
+    //       b*min - a*max -a*b >= 0 in the second case.
+
     // -1. Find a
     a = osl_int_get_si(precision, min->m[imin][0]);
     a = (a == 0) ? 1 : a;
@@ -411,10 +411,10 @@ osl_relation_p clan_relation_greater(osl_relation_p min, osl_relation_p max,
       for (j = 1; j < max->nb_columns; j++) {
         // -3.1. Compute b*min
         osl_int_mul_si(precision, &b_min, min->m[imin][j], b);
-        
+
         // -3.2. Compute a*max
         osl_int_mul_si(precision, &a_max, max->m[imax][j], a);
-        
+
         // -3.3. Compute b*min - a*max
         osl_int_sub(precision,
                     &r->m[imin * max->nb_rows + imax][j], b_min, a_max);
@@ -429,7 +429,7 @@ osl_relation_p clan_relation_greater(osl_relation_p min, osl_relation_p max,
       osl_int_set_si(precision, &r->m[imin * max->nb_rows + imax][0], 1);
     }
   }
-  
+
   osl_int_clear(precision, &a_max);
   osl_int_clear(precision, &b_min);
   return r;
@@ -444,15 +444,15 @@ osl_relation_p clan_relation_greater(osl_relation_p min, osl_relation_p max,
  * \param[in,out] relation The relation where to oppose a constraint.
  * \param[in]     row      The row corresponding to the constraint to oppose.
  */
-static 
+static
 void clan_relation_negate_inequality(osl_relation_p relation, int row) {
   int i;
-  
+
   // Oppose all constraint elements.
   for (i = 1; i < relation->nb_columns; i++)
     osl_int_oppose(relation->precision,
                    &relation->m[row][i], relation->m[row][i]);
-  
+
   // The constant term - 1.
   osl_int_decrement(relation->precision,
                     &relation->m[row][relation->nb_columns - 1],
@@ -474,7 +474,7 @@ osl_relation_p clan_relation_extract_constraint(osl_relation_p relation,
                                                 int row) {
   int i, precision = relation->precision;
   osl_relation_p constraint;
-  
+
   constraint = osl_relation_pmalloc(precision, 1, relation->nb_columns);
   constraint->type           = relation->type;
   constraint->nb_output_dims = relation->nb_output_dims;
@@ -550,7 +550,7 @@ void clan_relation_tag_equality(osl_relation_p relation, int row) {
 static
 osl_relation_p clan_relation_constraint_not(osl_relation_p relation, int row) {
   osl_relation_p tmp, tmp_eq = NULL;
-  
+
   if (row > relation->nb_rows)
     return NULL;
 
@@ -563,7 +563,7 @@ osl_relation_p clan_relation_constraint_not(osl_relation_p relation, int row) {
   // If the constraint is an equality we need to build an union.
   // a == 0 becomes a > 0 || a < 0, i.e., a - 1 >= 0 || -a - 1 >= 0.
   if (clan_relation_is_equality(relation, row)) {
-    
+
     tmp_eq = clan_relation_extract_constraint(relation, row);
     osl_int_decrement(relation->precision,
                       &tmp_eq->m[0][tmp_eq->nb_columns - 1],
@@ -589,7 +589,7 @@ osl_relation_p clan_relation_not(osl_relation_p relation) {
   int i;
   osl_relation_p not_constraint;
   osl_relation_p not = NULL, part;
-  
+
   while (relation != NULL) {
     // Build the negation of one relation union part.
     part = NULL;
@@ -606,7 +606,7 @@ osl_relation_p clan_relation_not(osl_relation_p relation) {
       osl_relation_free(part);
     }
     relation = relation->next;
-  } 
+  }
 
   return not;
 }
@@ -623,9 +623,9 @@ osl_relation_p clan_relation_not(osl_relation_p relation) {
 void clan_relation_and(osl_relation_p dest, osl_relation_p src) {
   osl_relation_p next_dest,
                  next_src,
-	         dup_dest,
+                 dup_dest,
                  next_mem = NULL;
-  
+
   // initializing
   next_src = src;
   next_dest = dest;
@@ -689,7 +689,7 @@ int clan_relation_existential(osl_relation_p relation) {
  */
 void clan_relation_oppose_row(osl_relation_p r, int row) {
   int i;
-  
+
   if (r == NULL)
     return;
 
@@ -782,7 +782,7 @@ void clan_relation_extract_bounding(osl_relation_p r,
 
 /**
  * clan_relation_to_expressions function:
- * this function translates a set of inequalities involving the 
+ * this function translates a set of inequalities involving the
  * coefficient of the loop iterator at depth "depth" to a set of
  * expressions which would compare to the iterator alone, hence
  * not involving the loop iterator anymore. E.g., an inequality
@@ -856,7 +856,7 @@ osl_relation_p clan_relation_stride(osl_relation_p r, int depth, int stride) {
     // Change the bounding constraints to a set of linear expressions
     // to make it easy to manipulate them through existing functions.
     clan_relation_to_expressions(bound, depth);
-  
+
     // Each bound constraint contributes along with the stride.
     for (i = 0; i < bound->nb_rows; i++) {
       // -1. Extract the contributing constraint c.
@@ -910,7 +910,7 @@ osl_relation_p clan_relation_stride(osl_relation_p r, int depth, int stride) {
       //           (Resp. -i + c >= 0 for the upper case.)
       osl_int_set_si(precision,
                      &contribution->m[contribution->nb_rows - 1][0], 1);
-    
+
       // -5. Add the contribution of the stride (same for lower and upper).
       //     * 5.1 Put c at the end of the constraint set.
       osl_relation_insert_constraints(contribution, constraint, -1);
@@ -922,7 +922,7 @@ osl_relation_p clan_relation_stride(osl_relation_p r, int depth, int stride) {
       osl_int_set_si(precision,
           &contribution->m[contribution->nb_rows - 1]
                           [CLAN_MAX_DEPTH + 1 + clan_parser_nb_ld()], stride);
-    
+
       osl_relation_free(constraint);
       osl_relation_add(&part, contribution);
     }
@@ -958,7 +958,7 @@ void clan_relation_gaussian_elimination(osl_relation_p relation,
                                         int pivot_row, int pivot_column) {
   int i, j, same_sign, precision, identical;
   osl_int_p temp, pivot_coef, current_coef;
-  
+
   if (relation == NULL)
     return;
 
@@ -1029,7 +1029,7 @@ void clan_relation_gaussian_elimination(osl_relation_p relation,
           osl_int_mul(precision,
               &relation->m[i][j], *pivot_coef, relation->m[i][j]);
           osl_int_add(precision,
-              &relation->m[i][j], relation->m[i][j], *temp); 
+              &relation->m[i][j], relation->m[i][j], *temp);
         }
       } else {
         // In the case of two inequalities of the same sign, check whether they
@@ -1107,7 +1107,7 @@ void clan_relation_simplify(osl_relation_p relation) {
       // - the pivot is not 0,
       // - the constraint including the pivot is an equality,
       // - there is no non-zero element in the row before the pivot.
-      
+
       //printf("j = %d\n", j);
       //osl_relation_dump(stdout, gauss);
       for (i = 0; i < gauss->nb_rows; i++) {
@@ -1123,7 +1123,7 @@ void clan_relation_simplify(osl_relation_p relation) {
       }
       //osl_relation_dump(stdout, gauss);
     }
-    
+
     // Second, remove trivially duplicated rows.
     for (i = 0; i < gauss->nb_rows; i++) {
       for (k = i + 1; k < gauss->nb_rows; k++) {
@@ -1220,7 +1220,7 @@ void clan_relation_loop_context(osl_relation_p condition,
   for (i = 0; i < initialization->nb_rows; i++)
     if (osl_int_zero(initialization->precision, initialization->m[i][0]))
       OSL_error("no equality is allowed in the initialization relation");
-  
+
   first_condition = condition;
   // For each possible initial value (e.g., in the case of a max):
   for (i = 0; i < initialization->nb_rows; i++) {
@@ -1237,7 +1237,7 @@ void clan_relation_loop_context(osl_relation_p condition,
       clan_relation_tag_equality(temp, 0);
       clan_relation_gaussian_elimination(temp, 0, depth);
       osl_relation_remove_row(temp, 0);
-      
+
       // Intersect the union part of the condition with its loop context.
       new_condition = osl_relation_nclone(condition, 1);
       osl_relation_insert_constraints(new_condition, temp, -1);
@@ -1251,7 +1251,7 @@ void clan_relation_loop_context(osl_relation_p condition,
   condition = first_condition;
   osl_relation_free_inside(condition);
   osl_relation_free(condition->next);
-  
+
   // Replace the inside of condition.
   condition->nb_rows = contextual->nb_rows;
   condition->m = contextual->m;

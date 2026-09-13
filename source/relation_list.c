@@ -70,7 +70,7 @@ void clan_relation_list_compact(osl_relation_list_p list, int nb_parameters) {
 }
 
 
-/** 
+/**
  * clan_relation_list_define_type function:
  * this function sets the type of each relation in the relation list to the
  * one provided as parameter, only if it is undefined.

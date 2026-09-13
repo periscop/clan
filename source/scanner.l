@@ -47,7 +47,7 @@ IS ((u|U)|(u|U)?(l|L|ll|LL)|(l|L|ll|LL)(u|U))
 %{
    #include <stdlib.h>
    #include <string.h>
-   
+
    #include <osl/vector.h>
    #include <osl/relation.h>
    #include <osl/relation_list.h>
@@ -102,10 +102,10 @@ IS ((u|U)|(u|U)?(l|L|ll|LL)|(l|L|ll|LL)(u|U))
                               scanner_line++;
                               scanner_column = 1;
                               if (scanner_parsing) {
-			        CLAN_realloc(scanner_clay, char *,
+                                CLAN_realloc(scanner_clay, char *,
                                     (strlen(scanner_clay) + 2) * sizeof(char));
                                 strcat(scanner_clay, yytext);
-			      }
+                              }
                             }
 <CLAY>.                     {
                               scanner_column++;
@@ -113,7 +113,7 @@ IS ((u|U)|(u|U)?(l|L|ll|LL)|(l|L|ll|LL)(u|U))
                                 CLAN_realloc(scanner_clay, char *,
                                     (strlen(scanner_clay) + 2) * sizeof(char));
                                 strcat(scanner_clay, yytext);
-			      }
+                              }
                             }
 <FULLCOMMENT>"*/"           {
                               scanner_column += 2;
@@ -121,7 +121,7 @@ IS ((u|U)|(u|U)?(l|L|ll|LL)|(l|L|ll|LL)(u|U))
                               if (scanner_comment == 0)
                                 BEGIN INITIAL;      /* Quit any mode */
                             }
-<FULLCOMMENT>"/*"           { 
+<FULLCOMMENT>"/*"           {
                               scanner_column += 2;
                               scanner_comment++;
                             }
@@ -130,22 +130,22 @@ IS ((u|U)|(u|U)?(l|L|ll|LL)|(l|L|ll|LL)(u|U))
                               scanner_column = 1;
                             }
 <FULLCOMMENT>.              { scanner_column++;     /* Do nothing */ }
-<LINECOMMENT>\n             { 
+<LINECOMMENT>\n             {
                               scanner_line++;
                               scanner_column = 1;
                               BEGIN INITIAL;        /* Quit any mode */
                             }
 <LINECOMMENT>.              { scanner_column++;     /* Do nothing */ }
-"//"                        { 
+"//"                        {
                               scanner_column += 2;
                               BEGIN LINECOMMENT;    /* Enter LINECOMMENT mode*/
                             }
 "/* Clay\n"                 {
                               scanner_column = 1;
                               scanner_line++;
-			      if (scanner_comment == 0)
-				BEGIN CLAY;         /* Enter CLAY mode*/
-			      else
+                              if (scanner_comment == 0)
+                                BEGIN CLAY;         /* Enter CLAY mode*/
+                              else
                                 BEGIN FULLCOMMENT;  /* Enter FULLCOMMENT mode*/
                               scanner_comment++;
                             }
@@ -197,7 +197,7 @@ IS ((u|U)|(u|U)?(l|L|ll|LL)|(l|L|ll|LL)(u|U))
 "ceild"                     { return clan_scanner(CEILD, "ceild"); }
 "floord"                    { return clan_scanner(FLOORD, "floord"); }
 
-"#pragma"[ ]+"scop"         { 
+"#pragma"[ ]+"scop"         {
                               clan_scanner_count();
                               scanner_scop_start = scanner_line;
                               if (parser_options->autoscop) {
@@ -226,7 +226,7 @@ IS ((u|U)|(u|U)?(l|L|ll|LL)|(l|L|ll|LL)(u|U))
                             }
 
 {L}({L}|{D})*               {
-                              if (scanner_parsing == CLAN_TRUE) { 
+                              if (scanner_parsing == CLAN_TRUE) {
                                 CLAN_strdup(yylval.symbol, yytext);
                               }
                               return clan_scanner(ID, "ID");
@@ -314,7 +314,7 @@ L?\"(\\.|[^\\"\n])*\"       { return clan_scanner(STRING_LITERAL, "STRING"); }
                                 scanner_space = CLAN_TRUE;
                               }
                             }
-.                           { 
+.                           {
                               scanner_column++;
                               CLAN_debug("unmatched characters by Lex");
                             }
@@ -414,7 +414,7 @@ int clan_scanner(int token, char* message) {
                     "(%s at line %d, column %d)\n",
                     message, yytext, scanner_line, scanner_column);
   clan_scanner_count();
-  
+
   free(scanner_latest_text);
   scanner_latest_text = strdup(yytext);
   if (parser_recording) {
@@ -423,7 +423,7 @@ int clan_scanner(int token, char* message) {
     strcat(parser_record, yytext);
     scanner_space = CLAN_FALSE;
   }
-  
+
   if (scanner_parsing == CLAN_TRUE)
     return token;
   else

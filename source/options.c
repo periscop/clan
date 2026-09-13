@@ -223,9 +223,9 @@ clan_options_p clan_options_malloc(void) {
   options->autoinsert = 0;     // Do not insert SCoP pragmas in the input file.
   options->inputscop  = 0;     // Default input is a source file, not a .scop.
   options->precision  = 64;    // Work in 64 bits by default.
-  options->bounded_context = 0;// Don't bound the global parameters. 
-  options->noloopcontext   = 0;// Do include loop context in domains. 
-  options->nosimplify      = 0;// Do simplify iteration domains. 
+  options->bounded_context = 0;// Don't bound the global parameters.
+  options->noloopcontext   = 0;// Do include loop context in domains.
+  options->nosimplify      = 0;// Do simplify iteration domains.
   options->outscoplib      = 0;// Default OpenScop format
   options->extbody         = 0;// Don't generate the extbody
   return options;
@@ -259,7 +259,7 @@ clan_options_p clan_options_read(int argv, char** argc,
   // Prepare an empty array of input file names.
   CLAN_malloc(*input_files, char**, sizeof(char*));
   (*input_files)[0] = NULL;
-  
+
   for (i=1; i < argv; i++) {
     if (argc[i][0] == '-') {
       if (argc[i][1] == '\0') {
@@ -314,7 +314,7 @@ clan_options_p clan_options_read(int argv, char** argc,
         if (strcmp(argc[i+1], "stdout") == 0) {
           *output = stdout;
         } else {
-	  *output = fopen(argc[i+1], "w");
+          *output = fopen(argc[i+1], "w");
           if (*output == NULL)
             CLAN_error("cannot open the output file");
         }

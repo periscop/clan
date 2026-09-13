@@ -250,7 +250,7 @@ clan_symbol_p clan_symbol_lookup(clan_symbol_p symbol, char* identifier) {
   return NULL;
 }
 
-  
+
 /**
  * clan_symbol_lookup_by_key function:
  * This function searches the symbol table for a symbol with the key
@@ -280,7 +280,7 @@ clan_symbol_p clan_symbol_lookup_by_key(clan_symbol_p symbol, int key) {
 static
 int clan_symbol_generate_new_key(clan_symbol_p table) {
   int key = CLAN_KEY_START;
-  
+
   while (table != NULL) {
     if (table->key >= key)
       key = table->key + 1;
@@ -438,7 +438,7 @@ osl_strings_p clan_symbol_array_to_strings(clan_symbol_p* sarray, int size) {
  */
 int clan_symbol_nb_of_type(clan_symbol_p symbol, int type) {
   int nb = 0;
-  
+
   while (symbol != NULL) {
     if (symbol->type == type)
       nb++;
@@ -540,7 +540,7 @@ osl_generic_p clan_symbol_to_arrays(clan_symbol_p symbol) {
       i++;
       symbol = symbol->next;
     }
-    
+
     // Embed the arrays in a generic shell.
     generic = osl_generic_shell(arrays, osl_arrays_interface());
   }
@@ -594,7 +594,7 @@ int clan_symbol_new_iterator(clan_symbol_p* table, clan_symbol_p* array,
     yyerror("a loop iterator was previously used for something else");
     return 0;
   }
-  
+
   // Update the rank, in case the symbol already exists.
   if (symbol->rank != depth + 1)
     symbol->rank = depth + 1;
@@ -623,7 +623,7 @@ int clan_symbol_update_type(clan_symbol_p table, osl_relation_list_p access,
   int key;
   int relation_type;
   clan_symbol_p symbol;
-  
+
   if (table == NULL)
     CLAN_error("cannot even try to update type: NULL symbol table");
   if (access == NULL)

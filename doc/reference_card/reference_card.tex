@@ -192,12 +192,12 @@ Codes between SCoP pragmas must comply to the following restrictions:
 \titre{Identification of Constrained Elements\vspace{0.07cm}}
 
 \begin{center}
+% Typeset the listing before TikZ parses the node and its path.
+\newsavebox{\pascallisting}
+\sbox{\pascallisting}{\scriptsize\lstinputlisting{codes/pascal.c}}
 \begin{tikzpicture}
-  \node[anchor=south west,inner sep=0] (image) at (0,0) {
-    \begin{scriptsize}
-    \lstinputlisting{codes/pascal.c}
-    \end{scriptsize}
-  };
+  \node[anchor=south west,inner sep=0] (image) at (0,0)
+    {\usebox{\pascallisting}};
   
   \begin{scope}[x={(image.south east)},y={(image.north west)}]
     \node[draw,rectangle,red,rounded corners=2pt,minimum height=0.3cm,minimum width=0.77cm] (Cond1) at (0.297,0.68){};

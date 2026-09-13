@@ -1,0 +1,44 @@
+# Run the CMake fixture list through the shared macOS leak checker.
+if(NOT "@APPLE@")
+  message(FATAL_ERROR "leakscheck requires macOS and Apple's leaks tool")
+endif()
+if("@ENABLE_ASAN@")
+  message(FATAL_ERROR "leakscheck requires a non-ASan build; reconfigure with -DENABLE_ASAN=OFF")
+endif()
+find_program(LEAKS_EXECUTABLE leaks)
+if(NOT LEAKS_EXECUTABLE)
+  message(FATAL_ERROR "leakscheck requires Apple's leaks tool")
+endif()
+
+set(leakscheck_tests "@tests@")
+set(leakscheck_failed FALSE)
+foreach(test IN LISTS leakscheck_tests)
+  file(RELATIVE_PATH test_name "@CMAKE_CURRENT_SOURCE_DIR@/tests" "${test}")
+  set(test_options normal)
+  if(test_name MATCHES "^(must_fail|nonaffine|private)/")
+    list(APPEND test_options -extbody)
+  endif()
+  foreach(test_option IN LISTS test_options)
+    if(test_option STREQUAL "normal")
+      set(test_option "")
+      if(test_name MATCHES "^autoinsert/")
+        set(test_option -autoinsert)
+      elseif(test_name MATCHES "^autoscop/")
+        set(test_option -autoscop)
+      endif()
+    endif()
+    execute_process(
+      COMMAND "@CMAKE_COMMAND@" -E env
+        "top_builddir=${CLAN_TEST_BINDIR}"
+        "EXEEXT=@CMAKE_EXECUTABLE_SUFFIX@"
+        "@SH_EXECUTABLE@" "@CMAKE_CURRENT_SOURCE_DIR@/tests/checker.sh"
+        "${test_name} ${test_option}" "${test}" "${test_option}" leaks
+      RESULT_VARIABLE result)
+    if(NOT result STREQUAL "0")
+      set(leakscheck_failed TRUE)
+    endif()
+  endforeach()
+endforeach()
+if(leakscheck_failed)
+  message(FATAL_ERROR "One or more leak checks failed")
+endif()

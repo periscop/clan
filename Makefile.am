@@ -76,9 +76,9 @@ BUILT_SOURCES = source/parser.h
 
 AM_CPPFLAGS = $(CLAN_INCLUDES)
 AM_CFLAGS = $(CFLAGS_WARN)
-AM_YFLAGS = -y -d
+AM_YFLAGS = -y -d -Wno-yacc
 
-EXTRA_DIST = clan-config.cmake
+EXTRA_DIST = clan-config.cmake leakscheck.cmake.in
 
 install-data-local:
 	@test -z "$(DESTDIR)$(libdir)/$(PACKAGE_NAME)" || $(MKDIR_P) "$(DESTDIR)$(libdir)/$(PACKAGE_NAME)"

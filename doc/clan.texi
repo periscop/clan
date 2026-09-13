@@ -1193,6 +1193,10 @@ After an ASan build, clean and reconfigure both projects with
 @code{--disable-asan} first. This target uses the current build and does
 not change its configuration. @code{make check} remains the output-regression
 test; @code{make leakscheck} checks memory leaks.
+With CMake, use @code{cmake --build <build-directory> --target leakscheck}.
+This target requires macOS and @code{-DENABLE_ASAN=OFF}; it checks the same
+fixtures as CTest, including the extended-body variants.
+
 For complete instrumentation, build OpenScop with ASan first and use
 that build or installation when configuring Clan. For example, run
 @code{make asan} and @code{make install} in OpenScop, then configure Clan

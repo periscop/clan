@@ -38,7 +38,7 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/asan.cmake")
 	if(texi2pdf_exe)
 		add_custom_target(
 			doc
-			${texi2pdf_exe} ${CMAKE_CURRENT_SOURCE_DIR}/doc/clan.texi --output=${CMAKE_CURRENT_BINARY_DIR}/clan.pdf
+			${texi2pdf_exe} ${CMAKE_CURRENT_SOURCE_DIR}/doc/clan.texi --output=clan.pdf
 			WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
 			COMMENT "Generating documentation (pdf) (with texi2pdf)" VERBATIM
 		)
@@ -178,6 +178,18 @@ foreach(test IN LISTS tests)
         "${test_name}-extbody" "${test}" -extbody clan)
   endif()
 endforeach()
+
+
+# Keep leak runs separate from normal CTest runs and use the same fixtures.
+configure_file(leakscheck.cmake.in leakscheck.cmake @ONLY)
+add_custom_target(leakscheck
+  COMMAND "${CMAKE_COMMAND}"
+    "-DCLAN_TEST_BINDIR=$<TARGET_FILE_DIR:clan_exe>"
+    -P "${CMAKE_CURRENT_BINARY_DIR}/leakscheck.cmake"
+  DEPENDS clan_exe
+  VERBATIM
+  USES_TERMINAL
+  COMMENT "Checking Clan fixtures with Apple's macOS leaks tool")
 
 
 # Install

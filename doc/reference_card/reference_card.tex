@@ -34,10 +34,10 @@
 % ******************************************************************************
 % *                             Version Information                            *
 % ******************************************************************************
-\def\clanversionnumber{0.7.0}
-\def\versionnumber{1.0}
-\def\year{2012}
-\def\month{January}
+\def\clanversionnumber{0.8.1}
+\def\versionnumber{1.1}
+\def\year{2026}
+\def\month{September}
 \def\version{\month\ \year\ v\versionnumber}
 
 % ******************************************************************************
@@ -165,12 +165,12 @@ Floor of {\tt a} divided by {\tt n} (considered as a {\tt min} expression)      
 \hrule
 \begin{scriptsize}
 \vspace{0.1cm}
-\centerline{\version. Copyright \copyright\ \year\ C\'edric Bastoul and Louis-No\"el Pouchet}
+\centerline{\version. Copyright \copyright\ \year\ Cedric Bastoul and Louis-No\"el Pouchet}
 
 Permission is granted to copy, distribute and/or modify this
 document under the terms of the GNU Free Documentation License,
 Version 1.2 published by the Free Software Foundation.
-Please send comments and corrections to C\'edric Bastoul, \verb+cedric.bastoul@u-psud.fr+
+Please send comments and corrections to Cedric Bastoul, \verb+cedric.bastoul@unistra.fr+
 
 \end{scriptsize}
 
@@ -182,7 +182,8 @@ Codes between SCoP pragmas must comply to the following restrictions:
 \begin{itemize}
 \item The only allowed control keywords are {\tt for}, {\tt while}, {\tt if} and
       {\tt else}, with restrictions as described below.
-\item Declarations are not allowed.
+\item Only base scalar variable declarations are allowed, one variable per
+      declaration, optionally initialized (e.g., {\tt float acc = 0;}).
 \item Any C instruction without control keywords is accepted, with
       restrictions for array subscripts as described below.
 \end{itemize}
@@ -194,7 +195,7 @@ Codes between SCoP pragmas must comply to the following restrictions:
 \begin{center}
 % Typeset the listing before TikZ parses the node and its path.
 \newsavebox{\pascallisting}
-\sbox{\pascallisting}{\scriptsize\lstinputlisting{codes/pascal.c}}
+\sbox{\pascallisting}{\hspace{0.07cm}\scriptsize\lstinputlisting{codes/pascal.c}}
 \begin{tikzpicture}
   \node[anchor=south west,inner sep=0] (image) at (0,0)
     {\usebox{\pascallisting}};
@@ -235,7 +236,8 @@ Codes between SCoP pragmas must comply to the following restrictions:
 Each loop initialization must be an assignment of the loop counter such that the
 right hand side is one or several affine expressions aggregated with {\tt max}
 (resp. {\tt min}) operators if the loop step is positive (resp. negative).
-Optionally, the iterator can be declared as an {\tt int} in the initialization part.
+Optionally, the iterator can be declared as an {\tt int} or {\tt size\_t}
+in the initialization part.
 
 \vspace{0.3cm}
 \begin{tabular}{p{4cm}|p{4.39cm}}
@@ -254,9 +256,8 @@ Optionally, the iterator can be declared as an {\tt int} in the initialization p
 \end{tabular}
 
 \vspace{0.3cm}
-\textit{Tip: if the initialization form is too restrictive for a given
-program, it may be possible to move the troublesome constraints to the
-loop condition or to an external or internal {\tt if} condition.}
+\textit{Tip: if initialization is too restrictive, try to move problematic
+constraints to the loop condition or an {\tt if}.}
 \end{small}
 
 % ******************************************************************************
@@ -264,7 +265,8 @@ loop condition or to an external or internal {\tt if} condition.}
 
 \begin{small}
 Each loop or {\tt if} condition must be a (composition of) constraint(s) on
-affine expressions, \sout{and function calls}.
+affine expressions.
+%, \sout{and function calls}.
 \begin{itemize} %\renewcommand{\labelitemi}{\ding{229}}
 \item Supported C operators are {\tt >}, {\tt >=}, {\tt <}, {\tt <=},
       {\tt ==}, {\tt !=}, {\tt !}, {\tt \&\&} and {\tt ||}.
@@ -275,7 +277,7 @@ affine expressions, \sout{and function calls}.
 \item Constraints involving the modulo operator are possible in the following
       form: let {\tt a} be an affine expression and {\tt x} and {\tt y} two
       positive integers, then the condition {\tt (a \% x == y)} is accepted.
-\item \sout{Function calls alone can be used as valid {\tt if} conditions}.
+%\item \sout{Function calls alone can be used as valid {\tt if} conditions}.
 \end{itemize}
 
 \vspace{0.3cm}
@@ -289,22 +291,22 @@ affine expressions, \sout{and function calls}.
 {\tt N>i \&\& !(j>0 || N!=1)} & Correct\\
 \hline
 {\tt ((2*i+1)\%3 == 1) \&\& i>j} & Correct\\
-\hline
-{\tt func(A[i], b)} & Correct in a {\tt if} condition\\
+%\hline
+%{\tt func(A[i], b)} & Correct in a {\tt if} condition\\
 \hline
 \hline
 {\tt min(2*i, N) < 0} & Incorrect: {\tt min} on the lower side\\
 \hline
 {\tt i + 2} & Incorrect: use {\tt (i + 2) != 0}\\
-\hline
-{\tt i<N \&\& g(a)} & Incorrect: function call not alone
+%\hline
+%{\tt i<N \&\& g(a)} & Incorrect: function call not alone
 \end{tabular}
 
-\vspace{0.3cm}
-\textit{\sout{Tip: to include data-dependent conditions, e.g.,
-{\tt if (A[i] == 0)}, create a preprocessor macro containing
-the condition and replace it in the SCoP by the macro-function call,
-e.g., {\tt if (my\_condition(A[i]))}}}.
+%\vspace{0.3cm}
+%\textit{\sout{Tip: to include data-dependent conditions, e.g.,
+%{\tt if (A[i] == 0)}, create a preprocessor macro containing
+%the condition and replace it in the SCoP by the macro-function call,
+%e.g., {\tt if (my\_condition(A[i]))}}}.
 \end{small}
 
 % ******************************************************************************
@@ -317,28 +319,36 @@ iterator value. Let {\tt i} be a loop iterator and {\tt x} an integer,
 the following forms are accepted for the loop step part:
 {\tt i++}, {\tt ++i}, {\tt i---}, {\tt ---i}, {\tt i += x}, {\tt i -= x}, {\tt i = i+x} and
 {\tt i = i-x}. The iterator can optionally be enclosed
-in parentheses in this part: @code{++(i)}.
+in parentheses: {\tt ++(i)}.
 \end{small}
 
 % ******************************************************************************
 \titre{Array Subscript}
 
 \begin{small}
-Array subscripts must be \sout{either} affine expressions \sout{or function calls}.
-
-\vspace{0.3cm}
-\textit{\sout{Tip: to include indirections, e.g., {\tt A[B[i]]}, create a
-preprocessor macro containing the subscript and replace it in the SCoP by
-the macro-function call, e.g., {\tt A[my\_subscript(B[i])]}}}.
+Array subscripts are analyzed independently, one dimension at a time:
+\begin{itemize}
+\item \textbf{Affine expressions} are represented exactly, e.g.,
+      {\tt A[2*i - N]}.
+\item \textbf{Affine \% integer} is represented exactly when the affine
+      dividend is nonnegative (by SCoP contract) and the divisor is a
+      positive integer constant, e.g., {\tt A[i \% 3]} or
+      {\tt A[(2*i - N + 1) \% 3]}.
+\item \textbf{General access functions}, e.g., {\tt A[B[i]]},
+      {\tt A[i*j]} or {\tt A[f(i)]}, are accepted conservatively:
+      the corresponding index is unconstrained. For example,
+      {\tt A[B[i]][j] = 0;} reads {\tt B[i]} and writes {\tt A} with
+      an unconstrained first index and exact second index {\tt j}.
+      Note option {\tt -affine-only} rejects non-affine subscripts.
+\end{itemize}
 \end{small}
 
 % ******************************************************************************
-\titre{Infinite and {\tt while} Loops}
+\titre{Infinite Loops}
 
 \begin{small}
-Infinite {\tt for} loops in the form {\tt for (;;)} are supported.
-{\tt while} loops are supported when the condition is \sout{either} {\tt 1}
-(infinite loop) \sout{or a function call}.
+Infinite {\tt for} loops in the form {\tt for (;;)} or {\tt while (1)} are
+supported.
 \end{small}
 
 \end{multicols}

@@ -33,6 +33,10 @@ source/scanner.c
 doc/
 build*/
 tests/*
+!tests/unitary/
+tests/unitary/*
+!tests/unitary/size_t_loop.c
+!tests/unitary/size_t_loop.c.scop
 !tests/check_checker.sh
 !tests/leaks-wrapper.c
 !tests/must_fail/

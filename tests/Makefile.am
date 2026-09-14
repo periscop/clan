@@ -55,6 +55,7 @@ TEST_FILES = \
 	$(top_srcdir)/tests/swim.c
 
 UNITARY_TEST_FILES = \
+	$(top_srcdir)/tests/unitary/size_t_loop.c \
 	$(top_srcdir)/tests/unitary/classicloop.c \
 	$(top_srcdir)/tests/unitary/simpleloop.c \
 	$(top_srcdir)/tests/unitary/basicnest.c \

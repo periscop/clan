@@ -183,6 +183,7 @@ IS ((u|U)|(u|U)?(l|L|ll|LL)|(l|L|ll|LL)(u|U))
 "short"                     { return clan_scanner(SHORT, "short"); }
 "signed"                    { return clan_scanner(SIGNED, "signed"); }
 "sizeof"                    { return clan_scanner(SIZEOF, "sizeof"); }
+"size_t"                    { return clan_scanner(SIZE_T, "size_t"); }
 "static"                    { return clan_scanner(STATIC, "static"); }
 "struct"                    { return clan_scanner(STRUCT, "struct"); }
 "switch"                    { return clan_scanner(SWITCH, "switch"); }

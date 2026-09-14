@@ -548,8 +548,8 @@ Those restrictions are detailed in the next sections.
 Each loop initialization must be an assignment of the loop counter such that the
 right hand side is one or several affine expressions aggregated with @code{max}
 (resp. @code{min}) operators if the loop step is positive (resp. negative).
-Optionally, the loop iterator can be declared (as an @code{int}) in the loop
-initialization part.
+Optionally, the loop iterator can be declared (as an @code{int} or @code{size_t})
+in the loop initialization part.
 
 For instance:
 @itemize @bullet

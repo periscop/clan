@@ -187,6 +187,7 @@ PRAGMA_PREFIX "#"[ \t]*"pragma"
 "signed"                    { return clan_scanner(SIGNED, "signed"); }
 "sizeof"                    { return clan_scanner(SIZEOF, "sizeof"); }
 "size_t"                    { return clan_scanner(SIZE_T, "size_t"); }
+"ssize_t"                   { return clan_scanner(SSIZE_T, "ssize_t"); }
 "static"                    { return clan_scanner(STATIC, "static"); }
 "struct"                    { return clan_scanner(STRUCT, "struct"); }
 "switch"                    { return clan_scanner(SWITCH, "switch"); }

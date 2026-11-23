@@ -43,6 +43,7 @@ E  [Ee][+-]?{D}+
 P  [Pp][+-]?{D}+
 FS (f|F|l|L)
 IS ((u|U)|(u|U)?(l|L|ll|LL)|(l|L|ll|LL)(u|U))
+PRAGMA_PREFIX "#"[ \t]*"pragma"
 
 %{
    #include <stdlib.h>
@@ -84,6 +85,7 @@ IS ((u|U)|(u|U)?(l|L|ll|LL)|(l|L|ll|LL)(u|U))
 %option noinput
 %option nounput
 %x LINECOMMENT
+%x PRAGMALINE
 %x FULLCOMMENT
 %x CLAY
 
@@ -130,12 +132,13 @@ IS ((u|U)|(u|U)?(l|L|ll|LL)|(l|L|ll|LL)(u|U))
                               scanner_column = 1;
                             }
 <FULLCOMMENT>.              { scanner_column++;     /* Do nothing */ }
-<LINECOMMENT>\n             {
+<PRAGMALINE>\\\r?\n         { clan_scanner_count(); }
+<LINECOMMENT,PRAGMALINE>\n  {
                               scanner_line++;
                               scanner_column = 1;
                               BEGIN INITIAL;        /* Quit any mode */
                             }
-<LINECOMMENT>.              { scanner_column++;     /* Do nothing */ }
+<LINECOMMENT,PRAGMALINE>.   { scanner_column++;     /* Do nothing */ }
 "//"                        {
                               scanner_column += 2;
                               BEGIN LINECOMMENT;    /* Enter LINECOMMENT mode*/
@@ -222,6 +225,16 @@ IS ((u|U)|(u|U)?(l|L|ll|LL)|(l|L|ll|LL)(u|U))
                               } else {
                                 scanner_parsing = CLAN_FALSE;
                                 CLAN_debug("pragma endscop: stop parsing");
+                                return IGNORE;
+                              }
+                            }
+
+    /* Match the whole pragma name so e.g. "endscop_hint" stays ordinary. */
+{PRAGMA_PREFIX}/[^a-zA-Z_0-9] |
+{PRAGMA_PREFIX}[ \t]+{L}({L}|{D})* {
+                              clan_scanner_count();
+                              BEGIN PRAGMALINE;
+                              if (!scanner_parsing) {
                                 return IGNORE;
                               }
                             }
@@ -327,6 +340,7 @@ L?\"(\\.|[^\\"\n])*\"       { return clan_scanner(STRING_LITERAL, "STRING"); }
  * this function initialises the scanner global variables with default values.
  */
 void clan_scanner_initialize() {
+  BEGIN INITIAL;
   yy_buffer_stack_top = 0;
   yy_buffer_stack = 0;
   yy_flush_buffer(YY_CURRENT_BUFFER);
